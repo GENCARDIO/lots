@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+   {% include 'Header/header.html' %}
+<script>
+        function nobackbutton(){
+            window.location.hash="no-back-button";
+            window.location.hash="Again-No-back-button" //chrome
+            window.onhashchange=function(){window.location.hash="no-back-button";}	
+        }
+</script>
+</head>
+
+<body>
+    {% include 'NavBar/navBar.html' %}
+    {% include 'ErrorFlash/errorFlash.html' %}
+    <div class="jumbotron bg-grey text-black jomboton-imgae shadow" style="width: 90%; margin: 0 auto;">
+        <h1 class='mb-4' style="color: rgb(70, 70, 70); text-align: center;">Registre de peticions<hr></h1>
+        <div class="d-flex justify-content-center">
+            <div class="row">
+                <div class="col-lg-3 col-md-6 col-sm-12">
+                    <div class="row">
+                        <div class="col-6" style="padding-top: 10px;">
+                            <div class="card" style="width: 22rem;height:100%">
+                                <div class="card-body">
+                                <h5 class="card-title"><b>1 - Afegir peticions </b></h5>
+                                <p class="card-text">Aquí podreu afegir les peticions, teniu l'opció de fer-ho manual o amb una plantilla d'Excel</p>
+                                {% if session['rol'] == 'admin' or session['rol'] == 'advanced' %}
+                                    <a href="/insert_home" class="btn btn-outline-primary btn-sm">Accedir</a>
+                                {% else %}
+                                    <a href="" class="btn btn-outline-primary btn-sm ">Accedir</a>
+                                {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 col-sm-12">
+                    <div class="row">
+                        <div class="col-6" style="padding-top: 10px;">
+                            <div class="card" style="width: 22rem;height:100%">
+                                <div class="card-body">
+                                    <h5 class="card-title"><b>2 - Assignacio de proves </b></h5>
+                                    <p class="card-text">Els tècnics es podran assignar les proves i descarregar un Excel amb la informació que requereixen.</p>
+                                    <!-- <button class="btn btn-outline-primary btn-sm" onclick="accio('Primers')">Accedir</button> -->
+                                    <form action="/select_register" method="post" name="select_register" id="select_register">
+                                        {% if session['rol'] == 'admin' or session['rol'] == 'user' %}
+                                            <select class="form-select" onchange="btn_select_sample(this.value, `{{session['rol']}}`)">
+                                        {% else %}
+                                            <select class="form-select" onchange="btn_select_sample(this.value, `{{session['rol']}}`)" disabled>
+                                        {% endif %}
+                                            <option>Selecciona</option>
+                                            <option>Sanger</option>
+                                            <option>Extracció</option>
+                                        </select>
+                                        <input id="select_type" name="select_type" type="hidden" value=""/>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 col-sm-12">
+                    <div class="row">
+                        <div class="col-6" style="padding-top: 10px;">
+                            <div class="card" style="width: 22rem;height:100%">
+                                <div class="card-body">
+                                    <h5 class="card-title"><b>3 - Entrada Resultats </b></h5>
+                                    <p class="card-text">Pàgina per introduir les dades de la mostra i completa les tasques pendents dels técnics.</p>
+                                    <br>
+                                    <!-- <button class="btn btn-outline-primary btn-sm" onclick="accio('Primers')">Accedir</button> -->
+                                    <form action="/add_results" method="post" name="add_results" id="add_results">
+                                        {% if session['rol'] == 'admin' or session['rol'] == 'user' %}
+                                            <select class="form-select" onchange="btn_add_results(this.value, `{{session['rol']}}`)">
+                                        {% else %}
+                                            <select class="form-select" onchange="btn_add_results(this.value, `{{session['rol']}}`)" disabled>
+                                        {% endif %}
+                                            <option>Selecciona</option>
+                                            <option>Sanger</option>
+                                            <option>Extracció</option>
+                                        </select>
+                                        <input id="result_type" name="result_type" type="hidden" value=""/>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 col-sm-12">
+                    <div class="row">
+                        <div class="col-6" style="padding-top: 10px;">
+                            <div class="card" style="width: 22rem;height:100%">
+                                <div class="card-body">
+                                    <h5 class="card-title"><b>4 - Validació facultativa </b></h5>
+                                    <p class="card-text">Pàgina per fer l'última validació abans de tancar el seu cicle de vida.</p>
+                                    <br>
+                                    <!-- <button class="btn btn-outline-primary btn-sm" onclick="accio('Primers')">Accedir</button> -->
+                                    <form action="/collect_pending_validations" method="post" name="collect_pending_validations" id="collect_pending_validations">
+                                        {% if session['rol'] == 'admin' or session['rol'] == 'advanced' %}
+                                            <select class="form-select" onchange="btn_val_facultativa(this.value, `{{session['rol']}}`)">
+                                        {% else %}
+                                            <select class="form-select" onchange="btn_val_facultativa(this.value, `{{session['rol']}}`)" disabled>
+                                        {% endif %}
+                                            <option>Selecciona</option>
+                                            <option>Sanger</option>
+                                            <option>Extracció</option>
+                                        </select>
+                                        <input id="validation_type" name="validation_type" type="hidden" value=""/>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+    <script src="/static/js/bootstrap.js"></script></body>
+</body>                    
+</html>

@@ -1,0 +1,32 @@
+<nav class="navbar shadow-sm navbar-expand-sm fixed-top mb-3" rel="preload" style="background-image: linear-gradient(15deg, #357ca5 0%, #60cec1 100%);">
+    <a class="navbar-brand" style="color:white;" href="/"><b>REGISTRES</b></a>
+    <div class="collapse navbar-collapse" id="navbarNavDarkDropdown">
+        <ul class="navbar-nav mr-auto"> 
+            <form action="/look_register" method="post" name="look_reg" id="look_reg">
+                <li class="nav-item dropdown" style="display: inline; color:white;padding:5px;">
+                    <a class="btn btn-link btn-sm mr-3 navbar-brand" style="color:white;" id="navbarDarkDropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"> Veure registres</i></a>
+                    <ul class="dropdown-menu" aria-labelledby="navbarDarkDropdownMenuLink">
+                        <li><a class="dropdown-item" onclick="submit('Sanger')">Sanger</a></li>
+                        <li><a class="dropdown-item" onclick="submit('Extraccio')">Extracció</a></li>
+                        <input id="type" name="type" type="hidden" value=""/>
+                    </ul>
+                </li>  
+            </form>
+    </div>
+
+    <ul class="navbar-nav ml-auto">
+        <li class="nav-item">
+            <a class="navbar btn mr-1" style="color:white;padding:5px;"><i class="fas fa-user fa"></i>&nbsp;{{session['user']}}</a>
+        </li>
+        <li class="nav-item">
+            <a class="navbar btn mr-1" style="color:white;padding:5px;" href="logout"><i class="fas fa-door-closed fa-sm"></i>&nbsp;Tanca sessió</a>
+        </li>
+        <li class="nav-item">
+            <a class="navbar btn mr-1" style="color:white;padding:5px;" href="apps"><i class="fas fa-home"></i>&nbsp;Home</a>
+        </li>
+    </ul>
+</nav>
+<div style="height: 45px;">
+
+</div>
+

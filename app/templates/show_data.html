@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    {% include 'Header/header.html' %}
+    <script>
+        // document.addEventListener("DOMContentLoaded", function() {
+        // const trList = document.querySelectorAll(".open-modal");
+
+
+        // trList.forEach(tr => {
+        //     tr.addEventListener("click", function() {
+        //     const info_row = this.getAttribute("data-target");
+        //     const split_row = info_row.split('/-/')
+        //     document.getElementById('title').innerHTML = 'Editar registre - ' + split_row[0] + ' -';
+        //     document.getElementById('id_row').value = split_row[0];
+        //     document.getElementById('panel').value = split_row[1];
+        //     document.getElementById('f_index').value = split_row[2];
+        //     document.getElementById('mostra').value = split_row[3];
+        //     document.getElementById('external_code').value = split_row[4];
+        //     document.getElementById('date_entered').value = split_row[5];
+        //     document.getElementById('limit_date').value = split_row[6];
+        //     document.getElementById('end_analysis').value = split_row[7];
+        //     document.getElementById('gene').value = split_row[8];
+        //     document.getElementById('isoform').value = split_row[9];
+        //     document.getElementById('intro_exon').value = split_row[10];
+        //     document.getElementById('c_code').value = split_row[11];
+        //     document.getElementById('nucleotides').value = split_row[12];
+        //     document.getElementById('aminoacid').value = split_row[13];
+        //     document.getElementById('sequence').value = split_row[14];
+        //     document.getElementById('confirmation').value = split_row[15];
+        //     document.getElementById('technician').value = split_row[16];
+        //     document.getElementById('confirmation_date').value = split_row[17];
+        //     document.getElementById('observations_lab').value = split_row[18];
+        //     document.getElementById('num_pcr').value = split_row[19];
+        //     document.getElementById('num_db').value = split_row[20];
+        //     document.getElementById('validation').value = split_row[21];
+        //     document.getElementById('validation_date').value = split_row[22];
+        //     document.getElementById('observations_data_manager').value = split_row[23];
+        //     document.getElementById('status').value = split_row[24];
+        //     document.getElementById('days_later').value = split_row[25];
+        //     $('#edit_register').modal('show');
+        //     });
+        // });
+
+
+        // const modals = document.querySelectorAll(".modal");
+        // modals.forEach(modal => {
+        //     modal.addEventListener("click", function(event) {
+        //     if (event.target === this) {
+        //         this.style.display = "none";
+        //     }
+        //     });
+        // });
+        // });
+
+        document.addEventListener("DOMContentLoaded", function() {
+        const tbody = document.querySelector("#example tbody");
+
+        // Delegación de eventos para abrir el modal al hacer clic en las filas con la clase "open-modal"
+        tbody.addEventListener("click", function(event) {
+            const tr = event.target.closest(".open-modal");
+            if (tr) {
+                const info_row = tr.getAttribute("data-target");
+                const split_row = info_row.split('/-/');
+                document.getElementById('title').innerHTML = 'Editar registre - ' + split_row[0] + ' -';
+                document.getElementById('id_row').value = split_row[0];
+                document.getElementById('panel').value = split_row[1];
+                document.getElementById('f_index').value = split_row[2];
+                document.getElementById('mostra').value = split_row[3];
+                document.getElementById('external_code').value = split_row[4];
+                document.getElementById('date_entered').value = split_row[5];
+                document.getElementById('limit_date').value = split_row[6];
+                document.getElementById('end_analysis').value = split_row[7];
+                document.getElementById('gene').value = split_row[8];
+                document.getElementById('isoform').value = split_row[9];
+                document.getElementById('intro_exon').value = split_row[10];
+                document.getElementById('c_code').value = split_row[11];
+                document.getElementById('nucleotides').value = split_row[12];
+                document.getElementById('aminoacid').value = split_row[13];
+                document.getElementById('sequence').value = split_row[14];
+                document.getElementById('confirmation').value = split_row[15];
+                if (split_row[15] == ''){
+                    document.getElementById('confirmation').style.backgroundColor = "#FFFFFF";
+                } else if (split_row[15] === '√' || split_row[15] === 'variant no trobada'){
+                    document.getElementById('confirmation').style.backgroundColor = "green";
+                } else {
+                    document.getElementById('confirmation').style.backgroundColor = "red";
+                }
+
+                document.getElementById('technician').value = split_row[16];
+                document.getElementById('confirmation_date').value = split_row[17];
+                document.getElementById('observations_lab').value = split_row[18];
+                document.getElementById('num_pcr').value = split_row[19];
+                document.getElementById('num_db').value = split_row[20];
+                document.getElementById('validation').value = split_row[21];
+                document.getElementById('validation_date').value = split_row[22];
+                document.getElementById('observations_data_manager').value = split_row[23];
+                document.getElementById('status').value = split_row[24];
+                document.getElementById('days_later').value = split_row[25];
+                $('#edit_register').modal('show');
+            }
+        });
+
+        const modals = document.querySelectorAll(".modal");
+            modals.forEach(modal => {
+                modal.addEventListener("click", function(event) {
+                    if (event.target === this) {
+                        this.style.display = "none";
+                    }
+                });
+            });
+        });
+
+
+        function close_modal(modal_id){
+            $(`#${modal_id}`).modal('hide');
+        }
+    
+
+        function modify_register(){
+            // Crear form data
+            var form_data = new FormData();
+            
+            // Carregar dades al form de l'html
+            const id_row = document.getElementById('id_row').value
+            const panel = document.getElementById('panel').value
+            const f_index = document.getElementById('f_index').value
+            const mostra = document.getElementById('mostra').value
+            const external_code = document.getElementById('external_code').value
+            const date_entered = document.getElementById('date_entered').value
+            const limit_date = document.getElementById('limit_date').value
+            const end_analysis = document.getElementById('end_analysis').value
+            const gene = document.getElementById('gene').value
+            const isoform = document.getElementById('isoform').value
+            const intro_exon = document.getElementById('intro_exon').value
+            const c_code = document.getElementById('c_code').value
+            const nucleotides = document.getElementById('nucleotides').value
+            const aminoacid = document.getElementById('aminoacid').value
+            const sequence = document.getElementById('sequence').value
+            const confirmation = document.getElementById('confirmation').value
+            const technician = document.getElementById('technician').value
+            const confirmation_date = document.getElementById('confirmation_date').value
+            const observations_lab = document.getElementById('observations_lab').value
+            const num_pcr = document.getElementById('num_pcr').value
+            const num_db = document.getElementById('num_db').value
+            const validation = document.getElementById('validation').value
+            const validation_date = document.getElementById('validation_date').value
+            const observations_data_manager = document.getElementById('observations_data_manager').value
+            const status = document.getElementById('status').value
+            const days_later = document.getElementById('days_later').value
+            const reason_change = document.getElementById('reason_change').value
+            
+            if (reason_change == '' || reason_change.length < 5){
+                alert(`El motiu del canvi no pot ser buit o contenir menys de 5 caràcters`)
+                document.querySelector('.special_span').style.backgroundColor = 'red';
+                return }
+
+            form_data.append('id_row', id_row)
+            form_data.append('panel', panel)
+            form_data.append('f_index', f_index)
+            form_data.append('mostra', mostra)
+            form_data.append('external_code', external_code)
+            form_data.append('date_entered', date_entered)
+            form_data.append('limit_date', limit_date)
+            form_data.append('end_analysis', end_analysis)
+            form_data.append('gene', gene)
+            form_data.append('isoform', isoform)
+            form_data.append('intro_exon', intro_exon)
+            form_data.append('c_code', c_code)
+            form_data.append('nucleotides', nucleotides)
+            form_data.append('aminoacid', aminoacid)
+            form_data.append('sequence', sequence)
+            form_data.append('confirmation', confirmation)
+            form_data.append('technician', technician)
+            form_data.append('confirmation_date', confirmation_date)
+            form_data.append('observations_lab', observations_lab)
+            form_data.append('num_pcr', num_pcr)
+            form_data.append('num_db', num_db)
+            form_data.append('validation', validation)
+            form_data.append('validation_date', validation_date)
+            form_data.append('observations_data_manager', observations_data_manager)
+            form_data.append('status', status)
+            form_data.append('days_later', days_later)
+            form_data.append('reason_change', reason_change)
+
+            $('#edit_register').modal('hide');
+
+            // Creeem l'objecte per l'ajax
+            var xhr = new XMLHttpRequest();
+            // 1er argument si es pots o get
+            // 2n argument url o ruta
+            // 3r argumemt true sempre
+            xhr.open('POST', '/modify_register', true);
+            xhr.onload = function(){
+                if (xhr.status === 200) {
+                    var response = xhr.responseText;
+                    if (response === 'False'){
+                        var flashContainer = document.querySelector(".d-flex.justify-content-center .row");
+                        var newFlash = document.createElement("div");
+                        newFlash.className = "alert alert-danger alert-dismissible fade show ml-3";
+                        newFlash.role = "alert";
+                        newFlash.innerHTML = "<span>No s'ha pogut realizar l'operació solicitada.</span>" + 
+                                            '<button type="button" class="close" data-dismiss="alert" aria-label="Close">' +
+                                            '<span aria-hidden="true">&times;</span>' +
+                                            '</button>';
+                        flashContainer.appendChild(newFlash);
+                        flashContainer.style.paddingTop = "20px";
+                    } else {
+                        var flashContainer = document.querySelector(".d-flex.justify-content-center .row");
+                        var newFlash = document.createElement("div");
+                        newFlash.className = "alert alert-success alert-dismissible fade show ml-3";
+                        newFlash.role = "alert";
+                        newFlash.innerHTML = "<span>Les dades s'han actualitzat correctament.</span>" + 
+                                            '<button type="button" class="close" data-dismiss="alert" aria-label="Close">' +
+                                            '<span aria-hidden="true">&times;</span>' +
+                                            '</button>';
+                        flashContainer.appendChild(newFlash);
+                        flashContainer.style.paddingTop = "20px";
+
+                        var row = document.getElementById(id_row)
+                        if (this.responseText == 'fail'){
+                            return none
+                        }
+                        const data_target_value = `${id_row}/-/${panel}/-/${f_index}/-/${mostra}/-/${external_code}/-/${date_entered}/-/${limit_date}/-/${end_analysis}/-/${gene}/-/${isoform}/-/${intro_exon}/-/${c_code}/-/${nucleotides}/-/${aminoacid}/-/${sequence}/-/${confirmation}/-/${technician}/-/${confirmation_date}/-/${observations_lab}/-/${num_pcr}/-/${num_db}/-/${validation}/-/${validation_date}/-/${observations_data_manager}/-/${status}/-/${days_later}`
+
+                        row.style.backgroundColor = 'yellow';
+                        row.setAttribute('data-target', data_target_value)
+                        row.cells[1].innerHTML = panel;
+                        row.cells[2].innerHTML = f_index;
+                        row.cells[3].innerHTML = mostra;
+                        row.cells[4].innerHTML = external_code;
+                        row.cells[5].innerHTML = date_entered;
+                        row.cells[6].innerHTML = limit_date;
+                        row.cells[7].innerHTML = end_analysis;
+                        row.cells[8].innerHTML = gene;
+                        row.cells[9].innerHTML = isoform;
+                        row.cells[10].innerHTML = intro_exon;
+                        row.cells[11].innerHTML = c_code;
+                        row.cells[12].innerHTML = nucleotides;
+                        row.cells[13].innerHTML = aminoacid;
+                        row.cells[14].innerHTML = sequence;
+                        row.cells[15].innerHTML = confirmation;
+                        row.cells[16].innerHTML = technician;
+                        row.cells[17].innerHTML = confirmation_date;
+                        row.cells[18].innerHTML = observations_lab;
+                        row.cells[19].innerHTML = num_pcr;
+                        row.cells[20].innerHTML = num_db;
+                        row.cells[21].innerHTML = validation;
+                        row.cells[22].innerHTML = validation_date;
+                        row.cells[23].innerHTML = observations_data_manager;
+                        row.cells[24].innerHTML = status;
+                        row.cells[25].innerHTML = days_later;
+
+                    }
+                } else {
+                    alert("Error, No s'ha pogut realitzar l'operació, acutlitza la pàgina i torna-ho a intentar")
+                }
+            }
+            xhr.send(form_data)
+        }
+
+    
+        function add_register(){
+            // Crear form data
+            var form_data = new FormData();
+            
+            // Carregar dades al form de l'html
+            const panel = document.getElementById('add_panel').value
+            const f_index = document.getElementById('add_f_index').value
+            const mostra = document.getElementById('add_mostra').value
+            const external_code = document.getElementById('add_external_code').value
+            const date_entered = document.getElementById('add_date_entered').value
+            const limit_date = document.getElementById('add_limit_date').value
+            const end_analysis = document.getElementById('add_end_analysis').value
+            const gene = document.getElementById('add_gene').value
+            const isoform = document.getElementById('add_isoform').value
+            const intro_exon = document.getElementById('add_intro_exon').value
+            const c_code = document.getElementById('add_c_code').value
+            const nucleotides = document.getElementById('add_nucleotides').value
+            const aminoacid = document.getElementById('add_aminoacid').value
+            const sequence = document.getElementById('add_sequence').value
+            const confirmation = document.getElementById('add_confirmation').value
+            const technician = document.getElementById('add_technician').value
+            const confirmation_date = document.getElementById('add_confirmation_date').value
+            const observations_lab = document.getElementById('add_observations_lab').value
+            const num_pcr = document.getElementById('add_num_pcr').value
+            const num_db = document.getElementById('add_num_db').value
+            const validation = document.getElementById('add_validation').value
+            const validation_date = document.getElementById('add_validation_date').value
+            const observations_data_manager = document.getElementById('add_observations_data_manager').value
+            const status = document.getElementById('add_status').value
+            const days_later = document.getElementById('add_days_later').value
+
+            form_data.append('panel', panel)
+            form_data.append('f_index', f_index)
+            form_data.append('mostra', mostra)
+            form_data.append('external_code', external_code)
+            form_data.append('date_entered', date_entered)
+            form_data.append('limit_date', limit_date)
+            form_data.append('end_analysis', end_analysis)
+            form_data.append('gene', gene)
+            form_data.append('isoform', isoform)
+            form_data.append('intro_exon', intro_exon)
+            form_data.append('c_code', c_code)
+            form_data.append('nucleotides', nucleotides)
+            form_data.append('aminoacid', aminoacid)
+            form_data.append('sequence', sequence)
+            form_data.append('confirmation', confirmation)
+            form_data.append('technician', technician)
+            form_data.append('confirmation_date', confirmation_date)
+            form_data.append('observations_lab', observations_lab)
+            form_data.append('num_pcr', num_pcr)
+            form_data.append('num_db', num_db)
+            form_data.append('validation', validation)
+            form_data.append('validation_date', validation_date)
+            form_data.append('observations_data_manager', observations_data_manager)
+            form_data.append('status', status)
+            form_data.append('days_later', days_later)
+
+            $('#add_register').modal('hide');
+
+            // Creeem l'objecte per l'ajax
+            var xhr = new XMLHttpRequest();
+            // 1er argument si es pots o get
+            // 2n argument url o ruta
+            // 3r argumemt true sempre
+            xhr.open('POST', '/add_register', true);
+            xhr.onload = function(){
+                if (xhr.status === 200) {
+                    var response = xhr.responseText;
+                    if (response === 'False'){
+                        message = "Error, no s'ha pogut inserir el rigistre."
+                        alert_type = 'danger' }
+                    else if (response === 'False_d') {
+                        message = "Error, la mostra està duplicada."
+                        alert_type = 'danger' }
+                    else {
+                        message = "El registre s'ha introduït correctament."
+                        alert_type = 'success'
+
+                        const split_id = response.split('_')
+
+                        // Obtén una referencia a la tabla
+                        const table = document.getElementById("example");
+
+                        // Agregar una nueva fila antes de la primera fila de datos
+                        const new_row = table.tBodies[0].insertRow(0);
+
+                        // Agregar el id, class, data-target i color de fons al nou <tr>
+                        new_row.id = split_id[1];
+                        new_row.classList.add("open-modal");
+                        const data_target_value = `${split_id[1]}/-/${panel}/-/${f_index}/-/${mostra}/-/${external_code}/-/${date_entered}/-/${limit_date}/-/${end_analysis}/-/${gene}/-/${isoform}/-/${intro_exon}/-/${c_code}/-/${nucleotides}/-/${aminoacid}/-/${sequence}/-/${confirmation}/-/${technician}/-/${confirmation_date}/-/${observations_lab}/-/${num_pcr}/-/${num_db}/-/${validation}/-/${validation_date}/-/${observations_data_manager}/-/${status}/-/${days_later}`
+                        new_row.setAttribute("data-target", data_target_value);
+                        new_row.style.backgroundColor = 'yellow';
+
+                        // Agregar celdas a la nueva fila
+                        const cell0 = new_row.insertCell();
+                        const cell1 = new_row.insertCell();
+                        const cell2 = new_row.insertCell();
+                        const cell3 = new_row.insertCell();
+                        const cell4 = new_row.insertCell();
+                        const cell5 = new_row.insertCell();
+                        const cell6 = new_row.insertCell();
+                        const cell7 = new_row.insertCell();
+                        const cell8 = new_row.insertCell();
+                        const cell9 = new_row.insertCell();
+                        const cell10 = new_row.insertCell();
+                        const cell11 = new_row.insertCell();
+                        const cell12 = new_row.insertCell();
+                        const cell13 = new_row.insertCell();
+                        const cell14 = new_row.insertCell();
+                        const cell15 = new_row.insertCell();
+                        const cell16 = new_row.insertCell();
+                        const cell17 = new_row.insertCell();
+                        const cell18 = new_row.insertCell();
+                        const cell19 = new_row.insertCell();
+                        const cell20 = new_row.insertCell();
+                        const cell21 = new_row.insertCell();
+                        const cell22 = new_row.insertCell();
+                        const cell23 = new_row.insertCell();
+                        const cell24 = new_row.insertCell();
+                        const cell25 = new_row.insertCell();
+
+                        // Rellenar las celdas con datos
+                        cell0.textContent = split_id[1];
+                        cell1.textContent = panel;
+                        cell2.textContent = f_index;
+                        cell3.textContent = mostra;
+                        cell4.textContent = external_code;
+                        cell5.textContent = date_entered;
+                        cell6.textContent = limit_date;
+                        cell7.textContent = end_analysis;
+                        cell8.textContent = gene;
+                        cell9.textContent = isoform;
+                        cell10.textContent = intro_exon;
+                        cell11.textContent = c_code;
+                        cell12.textContent = nucleotides;
+                        cell13.textContent = aminoacid;
+                        cell14.textContent = sequence;
+                        cell15.textContent = confirmation;
+                        cell16.textContent = technician;
+                        cell17.textContent = confirmation_date;
+                        cell18.textContent = observations_lab;
+                        cell19.textContent = num_pcr;
+                        cell20.textContent = num_db;
+                        cell21.textContent = validation;
+                        cell22.textContent = validation_date;
+                        cell23.textContent = observations_data_manager;
+                        cell24.textContent = status;
+                        cell25.textContent = days_later; } } 
+                else {
+                    message = "Error, No s'ha pogut realitzar l'operació."
+                    alert_type = 'danger' }
+
+                var flashContainer = document.querySelector(".d-flex.justify-content-center .row");
+                var newFlash = document.createElement("div");
+                newFlash.className = "alert alert-" + alert_type + " alert-dismissible fade show ml-3";
+                newFlash.role = "alert";
+                newFlash.innerHTML = "<span>" + message + "</span>" + 
+                                    '<button type="button" class="close" data-dismiss="alert" aria-label="Close">' +
+                                    '<span aria-hidden="true">&times;</span>' +
+                                    '</button>';
+                flashContainer.appendChild(newFlash);
+                flashContainer.style.paddingTop = "20px";
+            }
+            xhr.send(form_data)
+        }
+
+    </script>
+</head>
+<body>
+    {% include 'NavBar/navBar.html' %}
+    {% include 'ErrorFlash/errorFlash.html' %} 
+    <div class="d-flex justify-content-center pt-3 mt-3 rounded">
+        <div class="container-fluid rounded table-responsive" style="width: 90%; text-align: center;">
+            <div id="table1" name="table1">
+                <table id="example" class="display">
+                    <thead>
+                        <tr id="thcolor">
+                            <th style="min-width: 50px;">Id</th>
+                            <th style="min-width: 120px;">Panell mlpa qpcr</th>
+                            <th style="min-width: 120px;">Familiar index</th>
+                            <th style="min-width: 120px;">Mostra</th>
+                            <th style="min-width: 120px;">Codi extern</th>
+                            <th style="min-width: 120px;">Data entrada</th>
+                            <th style="min-width: 120px;">Data limit</th>
+                            <th style="min-width: 120px;">Fi analisi</th>
+                            <th style="min-width: 120px;">Gen</th>
+                            <th style="min-width: 120px;">Isoforma</th>
+                            <th style="min-width: 120px;">Intro exo</th>
+                            <th style="min-width: 120px;">Posicio cromosomica</th>
+                            <th style="min-width: 120px;">Nucleotid</th>
+                            <th style="min-width: 120px;">Aminoacid</th>
+                            <th style="min-width: 120px;">Seqüencia</th>
+                            <th style="min-width: 120px;">Confirmacio</th>
+                            <th style="min-width: 120px;">Técnic</th>
+                            <th style="min-width: 120px;">Data confirmació</th>
+                            <th style="min-width: 120px;">Observacions laboratori</th>
+                            <th style="min-width: 120px;">N. pcr</th>
+                            <th style="min-width: 120px;">N. Bigdye</th>
+                            <th style="min-width: 120px;">Validació</th>
+                            <th style="min-width: 120px;">Data validació</th>
+                            <th style="min-width: 120px;">Observacions gestor dades</th>
+                            <th style="min-width: 120px;">Status</th>
+                            <th style="min-width: 120px;">Dies retard</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in list_data %}
+                            <tr id="{{row.id}}" class="open-modal" data-target="{{row.id}}/-/{{row.panell_mlpa_qpcr}}/-/{{row.familiar_index}}/-/{{row.mostra}}/-/{{row.codi_extern}}/-/{{row.data_entrada}}/-/{{row.data_limit}}/-/{{row.fi_analisi}}/-/{{row.gen}}/-/{{row.isoforma}}/-/{{row.intro_exo}}/-/{{row.posicio_cromosomica}}/-/{{row.nucleotid}}/-/{{row.aminoacid}}/-/{{row.sequencia}}/-/{{row.confirmacio}}/-/{{row.tecnic}}/-/{{row.data_confirmacio}}/-/{{row.observacions_laboratori}}/-/{{row.num_pcr}}/-/{{row.num_db}}/-/{{row.validacio}}/-/{{row.data_validacio}}/-/{{row.observacions_gestor_dades}}/-/{{row.status}}/-/{{row.dies_retard}}">
+                                <td>{{row.id}}</td>
+                                <td>{{row.panell_mlpa_qpcr}}</td>
+                                <td>{{row.familiar_index}}</td>
+                                <td>{{row.mostra}}</td>
+                                <td>{{row.codi_extern}}</td>
+                                <td>{{row.data_entrada}}</td>
+                                <td>{{row.data_limit}}</td>
+                                <td>{{row.fi_analisi}}</td>
+                                <td>{{row.gen}}</td>
+                                <td>{{row.isoforma}}</td>
+                                <td>{{row.intro_exo}}</td>
+                                <td>{{row.posicio_cromosomica}}</td>
+                                <td>{{row.nucleotid}}</td>
+                                <td>{{row.aminoacid}}</td>
+                                <td>{{row.sequencia}}</td>
+                                {% if row.confirmacio == ''%}
+                                    <td></td>
+                                {% elif row.confirmacio == '√' or row.confirmacio == 'variant no trobada' %}
+                                    <td style="background-color: green;">{{row.confirmacio}}</td>
+                                {% else %}
+                                    <td style="background-color: red;">{{row.confirmacio}}</td>
+                                {% endif %}
+                                <td>{{row.tecnic}}</td>
+                                <td>{{row.data_confirmacio}}</td>
+                                <td>{{row.observacions_laboratori}}</td>
+                                <td>{{row.num_pcr}}</td>
+                                <td>{{row.num_db}}</td>
+                                <td>{{row.validacio}}</td>
+                                <td>{{row.data_validacio}}</td>
+                                <td>{{row.observacions_gestor_dades}}</td>
+                                <td>{{row.status}}</td>
+                                <td>{{row.dies_retard}}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <br>
+        </div>
+    </div>
+
+    <div class="modal fade"  id="edit_register" tabindex="-1" role="dialog" aria-labelledby="editRegister" aria-hidden="true">
+        <div class="modal-dialog modal-xl" tabindex="-1" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="title">Edita registre</h5>
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="close_modal('edit_register')"><span aria-hidden="true">&times;</span></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-lg-4 col-md-6 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>Panell :</b></span>
+                            <input type="text" class="form-control" id="panel" aria-label="TTN" aria-describedby="basic-addon1">
+                        </div>
+                    </div>
+                    <div class="col-lg-4 col-md-6 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>Familiar index :</b></span>
+                            <input type="text" class="form-control" id='f_index' aria-label="TTN" aria-describedby="basic-addon1">
+                        </div>
+                    </div>
+                    <div class="col-lg-4 col-md-6 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>Mostra :</b></span>
+                            <input type="text" class="form-control" id='mostra' aria-label="TTN" aria-describedby="basic-addon1">
+                        </div>
+                    </div>
+                    <div class="col-lg-4 col-md-6 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>Codi extern :</b></span>
+                            <input type="text" class="form-control" id='external_code' aria-label="TTN" aria-describedby="basic-addon1">
+                        </div>
+                    </div>
+                    <div class="col-lg-4 col-md-6 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>Data entrada :</b></span>
+                            <input type="text" class="form-control" id='date_entered' aria-label="TTN" aria-describedby="basic-addon1">
+                        </div>
+                    </div>
+                    <div class="col-lg-4 col-md-6 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>Data limit :</b></span>
+                            <input type="text" class="form-control" id='limit_date' aria-label="TTN" aria-describedby="basic-addon1">
+                        </div>
+                    </div>
+                    <div class="col-lg-4 col-md-6 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>Fi analisi :</b></span>
+                            <input type="text" class="form-control" id='end_analysis' aria-label="TTN" aria-describedby="basic-addon1">
+                        </div>
+                    </div>
+                    <div class="col-lg-4 col-md-6 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>Gen :</b></span>
+                            <input type="text" class="form-control" id='gene' aria-label="TTN" aria-describedby="basic-addon1">
+                        </div>
+                    </div>
+                    <div class="col-lg-4 col-md-6 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>Isoforma:</b></span>
+                            <input type="text" class="form-control" id='isoform' aria-label="TTN" aria-describedby="basic-addon1">
+                        </div>
+                    </div>
+                    <div class="col-lg-4 col-md-6 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>Intro exo:</b></span>
+                            <input type="text" class="form-control" id='intro_exon' aria-label="TTN" aria-describedby="basic-addon1">
+                        </div>
+                    </div>
+                    <div class="col-lg-4 col-md-6 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>P cromosomica :</b></span>
+                            <input type="text" class="form-control" id='c_code' aria-label="TTN" aria-describedby="basic-addon1">
+                        </div>
+                    </div>
+                    <div class="col-lg-4 col-md-6 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>Nucleotid :</b></span>
+                            <input type="text" class="form-control" id='nucleotides' aria-label="TTN" aria-describedby="basic-addon1">
+                        </div>
+                    </div>
+                    <div class="col-lg-4 col-md-6 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>Aminoacid :</b></span>
+                            <input type="text" class="form-control" id='aminoacid' aria-label="TTN" aria-describedby="basic-addon1">
+                        </div>
+                    </div>                     
+                    <div class="col-lg-4 col-md-6 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>Confirmacio :</b></span>
+                            <input type="text" class="form-control" id='confirmation' aria-label="TTN" aria-describedby="basic-addon1">
+                        </div>
+                    </div>                     
+                    <div class="col-lg-4 col-md-6 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>Técnic :</b></span>
+                            <input type="text" class="form-control" id='technician' aria-label="TTN" aria-describedby="basic-addon1">
+                        </div>
+                    </div> 
+                    <div class="col-lg-4 col-md-6 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>Data confirm. :</b></span>
+                            <input type="text" class="form-control" id='confirmation_date' aria-label="TTN" aria-describedby="basic-addon1">
+                        </div>
+                    </div> 
+                    <div class="col-lg-4 col-md-6 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>N. pcr :</b></span>
+                            <input type="text" class="form-control" id='num_pcr' aria-label="TTN" aria-describedby="basic-addon1">
+                        </div>
+                    </div> 
+                    <div class="col-lg-4 col-md-6 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>N. Bigdye :</b></span>
+                            <input type="text" class="form-control" id='num_db' aria-label="TTN" aria-describedby="basic-addon1">
+                        </div>
+                    </div> 
+                    <div class="col-lg-12 col-md-12 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>Seqüencia :</b></span>
+                            <input type="text" class="form-control" id='sequence' aria-label="TTN" aria-describedby="basic-addon1">
+                        </div>
+                    </div> 
+                    <div class="col-lg-12 col-md-12 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>Obs. laboratori :</b></span>
+                            <input type="text" class="form-control" id='observations_lab' aria-label="TTN" aria-describedby="basic-addon1">
+                        </div>
+                    </div> 
+                    <div class="col-lg-4 col-md-6 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>Validació :</b></span>
+                            <input type="text" class="form-control" id='validation' aria-label="TTN" aria-describedby="basic-addon1">
+                        </div>
+                    </div> 
+                    <div class="col-lg-4 col-md-6 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>Data validació :</b></span>
+                            <input type="text" class="form-control" id='validation_date' aria-label="TTN" aria-describedby="basic-addon1">
+                        </div>
+                    </div> 
+                    <div class="col-lg-4 col-md-6 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>Status :</b></span>
+                            <input type="text" class="form-control" id='status' aria-label="TTN" aria-describedby="basic-addon1">
+                        </div>
+                    </div> 
+                    <div class="col-lg-4 col-md-6 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>Dies retard :</b></span>
+                            <input type="text" class="form-control" id='days_later' aria-label="TTN" aria-describedby="basic-addon1">
+                        </div>
+                    </div>
+                    <div class="col-lg-8 col-md-6 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1"><b>Obs. gestor dades :</b></span>
+                            <input type="text" class="form-control" id='observations_data_manager' aria-label="TTN" aria-describedby="basic-addon1">
+                        </div>
+                    </div> 
+                    {% if session['rol'] == 'admin' or session['rol'] == 'advanced' %}
+                        <div class="col-lg-12 col-md-12 col-sm-12">       
+                            <div class="input-group mb-3">
+                                <span class="input-group-text special_span" id="basic-addon1" style="width: 140px;"><b>Motiu canvi : *</b></span>
+                                <input type="text" class="form-control" id='reason_change' aria-label="TTN" aria-describedby="basic-addon1">
+                            </div>
+                        </div> 
+                        <div class="col-lg-12 col-md-12 col-sm-12"></div>
+                        <div class="col-lg-3 col-md-6 col-sm-12">       
+                            <div class="input-group mb-3">
+                                <button type="button" class="btn btn-primary btn-sm" style="width: 150px;" onclick="modify_register()">Accepta</button>
+                            </div>
+                        </div>
+                    {% endif %}
+                    <input type="hidden" id="id_row" value=""/>
+                </div>
+            </div>
+          </div>
+        </div>
+    </div>
+
+    <div class="modal fade"  id="add_register" tabindex="-1" role="dialog" aria-labelledby="editRegister" aria-hidden="true">
+        <div class="modal-dialog modal-xl" tabindex="-1" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="title">Afegeix registre</h5>
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="close_modal('add_register')"><span aria-hidden="true">&times;</span></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-lg-4 col-md-6 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>Panell :</b></span>
+                            <input type="text" class="form-control" id="add_panel" aria-label="TTN" aria-describedby="basic-addon1">
+                        </div>
+                    </div>
+                    <div class="col-lg-4 col-md-6 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>Familiar index :</b></span>
+                            <input type="text" class="form-control" id='add_f_index' aria-label="TTN" aria-describedby="basic-addon1">
+                        </div>
+                    </div>
+                    <div class="col-lg-4 col-md-6 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>Mostra :</b></span>
+                            <input type="text" class="form-control" id='add_mostra' aria-label="TTN" aria-describedby="basic-addon1">
+                        </div>
+                    </div>
+                    <div class="col-lg-4 col-md-6 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>Codi extern :</b></span>
+                            <input type="text" class="form-control" id='add_external_code' aria-label="TTN" aria-describedby="basic-addon1">
+                        </div>
+                    </div>
+                    <div class="col-lg-4 col-md-6 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>Data entrada :</b></span>
+                            <input type="text" class="form-control" id='add_date_entered' aria-label="TTN" aria-describedby="basic-addon1">
+                        </div>
+                    </div>
+                    <div class="col-lg-4 col-md-6 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>Data limit :</b></span>
+                            <input type="text" class="form-control" id='add_limit_date' aria-label="TTN" aria-describedby="basic-addon1">
+                        </div>
+                    </div>
+                    <div class="col-lg-4 col-md-6 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>Fi analisi :</b></span>
+                            <input type="text" class="form-control" id='add_end_analysis' aria-label="TTN" aria-describedby="basic-addon1">
+                        </div>
+                    </div>
+                    <div class="col-lg-4 col-md-6 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>Gen :</b></span>
+                            <input type="text" class="form-control" id='add_gene' aria-label="TTN" aria-describedby="basic-addon1">
+                        </div>
+                    </div>
+                    <div class="col-lg-4 col-md-6 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>Isoforma:</b></span>
+                            <input type="text" class="form-control" id='add_isoform' aria-label="TTN" aria-describedby="basic-addon1">
+                        </div>
+                    </div>
+                    <div class="col-lg-4 col-md-6 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>Intro exo:</b></span>
+                            <input type="text" class="form-control" id='add_intro_exon' aria-label="TTN" aria-describedby="basic-addon1">
+                        </div>
+                    </div>
+                    <div class="col-lg-4 col-md-6 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>P cromosomica :</b></span>
+                            <input type="text" class="form-control" id='add_c_code' aria-label="TTN" aria-describedby="basic-addon1">
+                        </div>
+                    </div>
+                    <div class="col-lg-4 col-md-6 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>Nucleotid :</b></span>
+                            <input type="text" class="form-control" id='add_nucleotides' aria-label="TTN" aria-describedby="basic-addon1">
+                        </div>
+                    </div>
+                    <div class="col-lg-4 col-md-6 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>Aminoacid :</b></span>
+                            <input type="text" class="form-control" id='add_aminoacid' aria-label="TTN" aria-describedby="basic-addon1">
+                        </div>
+                    </div>                     
+                    <div class="col-lg-4 col-md-6 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>Confirmacio :</b></span>
+                            <input type="text" class="form-control" id='add_confirmation' aria-label="TTN" aria-describedby="basic-addon1">
+                        </div>
+                    </div>                     
+                    <div class="col-lg-4 col-md-6 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>Técnic :</b></span>
+                            <input type="text" class="form-control" id='add_technician' aria-label="TTN" aria-describedby="basic-addon1">
+                        </div>
+                    </div> 
+                    <div class="col-lg-4 col-md-6 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>Data confirm. :</b></span>
+                            <input type="text" class="form-control" id='add_confirmation_date' aria-label="TTN" aria-describedby="basic-addon1">
+                        </div>
+                    </div> 
+                    <div class="col-lg-4 col-md-6 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>N. pcr :</b></span>
+                            <input type="text" class="form-control" id='add_num_pcr' aria-label="TTN" aria-describedby="basic-addon1">
+                        </div>
+                    </div> 
+                    <div class="col-lg-4 col-md-6 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>N. Bigdye :</b></span>
+                            <input type="text" class="form-control" id='add_num_db' aria-label="TTN" aria-describedby="basic-addon1">
+                        </div>
+                    </div> 
+                    <div class="col-lg-12 col-md-12 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>Seqüencia :</b></span>
+                            <input type="text" class="form-control" id='add_sequence' aria-label="TTN" aria-describedby="basic-addon1">
+                        </div>
+                    </div> 
+                    <div class="col-lg-12 col-md-12 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>Obs. laboratori :</b></span>
+                            <input type="text" class="form-control" id='add_observations_lab' aria-label="TTN" aria-describedby="basic-addon1">
+                        </div>
+                    </div> 
+                    <div class="col-lg-4 col-md-6 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>Validació :</b></span>
+                            <input type="text" class="form-control" id='add_validation' aria-label="TTN" aria-describedby="basic-addon1">
+                        </div>
+                    </div> 
+                    <div class="col-lg-4 col-md-6 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>Data validació :</b></span>
+                            <input type="text" class="form-control" id='add_validation_date' aria-label="TTN" aria-describedby="basic-addon1">
+                        </div>
+                    </div> 
+                    <div class="col-lg-4 col-md-6 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>Status :</b></span>
+                            <input type="text" class="form-control" id='add_status' aria-label="TTN" aria-describedby="basic-addon1">
+                        </div>
+                    </div> 
+                    <div class="col-lg-4 col-md-6 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>Dies retard :</b></span>
+                            <input type="text" class="form-control" id='add_days_later' aria-label="TTN" aria-describedby="basic-addon1">
+                        </div>
+                    </div>
+                    <div class="col-lg-8 col-md-6 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1"><b>Obs. gestor dades :</b></span>
+                            <input type="text" class="form-control" id='add_observations_data_manager' aria-label="TTN" aria-describedby="basic-addon1">
+                        </div>
+                    </div> 
+                    <div class="col-lg-12 col-md-12 col-sm-12"></div>
+                    <div class="col-lg-3 col-md-6 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <button type="button" class="btn btn-primary btn-sm" style="width: 150px;" onclick="add_register()">Accepta</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+          </div>
+        </div>
+    </div>
+
+    <script>
+        $(document).ready(function() {
+            // Setup - add a text input to each footer cell
+            $('#example thead tr').clone(true).appendTo( '#example thead' );
+            $('#example thead tr:eq(1) th').each( function (i) {
+                var title = $(this).text();
+                if (title !== ''){
+                    $(this).html( '<input type="text" placeholder="Search '+title+'"/>' );
+            
+                    $( 'input', this ).on( 'keyup change', function () {
+                        if ( table.column(i).search() !== this.value ) {
+                            table
+                                .column(i)
+                                .search( this.value )
+                                .draw();
+                    }
+                } );
+                }
+            } );
+        
+            var table = $('#example').DataTable( {
+                orderCellsTop: true,
+                fixedHeader: true,
+                order: [[0, 'desc']] 
+            } );
+        } );
+    </script>
+    <script src="/static/js/bootstrap.js"></script>
+</body>
+</html>
+

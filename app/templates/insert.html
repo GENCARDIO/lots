@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    {% include 'Header/header.html' %}
+    <script>
+        function show_select(select){
+            if (select === '0'){
+                document.getElementById('upload_excels').style.display = 'none';
+                return }
+            else if (select === 'manual'){
+                $('#add_register').modal('show');
+                document.getElementById('upload_excels').style.display = 'none'; }
+            else if (select === 'genincode'){
+                document.getElementById('upload_excels').style.display = 'block'; }
+            else if (select === 'genotipat'){
+                document.getElementById('upload_excels').style.display = 'block'; }
+            else if (select === 'cancer'){
+                document.getElementById('upload_excels').style.display = 'block'; }
+            else if (select === 'familiars'){
+                $('#add_hgvsg').modal('show');
+            }
+        }
+
+    
+        function add_register(){
+            // Crear form data
+            var form_data = new FormData();
+            
+            // Carregar dades al form de l'html
+            const panel = document.getElementById('add_panel').value
+            const f_index = document.getElementById('add_f_index').value
+            const mostra = document.getElementById('add_mostra').value
+            const external_code = document.getElementById('add_external_code').value
+            const date_entered = document.getElementById('add_date_entered').value
+            const gene = document.getElementById('add_gene').value
+            const isoform = document.getElementById('add_isoform').value
+            const intro_exon = document.getElementById('add_intro_exon').value
+            const c_code = document.getElementById('add_c_code').value
+            const nucleotides = document.getElementById('add_nucleotides').value
+            const aminoacid = document.getElementById('add_aminoacid').value
+            const sequence = document.getElementById('add_sequence').value
+
+            // Check dades
+            var message_alert = '';
+            if (panel === '' || panel.length < 3){ message_alert += 'panell, '}
+            if (mostra === '' || mostra.length < 3){ message_alert += 'mostra, '}
+            if (external_code === '' || external_code.length < 3){ message_alert += 'codi extern, '}
+            if (gene === '' || gene.length < 2){ message_alert += 'gene, '}
+            if (isoform === '' || isoform.length < 3){ message_alert += 'isoforma, '}
+            if (intro_exon === ''){ message_alert += 'intró-exó, '}
+            if (nucleotides === '' || c_code.length < 1){ message_alert += 'nucleotid, '}
+            // if (c_code === '' || c_code.length < 5){ message_alert += 'posició cromosomica, '}
+            // if (sequence === '' || sequence.length < 7){ message_alert += 'seqüència, '}
+            if (date_entered === '' || date_entered.length < 3){ message_alert += 'data entrada, '}
+
+            if (message_alert != ''){
+                let alert_message = message_alert.slice(0, -2);
+                alert("Els seguents camps no poden estar buits : " + alert_message + ".")
+                return }
+            
+            var regex = /^(0[1-9]|[12][0-9]|3[01])[-/](0[1-9]|1[0-2])[-/]\d{4}$/;
+            const result = regex.test(date_entered);
+            if (!result){
+                alert("La data entrada no te el format correcta ha de ser dd/mm/aaaa")
+                return }
+            
+            form_data.append('panel', panel)
+            form_data.append('f_index', f_index)
+            form_data.append('mostra', mostra)
+            form_data.append('external_code', external_code)
+            form_data.append('date_entered', date_entered)
+            form_data.append('gene', gene)
+            form_data.append('isoform', isoform)
+            form_data.append('intro_exon', intro_exon)
+            form_data.append('c_code', c_code)
+            form_data.append('nucleotides', nucleotides)
+            form_data.append('aminoacid', aminoacid)
+            form_data.append('sequence', sequence)
+
+            $('#add_register').modal('hide');
+
+            // Creeem l'objecte per l'ajax
+            var xhr = new XMLHttpRequest();
+            // 1er argument si es pots o get
+            // 2n argument url o ruta
+            // 3r argumemt true sempre
+            xhr.open('POST', '/insert_manual', true);
+            xhr.onload = function(){
+                if (xhr.status === 200) {
+                    var response = xhr.responseText;
+                    var split_response = response.split('//')
+                    alert(split_response)
+                    if (split_response[0] === 'False'){
+                        if (split_response.length == 1){
+                            message = "Error, no s'ha pogut inserir el rigistre."
+                            alert_type = 'danger' }
+                        else{
+                            message = split_response[1]
+                            alert_type = 'danger' }}
+                    else if (split_response[0] === 'True'){
+                        message = "El registre s'ha introduït correctament."
+                        alert_type = 'success'} 
+                    else{
+                        message = "Error inesperat."
+                        alert_type = 'danger'}}
+                else {
+                    message = "Error, No s'ha pogut realitzar l'operació."
+                    alert_type = 'danger' }
+
+                var flashContainer = document.querySelector(".d-flex.justify-content-center .row");
+                var newFlash = document.createElement("div");
+                newFlash.className = "alert alert-" + alert_type + " alert-dismissible fade show ml-3";
+                newFlash.role = "alert";
+                newFlash.innerHTML = "<span>" + message + "</span>" + 
+                                    '<button type="button" class="close" data-dismiss="alert" aria-label="Close">' +
+                                    '<span aria-hidden="true">&times;</span>' +
+                                    '</button>';
+                flashContainer.appendChild(newFlash);
+                flashContainer.style.paddingTop = "20px";
+            }
+            document.getElementById('add_panel').value = '';
+            document.getElementById('add_f_index').value = '';
+            document.getElementById('add_mostra').value = '';
+            document.getElementById('add_external_code').value = '';
+            document.getElementById('add_date_entered').value = '';
+            document.getElementById('add_gene').value = '';
+            document.getElementById('add_isoform').value = '';
+            document.getElementById('add_intro_exon').value = '';
+            document.getElementById('add_c_code').value = '';
+            document.getElementById('add_nucleotides').value = '';
+            document.getElementById('add_aminoacid').value = '';
+            document.getElementById('add_sequence').value = '';
+            document.getElementById("type_selected").value = '0';
+            xhr.send(form_data)
+        }
+
+
+        function close_modal(modal_id){
+            $(`#${modal_id}`).modal('hide');
+            document.getElementById("type_selected").value = '0';
+        }
+
+
+        function search_hgvsg(){
+            // Carregar dades al form de l'html
+            const hgvsg = document.getElementById('hgvsg').value;
+
+            // Check dades
+            if (hgvsg === ''){
+                alert("El hgvsg no pot estar buit")
+                return;}
+            else if (hgvsg.length < 5){
+                alert("El hgvsg no pot tenir tan pocs caracters")
+                return;}
+
+            // Crear form data
+            var form_data = new FormData();
+            
+            form_data.append('hgvsg', hgvsg)
+
+            $('#add_hgvsg').modal('hide');
+
+            // Creeem l'objecte per l'ajax
+            var xhr = new XMLHttpRequest();
+            // 1er argument si es pots o get
+            // 2n argument url o ruta
+            // 3r argumemt true sempre
+            xhr.open('POST', '/search_family', true);
+            xhr.onload = function(){
+                if (xhr.status === 200) {
+                    var response = xhr.responseText;
+                    var info_dict = JSON.parse(response);
+                    if (Object.keys(info_dict).length === 0) {
+                        message = "No hem trobat el hgvsg facilitat a la bd."
+                        alert_type = 'danger' }
+                    else{
+                        document.getElementById("type_selected").value = 'manual';
+                        $('#add_register').modal('show');
+                        document.getElementById('add_panel').value = info_dict['panell'];
+                        document.getElementById('add_f_index').value = info_dict['index'];
+                        document.getElementById('add_mostra').value = info_dict['sample'];
+                        document.getElementById('add_external_code').value = info_dict['code'];
+                        document.getElementById('add_date_entered').value = info_dict['date_entered'];
+                        document.getElementById('add_gene').value = info_dict['gene'];
+                        document.getElementById('add_isoform').value = info_dict['isoform'];
+                        document.getElementById('add_intro_exon').value = info_dict['intron-exon'];
+                        document.getElementById('add_c_code').value = info_dict['code_g'];
+                        document.getElementById('add_nucleotides').value = info_dict['nucleotid'];
+                        document.getElementById('add_aminoacid').value = info_dict['aminoacid'];
+                        document.getElementById('add_sequence').value = info_dict['sequence'];
+                    }}
+                else {
+                    message = "Error, No s'ha pogut realitzar l'operació."
+                    alert_type = 'danger' }
+
+                var flashContainer = document.querySelector(".d-flex.justify-content-center .row");
+                var newFlash = document.createElement("div");
+                newFlash.className = "alert alert-" + alert_type + " alert-dismissible fade show ml-3";
+                newFlash.role = "alert";
+                newFlash.innerHTML = "<span>" + message + "</span>" + 
+                                    '<button type="button" class="close" data-dismiss="alert" aria-label="Close">' +
+                                    '<span aria-hidden="true">&times;</span>' +
+                                    '</button>';
+                flashContainer.appendChild(newFlash);
+                flashContainer.style.paddingTop = "20px";
+            }
+            xhr.send(form_data)
+        }
+   </script>
+</head>
+<body>
+    {% include 'NavBar/navBar.html' %}
+    {% include 'ErrorFlash/errorFlash.html' %}
+    <form action="/insert_by_docs" method="post" enctype="multipart/form-data" id="run">
+        <div class="jumbotron bg-grey text-black jomboton-imgae shadow" style="width: 40%; margin: 0 auto;">
+            <h1 class='mb-4' style="color: rgb(70, 70, 70); text-align: center;">Afegir peticions<hr></h1>
+            <div class="row">
+                <div class="input-group mb-3">
+                    <label class="input-group-text" for="inputGroupSelect01" style="background-color: rgb(181, 236, 250);">Tipu inserció:&nbsp;</label>
+                    <select name="type_selected" class="form-select" id="type_selected" onchange="show_select(this.value)">
+                        <option value="0">Selecciona</option>
+                        <option value="manual">Introduïr manualment</option>
+                        <option value="genincode">Intoduïr Excel Genincode</option>
+                        <option value="genotipat">Intoduïr Excel Genotipat</option>
+                        <option value="cancer">Intoduïr Excel Cancer</option>
+                        <option value="compendi">Intoduïr Excel Compendi</option>
+                        <option value="familiars">Intoduïr Familiars</option>
+                    </select>
+                </div>
+            </div>
+            <div class="row" id="upload_excels" style="display: none;">
+                <div class="input-group mb-3">
+                    <div class="input-group mb-3">
+                        <span class="input-group-text" id="basic-addon1" style="background-color:rgb(181, 236, 250);">Carrega de fitxers:</span>
+                        <input type="file" name="archivo" class="btn" style="background-color: white;">
+                    </div>
+                    <button class="btn btn-primary" data-toggle="modal" data-target="#new_sample2" onclick="sppiner()">Seguent</button>
+                </div>         
+            </div>
+        </div>
+    </form>
+
+    <!-- <div class="d-flex justify-content-center pt-3 mt-3 rounded">
+        <div class="container-fluid rounded" style="background-color: rgb(248, 248, 248); width: 40%;">
+            <br>
+            <h2 class="card-title">Afegir registres</h2>
+            <hr>
+            <form action="/preparar_run" method="post" enctype="multipart/form-data" id="run">
+                <div class="form-group">
+                    <div class="row">
+                        <div class="col-lg-12 col-md-12 col-sm-12">    
+                            <div class="input-group mb-3">
+                                <span class="input-group-text" id="basic-addon1"><b>Carrega de fitxers: (xlsx)</b></span>
+                                <input type="file" name="archivo" class="btn">
+                            </div>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" data-toggle="modal" data-target="#new_sample2" onclick="sppiner()">Seguent</button>
+                </div>
+            </form>
+            <br>
+        </div>
+        <br>
+        <div class="modal fade bd-example-modal-sm show" id="new_sample2" tabindex="-1" aria-labelledby="modal_new_sample" style="display: none; padding-right: 12px;" aria-modal="true" role="dialog">
+            <div class="modal-dialog modal-md">
+                <div class="modal-content">
+                    <div class="modal-body">
+                        <div class="d-flex align-items-center">
+                            <strong>Loading...</strong>
+                            <div class="spinner-border ms-auto text-success" role="status" aria-hidden="true"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div> -->
+    <div class="modal fade"  id="add_register" tabindex="-1" role="dialog" aria-labelledby="editRegister" aria-hidden="true">
+        <div class="modal-dialog modal-xl" tabindex="-1" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="title">Afegeix registre</h5>
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="close_modal('add_register')"><span aria-hidden="true">&times;</span></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-lg-4 col-md-6 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>Panell :</b></span>
+                            <select class="form-select" id="add_panel" required>
+                                <option selected></option>
+                                <option>Genotipatge</option>
+                                <option>MLPA</option>
+                                <option>MLPA-LIC</option>
+                                <option>NGS-LIC</option>
+                                <option>NGS-SUDD</option>
+                                <option>qPCR</option>
+                                <option>sanger_diagnóstic càncer</option>
+                                <option>SANGER-EMQN</option>
+                                <option>SANGER-LIC</option>
+                                <option>SANGER-SUDD</option>
+                            </select>
+                            <!-- <input type="text" class="form-control" id="add_panel" aria-label="TTN" aria-describedby="basic-addon1"> -->
+                        </div>
+                    </div>
+                    <div class="col-lg-4 col-md-6 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>Familiar index :</b></span>
+                            <input type="text" class="form-control" id='add_f_index' aria-label="TTN" aria-describedby="basic-addon1">
+                        </div>
+                    </div>
+                    <div class="col-lg-4 col-md-6 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>Mostra :</b></span>
+                            <input type="text" class="form-control" id='add_mostra' aria-label="TTN" aria-describedby="basic-addon1">
+                        </div>
+                    </div>
+                    <div class="col-lg-4 col-md-6 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>Codi extern :</b></span>
+                            <input type="text" class="form-control" id='add_external_code' aria-label="TTN" aria-describedby="basic-addon1">
+                        </div>
+                    </div>
+                    <div class="col-lg-4 col-md-6 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>Data entrada :</b></span>
+                            <input type="text" class="form-control" id='add_date_entered' aria-label="TTN" aria-describedby="basic-addon1" placeholder="01/01/2023">
+                        </div>
+                    </div>
+                    <!-- <div class="col-lg-4 col-md-6 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>Data limit :</b></span>
+                            <input type="text" class="form-control" id='add_limit_date' aria-label="TTN" aria-describedby="basic-addon1">
+                        </div>
+                    </div> -->
+                    <!-- <div class="col-lg-4 col-md-6 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>Fi analisi :</b></span>
+                            <input type="text" class="form-control" id='add_end_analysis' aria-label="TTN" aria-describedby="basic-addon1">
+                        </div>
+                    </div> -->
+                    <div class="col-lg-4 col-md-6 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>Gen :</b></span>
+                            <input type="text" class="form-control" id='add_gene' aria-label="TTN" aria-describedby="basic-addon1">
+                        </div>
+                    </div>
+                    <div class="col-lg-4 col-md-6 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>Isoforma:</b></span>
+                            <input type="text" class="form-control" id='add_isoform' aria-label="TTN" aria-describedby="basic-addon1">
+                        </div>
+                    </div>
+                    <div class="col-lg-4 col-md-6 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>Intro exo:</b></span>
+                            <input type="text" class="form-control" id='add_intro_exon' aria-label="TTN" aria-describedby="basic-addon1">
+                        </div>
+                    </div>
+                    <div class="col-lg-4 col-md-6 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>P cromosomica :</b></span>
+                            <input type="text" class="form-control" id='add_c_code' aria-label="TTN" aria-describedby="basic-addon1">
+                        </div>
+                    </div>
+                    <div class="col-lg-4 col-md-6 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>Nucleotid :</b></span>
+                            <input type="text" class="form-control" id='add_nucleotides' aria-label="TTN" aria-describedby="basic-addon1">
+                        </div>
+                    </div>
+                    <div class="col-lg-4 col-md-6 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>Aminoacid :</b></span>
+                            <input type="text" class="form-control" id='add_aminoacid' aria-label="TTN" aria-describedby="basic-addon1">
+                        </div>
+                    </div>                     
+                    <!-- <div class="col-lg-4 col-md-6 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>Confirmacio :</b></span>
+                            <input type="text" class="form-control" id='add_confirmation' aria-label="TTN" aria-describedby="basic-addon1">
+                        </div>
+                    </div>                     
+                    <div class="col-lg-4 col-md-6 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>Técnic :</b></span>
+                            <input type="text" class="form-control" id='add_technician' aria-label="TTN" aria-describedby="basic-addon1">
+                        </div>
+                    </div> 
+                    <div class="col-lg-4 col-md-6 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>Data confirm. :</b></span>
+                            <input type="text" class="form-control" id='add_confirmation_date' aria-label="TTN" aria-describedby="basic-addon1">
+                        </div>
+                    </div> 
+                    <div class="col-lg-4 col-md-6 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>N. pcr :</b></span>
+                            <input type="text" class="form-control" id='add_num_pcr' aria-label="TTN" aria-describedby="basic-addon1">
+                        </div>
+                    </div> 
+                    <div class="col-lg-4 col-md-6 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>N. db :</b></span>
+                            <input type="text" class="form-control" id='add_num_db' aria-label="TTN" aria-describedby="basic-addon1">
+                        </div>
+                    </div>  -->
+                    <div class="col-lg-12 col-md-12 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>Seqüencia :</b></span>
+                            <input type="text" class="form-control" id='add_sequence' aria-label="TTN" aria-describedby="basic-addon1">
+                        </div>
+                    </div> 
+                    <!-- <div class="col-lg-12 col-md-12 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>Obs. laboratori :</b></span>
+                            <input type="text" class="form-control" id='add_observations_lab' aria-label="TTN" aria-describedby="basic-addon1">
+                        </div>
+                    </div> 
+                    <div class="col-lg-4 col-md-6 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>Validació :</b></span>
+                            <input type="text" class="form-control" id='add_validation' aria-label="TTN" aria-describedby="basic-addon1">
+                        </div>
+                    </div> 
+                    <div class="col-lg-4 col-md-6 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>Data validació :</b></span>
+                            <input type="text" class="form-control" id='add_validation_date' aria-label="TTN" aria-describedby="basic-addon1">
+                        </div>
+                    </div> 
+                    <div class="col-lg-4 col-md-6 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>Status :</b></span>
+                            <input type="text" class="form-control" id='add_status' aria-label="TTN" aria-describedby="basic-addon1">
+                        </div>
+                    </div> 
+                    <div class="col-lg-4 col-md-6 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>Dies retard :</b></span>
+                            <input type="text" class="form-control" id='add_days_later' aria-label="TTN" aria-describedby="basic-addon1">
+                        </div>
+                    </div>
+                    <div class="col-lg-8 col-md-6 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1"><b>Obs. gestor dades :</b></span>
+                            <input type="text" class="form-control" id='add_observations_data_manager' aria-label="TTN" aria-describedby="basic-addon1">
+                        </div>
+                    </div>  -->
+                    <div class="col-lg-3 col-md-6 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <button type="button" class="btn btn-primary btn-sm" style="width: 150px;" onclick="add_register()">Accepta</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+          </div>
+        </div>
+    </div>
+
+    <div class="modal fade"  id="add_hgvsg" tabindex="-1" role="dialog" aria-labelledby="editRegister" aria-hidden="true">
+        <div class="modal-dialog modal-xs" tabindex="-1" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="title">Introdueix hgvsg</h5>
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="close_modal('add_hgvsg')"><span aria-hidden="true">&times;</span></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-row">
+                    <div class="input-group mb-3">
+                        <label class="input-group-text" for="inputGroupSelect01">Hgvsg :&nbsp;</label>
+                        <input type="text" class="form-control" id='hgvsg' name="hgvsg" aria-label="TTN" aria-describedby="basic-addon1">
+                    </div>                    
+                </div>
+                <center><button type="button" class="btn btn-success btn-sm" onclick="search_hgvsg()">Buscar</button></center>
+            </div>
+          </div>
+        </div>
+    </div>
+    <script src="/static/js/bootstrap.js"></script>
+</body>
+</html>
+

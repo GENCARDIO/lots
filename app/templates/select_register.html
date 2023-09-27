@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    {% include 'Header/header.html' %}
+    <script>
+        function assign_row(acronim){
+            id_tr = document.getElementById('id_assign').value;
+            name_batch = document.getElementById('select_type_var').value;
+
+            add_batch = false
+            if (name_batch === 'Nou batch'){
+                name_batch_user = document.getElementById('add_confirmation').value;
+                name_batch = name_batch_user
+
+                var select_batch = document.getElementById("select_type_var");
+                // Recorre las opciones del select para verificar si el valor está presente
+                var options = select_batch.options;
+                var found = false;
+
+                for (var i = 0; i < options.length; i++) {
+                    if (options[i].value === name_batch) {
+                        found = true;
+                        break;
+                    }
+                }
+
+                if (!found) { add_batch = true }
+            }
+
+            // Comprobem si ha fet servir la seleccio multiple
+            var checkboxes = document.querySelectorAll('input[name="selection_multiple"]:checked');
+            var valoresSeleccionados = [];
+
+            checkboxes.forEach(function(checkbox) {
+                valoresSeleccionados.push(checkbox.value);
+            });
+
+            // Crear form data
+            var form_data = new FormData();
+
+            if (acronim === ''){
+                alert("El nom del tècnic és obligatori per assignar una mostra")
+                return
+            }
+
+            if (valoresSeleccionados.length > 1){
+                var id_tr = valoresSeleccionados }
+
+            form_data.append('id_tr', id_tr)
+            form_data.append('username', acronim)
+            form_data.append('name_batch', name_batch)
+
+            // Creeem l'objecte per l'ajax
+            var xhr = new XMLHttpRequest();
+            // 1er argument si es pots o get
+            // 2n argument url o ruta
+            // 3r argumemt true sempre
+            xhr.open('POST', '/assign_register', true);
+            xhr.onload = function(){
+                if (xhr.status === 200) {
+                    var response = xhr.responseText;
+                    if (response === 'False'){
+                        message = "Error, No s'ha pogut realizar l'operació solicitada"
+                        alert_type = 'danger' }
+                    else if (response === 'True') {
+                        message = "La mostra ha set assignada correctament"
+                        alert_type = 'success'
+
+                        if (valoresSeleccionados.length === 0){
+                            var delete_row = document.getElementById(`${id_tr}_tr`);
+                            delete_row.remove(); }
+                        else {
+                            for (var i = 0; i < valoresSeleccionados.length; i++) {
+                                var delete_row = document.getElementById(`${valoresSeleccionados[i]}_tr`);
+                                delete_row.remove(); }}
+                            
+                        if (add_batch){
+                            // Obtener una referencia al elemento select por su ID
+                            var select_element = document.getElementById("select_type_var");
+
+                            // Crear un nuevo elemento option
+                            var new_option = document.createElement("option");
+                            new_option.text = name_batch; // Texto que se mostrará en el option
+                            new_option.value = name_batch; // Valor que se enviará al seleccionar el option
+
+                            // Agregar el nuevo option al select
+                            select_element.add(new_option);
+
+                            // Obtén una referencia al elemento <tbody> de la tabla por su ID
+                            var tbody = document.querySelector("#table_reports tbody");
+
+                            // Crea un nuevo elemento <tr>
+                            var newRow = document.createElement("tr");
+
+                            // Crea y agrega los elementos <td> a la fila
+                            var cell1 = document.createElement("td");
+                            cell1.textContent = name_batch;
+                            cell1.className = "text-center align-middle";
+
+                            // Crea la segunda celda <td> con un botón Veure batch
+                            var cell2 = document.createElement("td");
+                            var veureBatchButton = document.createElement("button");
+                            veureBatchButton.type = "button";
+                            veureBatchButton.className = "btn btn-link";
+                            veureBatchButton.textContent = "Veure batch";
+                            veureBatchButton.onclick = function() {
+                                consult_registers(acronim, name_batch);
+                            };
+                            cell2.appendChild(veureBatchButton);
+
+                            // Crea la tercera celda <td> con un botón Descarrega excel
+                            var cell3 = document.createElement("td");
+                            var descarregaExcelButton = document.createElement("button");
+                            descarregaExcelButton.type = "button";
+                            descarregaExcelButton.className = "btn btn-link";
+                            descarregaExcelButton.textContent = "Descarrega excel";
+                            var downloadIcon = document.createElement("i");
+                            downloadIcon.className = "fas fa-download";
+                            descarregaExcelButton.appendChild(downloadIcon); 
+                            descarregaExcelButton.onclick = function() {
+                                download_excel(name_batch);
+                            };
+                            cell3.appendChild(descarregaExcelButton);
+
+                            // Agrega los elementos <td> a la fila
+                            newRow.appendChild(cell1);
+                            newRow.appendChild(cell2);
+                            newRow.appendChild(cell3);
+
+                            // Agrega la fila al <tbody> de la tabla
+                            tbody.appendChild(newRow);
+                        }}
+                    else {
+                        message = "Error, No s'ha rebut resposta del servido"
+                        alert_type = 'danger' } }
+                else {
+                    message = "Error, No s'ha pogut realitzar l'operació, actulitza la pàgina i torna-ho a intentar"
+                    alert_type = 'danger' }
+
+                var flashContainer = document.querySelector(".d-flex.justify-content-center .row");
+                var newFlash = document.createElement("div");
+                newFlash.className = "alert alert-" + alert_type + " alert-dismissible fade show ml-3";
+                newFlash.role = "alert";
+                newFlash.innerHTML = "<span>" + message + "</span>" + 
+                                    '<button type="button" class="close" data-dismiss="alert" aria-label="Close">' +
+                                    '<span aria-hidden="true">&times;</span>' +
+                                    '</button>';
+                flashContainer.appendChild(newFlash);
+                flashContainer.style.paddingTop = "20px";
+                close_modal('assing_batch')
+            }
+            xhr.send(form_data)
+        }
+        
+        
+        function primer_received(id_tr, acronim){
+            // Crear form data
+            var form_data = new FormData();
+
+            if (acronim === ''){
+                alert("El nom del tècnic és obligatori per assignar una mostra")
+                return
+            }
+
+            form_data.append('id_tr', id_tr)
+            form_data.append('username', acronim)
+
+            // Creeem l'objecte per l'ajax
+            var xhr = new XMLHttpRequest();
+            // 1er argument si es pots o get
+            // 2n argument url o ruta
+            // 3r argumemt true sempre
+            xhr.open('POST', '/received_primer', true);
+            xhr.onload = function(){
+                if (xhr.status === 200) {
+                    var response = xhr.responseText;
+                    if (response === 'False'){
+                        message = "Error, No s'ha pogut realizar l'operació solicitada"
+                        alert_type = 'danger' }
+                    else if (response === 'True') {
+                        message = "La mostra ha set activada!"
+                        alert_type = 'success'
+
+                        var row = document.getElementById(`${id_tr}_tr`);
+
+                        // Asegúrate de que la tabla existe
+                        if (row) {
+                            // Obtén la primera fila (índice 0)
+                            var first_cell = row.cells[0];
+
+                            // Cambia el contenido de la primera celda
+                            if (first_cell) {
+                                first_cell.innerHTML = `<div class="form-check"><input class="form-check-input" type="checkbox" value="${id_tr}" id="flexCheckDefault" name="selection_multiple"><button type="button" class="btn btn-link" onclick="open_batch('${id_tr}')">Assigna</i></button></div>`
+                                row.style.backgroundColor = "#00FF00";
+                            }
+                        }
+                        }
+                    else {
+                        message = "Error, No s'ha rebut resposta del servido"
+                        alert_type = 'danger' } }
+                else {
+                    message = "Error, No s'ha pogut realitzar l'operació, actulitza la pàgina i torna-ho a intentar"
+                    alert_type = 'danger' }
+
+                var flashContainer = document.querySelector(".d-flex.justify-content-center .row");
+                var newFlash = document.createElement("div");
+                newFlash.className = "alert alert-" + alert_type + " alert-dismissible fade show ml-3";
+                newFlash.role = "alert";
+                newFlash.innerHTML = "<span>" + message + "</span>" + 
+                                    '<button type="button" class="close" data-dismiss="alert" aria-label="Close">' +
+                                    '<span aria-hidden="true">&times;</span>' +
+                                    '</button>';
+                flashContainer.appendChild(newFlash);
+                flashContainer.style.paddingTop = "20px";
+            }
+            xhr.send(form_data)
+        }
+
+
+        function close_modal(modal_id){
+            $(`#${modal_id}`).modal('hide');
+        }
+
+
+        function download_excel(batch){
+            // close_modal(modal_id);
+            document.getElementById('n_batch').value = batch;
+            document.forms["down_excel"].submit();
+        }
+
+        
+        function consult_registers(acronim, batch){
+            // close_modal(modal_id);
+
+            // Crear form data
+            var form_data = new FormData();
+            
+            // Carregar dades al form de l'html
+            // const username = document.getElementById('username_consult').value
+
+            // if (username === ''){
+            //     alert("El nom del tècnic és obligatori per assignar una mostra")
+            //     return
+            // }
+
+            form_data.append('username', acronim)
+            form_data.append('batch', batch)
+
+            // Creeem l'objecte per l'ajax
+            var xhr = new XMLHttpRequest();
+            // 1er argument si es pots o get
+            // 2n argument url o ruta
+            // 3r argumemt true sempre
+
+            xhr.open('POST', '/consult_registers_assign', true);
+            xhr.onload = function(){
+                if (xhr.status === 200) {
+                    var response = xhr.responseText;
+                    var info_registers = JSON.parse(response);
+                    var show_flash = true
+                    if (Array.isArray(info_registers) && info_registers.length === 0){
+                        message = "No hem trobat mostres assignades amb les inicials introduïdes"
+                        alert_type = 'warning' }
+                    else {
+                        var show_flash = false
+                        $('#table_info_tecnic').modal('show');
+                        var tabla = document.getElementById("table_consult_tecnic");
+
+                        // Vaciar el tbody antes de llenarlo nuevamente
+                        tabla.innerHTML = '';
+
+
+                        // Crear el elemento 'thead'
+                        var thead = document.createElement('thead');
+
+                        // Crear la fila de encabezado 'tr'
+                        var tr = document.createElement('tr');
+
+                        // Agregar las columnas 'th' al encabezado
+                        var columnas = ["Mostra", "Gen", "Isoforma", "intró Exó", "Hgvsg", ""];
+                        for (var i = 0; i < columnas.length; i++) {
+                            var th = document.createElement('th');
+                            th.setAttribute('scope', 'col');
+                            th.textContent = columnas[i];
+                            tr.appendChild(th);
+                        }
+
+                        // Agregar la fila de encabezado al 'thead'
+                        thead.appendChild(tr);
+
+                        // Agregar el 'thead' a la tabla
+                        tabla.appendChild(thead);
+
+                        // Recorrer el objeto y llenar la tabla
+                        for (var i = 0; i < info_registers.length; i++) {
+                            var fila = tabla.insertRow();
+                            var diccionario = info_registers[i];
+
+                            var fila = tabla.insertRow();
+                            fila.id = `${diccionario['id']}_consult`
+                            fila.innerHTML = `
+                                <td>${diccionario['sample']}</td>
+                                <td>${diccionario['gene']}</td>
+                                <td>${diccionario['isoform']}</td>
+                                <td>${diccionario['intron-exon']}</td>
+                                <td>${diccionario['code_g']}</td>
+                                <td><input type="button" class="btn btn-warning btn-sm" value="Alliberar" onclick="release_register(${diccionario['id']})"></td>`; }}}
+                else {
+                    message = "Error, No s'ha pogut realitzar l'operació, actulitza la pàgina i torna-ho a intentar"
+                    alert_type = 'danger' }
+
+                if (show_flash){
+                    var flashContainer = document.querySelector(".d-flex.justify-content-center .row");
+                    var newFlash = document.createElement("div");
+                    newFlash.className = "alert alert-" + alert_type + " alert-dismissible fade show ml-3";
+                    newFlash.role = "alert";
+                    newFlash.innerHTML = "<span>" + message + "</span>" + 
+                                        '<button type="button" class="close" data-dismiss="alert" aria-label="Close">' +
+                                        '<span aria-hidden="true">&times;</span>' +
+                                        '</button>';
+                    flashContainer.appendChild(newFlash);
+                    flashContainer.style.paddingTop = "20px"; }
+            }
+            xhr.send(form_data)
+        }
+
+
+        function release_register(id){
+            // Crear form data
+            var form_data = new FormData();
+
+            form_data.append('id', id)
+
+            // Creeem l'objecte per l'ajax
+            var xhr = new XMLHttpRequest();
+            // 1er argument si es pots o get
+            // 2n argument url o ruta
+            // 3r argumemt true sempre
+            xhr.open('POST', '/release_register', true);
+            xhr.onload = function(){
+                if (xhr.status === 200) {
+                    var response = xhr.responseText;
+                    if (response === 'False'){
+                        message = "Error, No s'ha pogut alliberar la mostra"
+                        alert_type = 'danger' }
+                    else if (response.startsWith("True")) {
+                        message = "La mostra ha set alliberada correctament"
+                        alert_type = 'success'
+
+                        var delete_row = document.getElementById(`${id}_consult`);
+                        delete_row.remove();
+
+                        // Crear un objeto de datos con la información deseada (reemplaza con valores reales)
+                        var string_dict = response.substring(4);
+
+                        var row_data = JSON.parse(string_dict);
+
+                        // Obtener la tabla a la que deseas agregar la fila
+                        var tabla = document.getElementById("example");
+                        
+                        // Obtener el primer tbody de la tabla (índice 0)
+                        var tbody = tabla.getElementsByTagName("tbody")[0];
+
+                        // Obtener el número total de filas en el tbody
+                        var numFilas = tbody.rows.length;
+
+                        // Crear una nueva fila
+                        var tr = document.createElement("tr");
+
+                        // Establecer el ID de la fila (reemplaza con el valor deseado)
+                        tr.id = row_data.id + "_tr";
+
+                        // Determinar si el número de fila es impar o par
+                        if (numFilas % 2 === 0) {
+                            // Si es par, agregar la clase "even" a la fila
+                            tr.classList.add("even"); }
+                        else {
+                            // Si es impar, agregar la clase "odd" a la fila
+                            tr.classList.add("odd");}
+
+                        // Agregar el atributo "role" con el valor "row" a la fila
+                        tr.setAttribute("role", "row");
+
+                        // Crear las celdas de la fila y agregar contenido
+                        tr.innerHTML = `
+                            <td>
+                                <div class="form-check">
+                                    <div class="form-check"><input class="form-check-input" type="checkbox" value="${row_data.id}" id="flexCheckDefault" name="selection_multiple"><button type="button" class="btn btn-link" onclick="open_batch('${row_data.id}')">Assigna</i></button></div>       
+                                </div>
+                            </td>
+                            <td>${row_data.panell_mlpa_qpcr}</td>
+                            <td>${row_data.mostra}</td>
+                            <td>${row_data.data_limit}</td>
+                            <td>${row_data.gen}</td>
+                            <td>${row_data.isoforma}</td>
+                            <td>${row_data.intro_exo}</td>
+                            <td>${row_data.posicio_cromosomica}</td>
+                            <td>${row_data.nucleotid}</td>
+                            <td>${row_data.observacions_laboratori}</td>
+                            <td>${row_data.sequencia}</td>
+                        `;
+
+                        // Agregar la fila a la tabla
+                        tbody.appendChild(tr);}
+                    else {
+                        message = "Error, No s'ha rebut resposta del servidor"
+                        alert_type = 'danger' } }
+                else {
+                    message = "Error, No s'ha pogut realitzar l'operació, actualitza la pàgina i torna-ho a intentar"
+                    alert_type = 'danger' }
+
+                var flashContainer = document.querySelector(".d-flex.justify-content-center .row");
+                var newFlash = document.createElement("div");
+                newFlash.className = "alert alert-" + alert_type + " alert-dismissible fade show ml-3";
+                newFlash.role = "alert";
+                newFlash.innerHTML = "<span>" + message + "</span>" + 
+                                    '<button type="button" class="close" data-dismiss="alert" aria-label="Close">' +
+                                    '<span aria-hidden="true">&times;</span>' +
+                                    '</button>';
+                flashContainer.appendChild(newFlash);
+                flashContainer.style.paddingTop = "20px";
+            }
+            xhr.send(form_data)
+        }
+    
+
+        function selected_confirm(value){
+            if (value === "Nou batch"){
+                document.getElementById("text_confirm").style.display = 'block';
+                nucleotid = document.getElementById('nucleotid_aux').value;
+                document.getElementById('add_confirmation').value = '';}
+            else {
+                document.getElementById("text_confirm").style.display = 'none';
+                document.getElementById('add_confirmation').value = ''; }
+            
+            return
+        }
+    
+
+        function open_batch(id_tr){
+            document.getElementById('id_assign').value = id_tr;
+            document.getElementById('select_type_var').value = ''
+            document.getElementById('add_confirmation').value = ''
+            document.getElementById('text_confirm').style.display = 'None'
+            $("#assing_batch").modal('show');
+        }
+
+    </script>
+    <style>
+        #example thead input[type="text"] {
+            max-width: 100%; /* Ajusta este valor según tus necesidades */
+        }
+    </style>
+</head>
+<body>
+    {% include 'NavBar/navBar.html' %}
+    {% include 'ErrorFlash/errorFlash.html' %} 
+    <div class="jumbotron bg-grey text-black jomboton-imgae shadow d-flex justify-content-between align-items-center" style="width: 90%; height: 90px; margin: 0 auto; padding-top: 0px; padding-bottom: 0px;">
+        <h1 class="mb-0">
+            <span style="color: darkblue;">( {{select_type}} ) </span> - 
+            <span>Seleccionar registre</span>
+        </h1>
+        <div class="d-flex align-items-center">
+            <button type="button" data-toggle="modal" data-target="#consult_register_tecnic" class="btn btn-link">Registres assignats <i class="fa-solid fa-file-circle-check"></i></button>
+            <!-- <button type="button" class="btn btn-link" onclick="consult_registers(`{{session['acronim']}}`)">Registers assignats <i class="fa-solid fa-file-circle-check"></i></button> -->
+            <!-- <div style="width: 10px;"></div>
+            <button type="button" data-toggle="modal" data-target="#assing_register" class="btn btn-link">Descarrega excel <i class="fas fa-download"></i></button>
+            <form action="/download_excel" method="post" id="down_excel">
+                <button type="button" class="btn btn-link" onclick="download_excel()">Descarrega excel <i class="fas fa-download"></i></button>
+            </form> -->
+        </div>
+    </div>
+    
+    <div class="d-flex justify-content-center pt-3 mt-3 rounded">
+        <div class="container-fluid rounded table-responsive" style="width: 90%; text-align: center;">
+            <div id="table1" name="table1">
+                <table id="example" class="display">
+                    <thead>
+                        <tr id="thcolor">
+                            <!-- <th id="thcolor" style="min-width: 50px;">Id</th> -->
+                            <th></th>
+                            <!-- <th style="max-width: 40px;">Técnic</th> -->
+                            <th style="min-width: 70px;  max-width: 120px;">Panell</th>
+                            <!-- <th style="min-width: 70px;  max-width: 120px;">Familiar index</th> -->
+                            <th style="min-width: 70px;  max-width: 120px;">Mostra</th>
+                            <th style="min-width: 70px;  max-width: 120px;">Data limit</th>
+                            <th style="min-width: 70px;  max-width: 120px;">Gen</th>
+                            <th style="min-width: 70px;  max-width: 120px;">Isoforma</th>
+                            <th style="min-width: 70px;  max-width: 120px;">Intro exo</th>
+                            <th>Posicio cromosomica</th>
+                            <th>Nucleotid</th>
+                            <th>Observacions</th>
+                            <th>Seqüencia</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in select_row %}
+                            <tr id="{{row.id}}_tr">
+                                <!-- <td>{{row.id}}</td> -->
+                                {% if row.dissenyar_primer == 'si'%}
+                                    <td><input type="button" class="btn btn-link" value="Primer rebut" onclick="primer_received(`{{row.id}}`, `{{session['acronim']}}`)"></td>
+                                    <script>
+                                        // Obtén el elemento <tr> por su id
+                                        var trElement = document.getElementById("{{row.id}}_tr");
+                                    
+                                        // Verifica si se cumple la condición
+                                        trElement.style.backgroundColor = "#FFFFE0";
+                                    </script>                                    
+                                {% else%}
+                                    <td>
+                                        <!-- <div class="form-check"><input class="form-check-input" type="checkbox" value="{{row.id}}" id="flexCheckDefault" name="selection_multiple"><input type="button" class="btn btn-link" value="Assigna" onclick="assign_row(`{{row.id}}`, `{{session['acronim']}}`)"></div> -->
+                                        <!-- <button type="button" data-toggle="modal" data-target="#assing_batch" class="btn btn-link">Assigna</i></button>           -->
+                                        <div class="form-check"><input class="form-check-input" type="checkbox" value="{{row.id}}" id="flexCheckDefault" name="selection_multiple"><button type="button" class="btn btn-link" onclick="open_batch(`{{row.id}}`)">Assigna</i></button></div>       
+                                    </td>
+                                {% endif %}
+                                <!-- <td><input type="text" id="{{row.id}}" value='{{row.tecnic}}' class="form-control" aria-label="TTN" aria-describedby="basic-addon1" style="text-align: center;" oninput="this.value = this.value.toUpperCase()"></td> -->
+                                <td>{{row.panell_mlpa_qpcr}}</td>
+                                <!-- <td>{{row.familiar_index}}</td> -->
+                                <td>{{row.mostra}}</td>
+                                <td>{{row.data_limit}}</td>
+                                <td>{{row.gen}}</td>
+                                <td>{{row.isoforma}}</td>
+                                <td>{{row.intro_exo}}</td>
+                                <td>{{row.posicio_cromosomica}}</td>
+                                <td>{{row.nucleotid}}</td>
+                                <td>{{row.observacions_laboratori}}</td>
+                                <td>{{row.sequencia}}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <br>
+        </div>
+    </div>
+
+    <div class="modal fade"  id="assing_batch" tabindex="-1" role="dialog" aria-labelledby="editRegister" aria-hidden="true">
+        <div class="modal-dialog modal-xs" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="title">Batch a vincular</h5>
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="close_modal('assing_batch')"><span aria-hidden="true">&times;</span></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-lg-12 col-md-12 col-sm-12">
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 143px;"><b>Nom batch :</b></span>
+                            <select class="form-select" onchange="selected_confirm(this.value)" id="select_type_var">
+                                <option selected></option>
+                                {% for row in select_row_batch %}
+                                    <option>{{row.batch}}</option>
+                                {% endfor%}
+                                <option>Nou batch</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-lg-12 col-md-12 col-sm-12" style="display: none;" id="text_confirm">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 143px;"><b>Introduir nom :</b></span>
+                            <input type="text" class="form-control" id='add_confirmation' aria-label="TTN" aria-describedby="basic-addon1">
+                        </div>
+                    </div>    
+                    <div class="col-lg-12 col-md-12 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <input type="button" class="btn btn-success" value="Assigna" onclick="assign_row(`{{session['acronim']}}`)">
+                        </div>
+                    </div>   
+                    <input type="hidden" id="id_assign" name="id_assign" value="" />                            
+                </div>
+            </div>
+          </div>
+        </div>
+    </div>
+
+    <div class="modal fade"  id="consult_register_tecnic" tabindex="-1" role="dialog" aria-labelledby="editRegister" aria-hidden="true">
+        <div class="modal-dialog modal-xs" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="title">Consultar mostres assignades</h5>
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="close_modal('consult_register_tecnic')"><span aria-hidden="true">&times;</span></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-lg-12 col-md-12 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <table class="table" id="table_reports">
+                                <thead>
+                                  <tr style="background-color: rgb(107, 166, 194);">
+                                    <th scope="col" class="text-center" style="width: 25%;">Batch</th>
+                                    <th scope="col"></th>
+                                    <th scope="col"></th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                    <form action="/download_excel" method="post" id="down_excel">
+                                        {% for row in select_row_batch %}
+                                            <tr id="{{row.mostra}}">
+                                                <td class="text-center align-middle">{{row.batch}}</td>
+                                                <!-- <td class="text-center align-middle"><button type="button" class="btn btn-link" onclick="report_made(`{{row.mostra}}`)">eliminar</button></td> -->
+                                                <td><button type="button" class="btn btn-link" onclick="consult_registers(`{{session['acronim']}}`, `{{row.batch}}`)">Veure batch</i></button></td>
+                                                <td><button type="button" class="btn btn-link" onclick="download_excel(`{{row.batch}}`)">Descarrega excel <i class="fas fa-download"></i></button></td>
+                                            </tr>
+                                        {% endfor %}
+                                        <input type="hidden" name="n_batch" id="n_batch" value=""/>
+                                    </form>
+                                </tbody>
+                            </table>                        
+                        </div>
+                    </div>
+                </div>
+            </div>
+          </div>
+        </div>
+    </div>
+
+    <div class="modal fade"  id="table_info_tecnic" tabindex="-1" role="dialog" aria-labelledby="editRegister" aria-hidden="true">
+        <div class="modal-dialog modal-xl" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="title">Mostres assignades</h5>
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="close_modal('table_info_tecnic')"><span aria-hidden="true">&times;</span></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-lg-12 col-md-12 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <table class="table" id="table_consult_tecnic">
+                                <thead>
+                                  <tr>
+                                    <th scope="col">Mostra</th>
+                                    <th scope="col">Gen</th>
+                                    <th scope="col">Isoforma</th>
+                                    <th scope="col">intró Exó</th>
+                                    <th scope="col">Hgvsg</th>
+                                    <th scope="col"></th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                </tbody>
+                            </table>                        
+                        </div>
+                    </div>
+                </div>
+            </div>
+          </div>
+        </div>
+    </div>
+
+    <script>
+        $(document).ready(function() {
+            // Setup - add a text input to each footer cell
+            $('#example thead tr').clone(true).appendTo( '#example thead' );
+            $('#example thead tr:eq(1) th').each( function (i) {
+                var title = $(this).text();
+                if (title !== ''){
+                    if (title === 'Técnic') {
+                        $(this).html('');
+                    } else {
+                        $(this).html( '<input type="text" placeholder=""/>' );
+                
+                        $( 'input', this ).on( 'keyup change', function () {
+                            if ( table.column(i).search() !== this.value ) {
+                                table
+                                    .column(i)
+                                    .search( this.value )
+                                    .draw();
+                            }
+                        } );
+                    }
+                }
+            } );
+        
+            var table = $('#example').DataTable( {
+                orderCellsTop: true,
+                fixedHeader: true,
+                columnDefs: [
+                    {
+                        targets: 3, // Índice de la columna con las fechas
+                        type: 'numeric', // Usar orden numérico personalizado
+                        render: function(data, type, row) {
+                            // Transformar la fecha en formato DD/MM/YYYY a un número YYYYMMDD para ordenar
+                            if (type === 'sort') {
+                                var parts = data.split('/');
+                                return parseInt(parts[2] + parts[1] + parts[0]);
+                            }
+                            return data; // Mantener el formato original para mostrar
+                        },
+                    },
+                ],
+                order: [[3, 'asc']],
+            } );
+
+            // Adjust column widths to content
+            table.columns.adjust().draw();
+        } );
+    </script>
+    
+    <script src="/static/js/bootstrap.js"></script>
+</body>
+</html>
