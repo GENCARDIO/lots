@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 from datetime import datetime, timedelta
-from app.models import Registres_sanger, session1, IP_HOME
-from config import main_dir_docs
+from app.models import Lots, session1, IP_HOME
 import pandas as pd
 import os
 from sqlalchemy import desc

@@ -2,9 +2,8 @@ from flask import render_template, request, flash, redirect, send_file, session
 from app import app
 from app.utils import get_data, create_excel, check_finish_sample, insert_register, read_excel, convert_xls_with_xlsx,\
                       check_excel, add_date, search_hgvsg, check_duplidates, instant_date, requires_auth
-from app.models import IP_HOME, session1, Registres_sanger, Logs
+from app.models import IP_HOME, session1, Lots, Logs
 from sqlalchemy import or_, func, and_
-from config import main_dir_docs
 from werkzeug.utils import secure_filename
 import os
 import jwt
@@ -21,6 +20,121 @@ def main():
     '''
     return render_template('home.html')
 
+
+@app.route('/logout')
+def logout():
+    url = IP_HOME + 'logout'
+
+    return redirect(url)
+
+
+@app.route('/apps')
+@requires_auth
+def apps():
+    tocken_cookies = {'user_tok': session['user'], 'rols_tok': session['rols'], 'email_tok': session['email'],
+                      'id_client_tok': session['idClient'], 'rol_tok': 'None', 'acronim_tok': session['acronim']}
+    secret_key = '12345'
+    token = jwt.encode(tocken_cookies, secret_key, algorithm='HS256')
+    url = f'{IP_HOME}apps/token?token={token}'
+
+    return redirect(url)
+
+
+@app.route('/receive_token')
+def receive_token():
+    received_token = request.args.get('token')
+    secret_key = '12345'  # Debe ser la misma clave utilizada para generar el token
+
+    try:
+        decoded_token = jwt.decode(received_token, secret_key, algorithms=['HS256'])
+        session['user'] = decoded_token.get('user_tok', 'Usuario no encontrado')
+        session['rols'] = decoded_token.get('rols_tok', 'Usuario no encontrado')
+        session['email'] = decoded_token.get('email_tok', 'Usuario no encontrado')
+        session['idClient'] = decoded_token.get('id_client_tok', 'Usuario no encontrado')
+        session['rol'] = decoded_token.get('rol_tok', 'Usuario no encontrado')
+        session['acronim'] = decoded_token.get('acronim_tok', 'Usuario no encontrado')
+        print(session['user'])
+        print(session['rols'])
+        print(session['email'])
+        print(session['idClient'])
+        print(session['rol'])
+        print(session['acronim'])
+        return redirect('/')
+    except Exception:
+        return redirect('/logout')
+
+
+@app.route('/insert_lot', methods=['POST'])
+@requires_auth
+def insert_lot():
+    '''
+        Recullim la informació, mirem que la no estigui duplicada i si no ho esta afegim la informació a la BD.
+    '''
+    type_lot = request.form.get("type_lot")
+    lot_name = request.form.get("lot_name")
+    reference = request.form.get("reference")
+    trademark = request.form.get("trademark")
+    preserved_in = request.form.get("preserved_in")
+    stock_minimum = request.form.get("stock_minimum")
+    date_arrived = request.form.get("date_arrived")
+    supplier_lot = request.form.get("supplier_lot")
+    expiry = request.form.get("expiry")
+    internal_lot = request.form.get("internal_lot")
+    tecnic = request.form.get("tecnic")
+    observations = request.form.get("observations")
+
+    try:
+        insert = Lots(type_lot=type_lot,
+                      lot_name=lot_name,
+                      reference=reference,
+                      trademark=trademark,
+                      preserved_in=preserved_in,
+                      stock_minimum=stock_minimum,
+                      date_arrived=date_arrived,
+                      supplier_lot=supplier_lot,
+                      expiry=expiry,
+                      internal_lot=internal_lot,
+                      tecnic=tecnic,
+                      observations=observations,)
+        session1.add(insert)
+        session1.commit()
+        return 'True'
+    except Exception:
+        # session1.rollback()
+        return 'False'
+
+
+@app.route('/search_lots', methods=['POST'])
+@requires_auth
+def search_lots():
+    '''
+        Creem la llista que passarem al html.
+        Redirigim a estadistiques.html
+    '''
+    select_type = request.form.get("select_type")
+
+    if select_type == 'Sanger':
+        select_row = session1.query(Registres_sanger)\
+            .filter(or_(Registres_sanger.confirmacio is None, Registres_sanger.confirmacio == ''))\
+            .filter(Registres_sanger.tecnic == '').all()
+
+        select_row_batch = session1.query(Registres_sanger.batch)\
+            .filter(Registres_sanger.tecnic == session['acronim'])\
+            .filter(Registres_sanger.confirmacio == '')\
+            .distinct(Registres_sanger.batch).all()
+        if not select_row:
+            flash("No hi ha cap mostra pendent", "warning")
+            return render_template('home.html')
+
+        return render_template('select_register.html', select_row=select_row, select_type=select_type,
+                               select_row_batch=select_row_batch)
+    else:
+        flash("Error, no s'ha pogut redirigir a la pàgina per seleccionar mostres.", "danger")
+        return render_template('home.html')
+
+####################################################
+####################################################
+####################################################
 
 @app.route('/look_register', methods=['POST'])
 @requires_auth
@@ -262,49 +376,6 @@ def modify_register():
     session1.commit()
 
     return 'True'
-
-
-@app.route('/logout')
-def logout():
-    url = IP_HOME + 'logout'
-
-    return redirect(url)
-
-
-@app.route('/apps')
-@requires_auth
-def apps():
-    tocken_cookies = {'user_tok': session['user'], 'rols_tok': session['rols'], 'email_tok': session['email'],
-                      'id_client_tok': session['idClient'], 'rol_tok': 'None', 'acronim_tok': session['acronim']}
-    secret_key = '12345'
-    token = jwt.encode(tocken_cookies, secret_key, algorithm='HS256')
-    url = f'{IP_HOME}apps/token?token={token}'
-
-    return redirect(url)
-
-
-@app.route('/receive_token')
-def receive_token():
-    received_token = request.args.get('token')
-    secret_key = '12345'  # Debe ser la misma clave utilizada para generar el token
-
-    try:
-        decoded_token = jwt.decode(received_token, secret_key, algorithms=['HS256'])
-        session['user'] = decoded_token.get('user_tok', 'Usuario no encontrado')
-        session['rols'] = decoded_token.get('rols_tok', 'Usuario no encontrado')
-        session['email'] = decoded_token.get('email_tok', 'Usuario no encontrado')
-        session['idClient'] = decoded_token.get('id_client_tok', 'Usuario no encontrado')
-        session['rol'] = decoded_token.get('rol_tok', 'Usuario no encontrado')
-        session['acronim'] = decoded_token.get('acronim_tok', 'Usuario no encontrado')
-        print(session['user'])
-        print(session['rols'])
-        print(session['email'])
-        print(session['idClient'])
-        print(session['rol'])
-        print(session['acronim'])
-        return redirect('/')
-    except Exception:
-        return redirect('/logout')
 
 
 @app.route('/add_register', methods=['POST'])
