@@ -6,131 +6,192 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
    {% include 'Header/header.html' %}
 <script>
-        function nobackbutton(){
-            window.location.hash="no-back-button";
-            window.location.hash="Again-No-back-button" //chrome
-            window.onhashchange=function(){window.location.hash="no-back-button";}	
-        }
+    var list_info_lots;
+
+    function replae_slash_with_hyphen(input) {
+        input.value = input.value.replace(/\//g, '-');
+    }
+
+    
+    function nobackbutton(){
+        window.location.hash="no-back-button";
+        window.location.hash="Again-No-back-button" //chrome
+        window.onhashchange=function(){window.location.hash="no-back-button";}	
+    }
 
 
-        function insert(acronim){
-            document.getElementById('type_lot').value = ''
-            document.getElementById('lot_name').value = ''
-            document.getElementById('reference').value = ''
-            document.getElementById('trademark').value = ''
-            document.getElementById('preserved_in').value = ''
-            document.getElementById('stock_minimum').value = ''
-            document.getElementById('date_arrived').value = ''
-            document.getElementById('supplier_lot').value = ''
-            document.getElementById('expiry').value = ''
-            document.getElementById('internal_lot').value = ''
-            document.getElementById('tecnic').value = acronim
-            // document.getElementById('data_open').value = ''
-            // document.getElementById('tecnic_open').value = ''
-            // document.getElementById('data_close').value = ''
-            // document.getElementById('tecnic_close').value = ''
-            document.getElementById('observations').value = ''
-            $('#add_lot').modal('show');
-        }
+    function insert(acronim){
+        // document.getElementById('type_lot').value = ''
+        // document.getElementById('lot_name').value = ''
+        // document.getElementById('reference').value = ''
+        // document.getElementById('trademark').value = ''
+        // document.getElementById('preserved_in').value = ''
+        // document.getElementById('stock_minimum').value = ''
+        // document.getElementById('date_arrived').value = ''
+        // document.getElementById('supplier_lot').value = ''
+        // document.getElementById('expiry').value = ''
+        // document.getElementById('internal_lot').value = ''
+        // document.getElementById('tecnic').value = acronim
+        // document.getElementById('data_open').value = ''
+        // document.getElementById('tecnic_open').value = ''
+        // document.getElementById('data_close').value = ''
+        // document.getElementById('tecnic_close').value = ''
+        // document.getElementById('observations').value = ''
+        document.getElementById('code_search').value = ''
+        $('#add_lot').modal('show');
+    }
 
 
-        function close_modal(modal_id){
-            $(`#${modal_id}`).modal('hide');
-            document.getElementById("type_selected").value = '0';
-        }
+    function close_modal(modal_id){
+        $(`#${modal_id}`).modal('hide');
+        // document.getElementById("type_selected").value = '0';
+    }
 
 
-        function add_lot(){
-            // Crear form data
-            var form_data = new FormData();
+    function open_modal(modal_id){
+        $(`#${modal_id}`).modal('show');
+    }
+    
+
+    function add_lot(){
+        document.getElementById('unit_lots').value = 1;
+        // Crear form data
+        var form_data = new FormData();
+        
+        // Carregar dades al form de l'html
+        const code_search = document.getElementById('code_search').value
+
+        var regex = /^\s*$/;
+        var only_space = regex.test(code_search);
+        if (only_space){alert("El camp no pot estar buït"); return}
+        if (code_search.length < 3){alert("No pots deixar el camp : " + alert_message + "."); return }
+                    
+        form_data.append('code_search', code_search)
+
+        $('#add_lot').modal('hide');
+
+        // Creeem l'objecte per l'ajax
+        var xhr = new XMLHttpRequest();
+        // 1er argument si es pots o get
+        // 2n argument url o ruta
+        // 3r argumemt true sempre
+        xhr.open('POST', '/search_add_lot', true);
+        xhr.onload = function(){
+            if (xhr.status === 200) {
+                var response = xhr.responseText;
+
+                var split_response = response.split('_//_')
+
+                if (split_response[0] === 'True'){
+                    message = ''
+                    if (split_response[1] === 'new'){
+                        document.getElementById("code_log").value = '';
+                        document.getElementById("code_sap").value = '';
+                        document.getElementById("manufacturer").value = '';
+                        document.getElementById("analytical_technique").value = '';
+                        document.getElementById('num_lots').value = 0;            
+                        document.getElementById('reference_catalog').value = "";            
+                        $('#add_new_lot').modal('show'); }
+                    else {
+                        // Eliminar tots els div amb el name divs_subproduct
+                        var elementosAEliminar = document.querySelectorAll('div[name="divs_subproducts"]');
+                        elementosAEliminar.forEach(function(elemento) {
+                            elemento.remove(); });
+
+                        // obtenir i formatar la data
+                        var current_date = new Date();
+                        var day = current_date.getDate();
+                        var month = current_date.getMonth() + 1;
+                        var year = current_date.getFullYear();
+                        day = day < 10 ? '0' + day : day;
+                        month = month < 10 ? '0' + month : month;
+                        var formated_date = day + '-' + month + '-' + year;
+                        var internal_lot = year + month + day
+
+                        document.getElementById('date_recepcion_lot').value = formated_date;
+                        
+                        var miDiv = document.getElementById('div_info_lot');
+                        list_info_lots = JSON.parse(split_response[1]);
+
+                        document.getElementsByName("title_add_lots")[0].textContent = `Afegeix article : ${list_info_lots[0]['catalog_reference']}`;
+
+                        document.getElementById("description_add_lot").value = `${list_info_lots[0]['description']}`;
+
+                        var HTML = `
+                            <div class="col-lg-5 col-md-12 col-sm-12" name="divs_subproducts">
+                                <hr>
+                            </div>
+                            <div class="col-lg-2 col-md-12 col-sm-12" name="divs_subproducts">
+                                <center>Article 1</center>
+                            </div>
+                            <div class="col-lg-5 col-md-12 col-sm-12" name="divs_subproducts">
+                                <hr>
+                            </div>
+                        `;
+
+                        // Agrega el nuevo conjunto debajo del div existente
+                        miDiv.insertAdjacentHTML('beforebegin', HTML);
+
+                        for (var i = 0; i < list_info_lots.length; i++) {
+                            var dict_lots = JSON.stringify(list_info_lots[i]);
+                            var nuevoHTML_variable = `<div class="col-lg-12 col-md-12 col-sm-12" name="divs_subproducts" style="display: none;">`
+                            var nuevoHTML_variable2 = `<div class="col-lg-12 col-md-12 col-sm-12" name="divs_subproducts">`
+                            var nuevoHTML_context = `
+                                    <div class="input-group mb-3">
+                                        <span class="input-group-text" id="basic-addon1" style="width: 135px;"><b>Descripció:</b></span>
+                                        <input type="text" class="form-control" id="descripton0_${i}" aria-label="TTN" value="${list_info_lots[i]['id_reactive']} || ${list_info_lots[i]['description_subreference']}" readonly>
+                                    </div>
+                                </div>
+                                <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts">
+                                    <div class="input-group mb-3">
+                                        <span class="input-group-text" id="basic-addon1" style="width: 135px;"><b>Lots :</b></span>
+                                        <input type="text" class="form-control" id="lot0_${i}" aria-label="TTN">
+                                    </div>
+                                </div>
+                                <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts">  
+                                    <div class='input-group mb-3'>
+                                        <span class='input-group-text' id='basic-addon1' style='width: 140px;'><b>Data caducitat :</b></span>
+                                        <input type="text" class="form-control" id="expiry_date0_${i}" aria-label="TTN" aria-describedby="basic-addon1" oninput="replae_slash_with_hyphen(this)">
+                                    </div>
+                                </div>
+                                <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts">
+                                    <div class="input-group mb-3">
+                                        <span class="input-group-text" id="basic-addon1" style="width: 135px;"><b>Lot intern :</b></span>
+                                        <input type="text" class="form-control" id="internal_lot0_${i}" aria-label="TTN" value="${internal_lot}">
+                                    </div>
+                                </div>
+                                <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts">
+                                    <div class="input-group mb-3">
+                                        <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>Unitats lot :</b></span>
+                                        <select class="form-select" id="units_lot0_${i}">
+                                            <option selected>1</option>
+                                            {% for i in range(2, 1001) %}
+                                                <option>{{ i }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+                                <input type='hidden' id='json_info_lot0_${i}' value='${dict_lots}' name="divs_subproducts">
+                            `;
+                            if (list_info_lots[i]['description_subreference'] === '' || list_info_lots[i]['description_subreference'] === null || list_info_lots[i]['description_subreference'] === undefined){ 
+                                var nuevoHTML = nuevoHTML_variable + nuevoHTML_context}
+                            else { var nuevoHTML = nuevoHTML_variable2 + nuevoHTML_context }
+                            // Agrega el nuevo conjunto debajo del div existente
+                            miDiv.insertAdjacentHTML('beforebegin', nuevoHTML);}
+
+                        $('#add_lot_info').modal('show');
+                    }}
+                else if (split_response === 'False'){
+                    message = "La cerca del lot ha fallat."
+                    alert_type = 'danger'} 
+                else{
+                    message = "Error inesperat."
+                    alert_type = 'danger'}}
+            else {
+                message = "Error, No s'ha pogut realitzar l'operació."
+                alert_type = 'danger' }
             
-            // Carregar dades al form de l'html
-            const type_lot = document.getElementById('type_lot').value
-            const lot_name = document.getElementById('lot_name').value
-            const reference = document.getElementById('reference').value
-            const trademark = document.getElementById('trademark').value
-            const preserved_in = document.getElementById('preserved_in').value
-            const stock_minimum = document.getElementById('stock_minimum').value
-            const date_arrived = document.getElementById('date_arrived').value
-            const supplier_lot = document.getElementById('supplier_lot').value
-            const expiry = document.getElementById('expiry').value
-            const internal_lot = document.getElementById('internal_lot').value
-            const tecnic = document.getElementById('tecnic').value
-            // const data_open = document.getElementById('data_open').value
-            // const tecnic_open = document.getElementById('tecnic_open').value
-            // const data_close = document.getElementById('data_close').value
-            // const tecnic_close = document.getElementById('tecnic_close').value
-            const observations = document.getElementById('observations').value
-
-            // Check dades
-            var message_alert = '';
-
-            if (type_lot === '' || type_lot.length < 3) {message_alert += 'type_lot, '}
-            if (lot_name === '' || lot_name.length < 3) {message_alert += 'lot_name, '}
-            if (reference === '' || reference.length < 3) {message_alert += 'reference, '}
-            if (trademark === '' || trademark.length < 3) {message_alert += 'trademark, '}
-            if (preserved_in === '' || preserved_in.length < 3) {message_alert += 'preserved_in, '}
-            if (stock_minimum === '' || stock_minimum.length < 3) {message_alert += 'stock_minimum, '}
-            if (date_arrived === '' || date_arrived.length < 3) {message_alert += 'date_arrived, '}
-            if (supplier_lot === '' || supplier_lot.length < 3) {message_alert += 'supplier_lot, '}
-            if (expiry === '' || expiry.length < 3) {message_alert += 'expiry, '}
-            if (internal_lot === '' || internal_lot.length < 3) {message_alert += 'internal_lot, '}
-            if (tecnic === '' || tecnic.length < 2) {message_alert += 'tecnic, '}
-            // if (data_open === '' || data_open.length < 3) {message_alert += 'data_open, '}
-            // if (tecnic_open === '' || tecnic_open.length < 2) {message_alert += 'tecnic_open, '}
-            // if (data_close === '' || data_close.length < 3) {message_alert += 'data_close, '}
-            // if (tecnic_close === '' || tecnic_close.length < 2) {message_alert += 'tecnic_close, '}
-            // if (observations === '' || observations.length < 5) {message_alert += 'observations, '}
-
-            if (message_alert != ''){
-                let alert_message = message_alert.slice(0, -2);
-                alert("Els seguents camps no poden estar buits : " + alert_message + ".")
-                return }
-            
-            var regex = /^(0[1-9]|[12][0-9]|3[01])[-/](0[1-9]|1[0-2])[-/]\d{4}$/;
-            const result = regex.test(date_arrived);
-            const result2 = regex.test(expiry);
-            if (!result || !result2){
-                alert("La data no te el format correcta ha de ser dd/mm/aaaa")
-                return }
-            
-            form_data.append('type_lot', type_lot)
-            form_data.append('lot_name', lot_name)
-            form_data.append('reference', reference)
-            form_data.append('trademark', trademark)
-            form_data.append('preserved_in', preserved_in)
-            form_data.append('stock_minimum', stock_minimum)
-            form_data.append('date_arrived', date_arrived)
-            form_data.append('supplier_lot', supplier_lot)
-            form_data.append('expiry', expiry)
-            form_data.append('internal_lot', internal_lot)
-            form_data.append('tecnic', tecnic)
-            form_data.append('observations', observations)
-
-            $('#add_lot').modal('hide');
-
-            // Creeem l'objecte per l'ajax
-            var xhr = new XMLHttpRequest();
-            // 1er argument si es pots o get
-            // 2n argument url o ruta
-            // 3r argumemt true sempre
-            xhr.open('POST', '/insert_lot', true);
-            xhr.onload = function(){
-                if (xhr.status === 200) {
-                    var response = xhr.responseText;
-                    if (response === 'False'){
-                        message = "Error, no s'ha pogut inserir el lot."
-                        alert_type = 'danger' }
-                    else if (response === 'True'){
-                        message = "El lot s'ha introduït correctament."
-                        alert_type = 'success'} 
-                    else{
-                        message = "Error inesperat."
-                        alert_type = 'danger'}}
-                else {
-                    message = "Error, No s'ha pogut realitzar l'operació."
-                    alert_type = 'danger' }
-
+            if (message !== ''){
                 var flashContainer = document.querySelector(".d-flex.justify-content-center .row");
                 var newFlash = document.createElement("div");
                 newFlash.className = "alert alert-" + alert_type + " alert-dismissible fade show ml-3";
@@ -140,20 +201,415 @@
                                     '<span aria-hidden="true">&times;</span>' +
                                     '</button>';
                 flashContainer.appendChild(newFlash);
-                flashContainer.style.paddingTop = "20px";
-            }
-
-            xhr.send(form_data)
+                flashContainer.style.paddingTop = "20px";}
         }
 
+        xhr.send(form_data)
+    }
+
+    
+    function add_more_lines_in_modal(number_references){
+        // Eliminar tots els div amb el name divs_subproduct
+        var elementosAEliminar = document.querySelectorAll('div[name="divs_subproducts"]');
+        elementosAEliminar.forEach(function(elemento) {
+            elemento.remove(); });
+
+        // obtenir i formatar la data
+        var current_date = new Date();
+        var day = current_date.getDate();
+        var month = current_date.getMonth() + 1;
+        var year = current_date.getFullYear();
+        day = day < 10 ? '0' + day : day;
+        month = month < 10 ? '0' + month : month;
+        var formated_date = day + '-' + month + '-' + year;
+        var internal_lot = year + month + day
+
+        document.getElementById('date_recepcion_lot').value = formated_date;
+        
+        var miDiv = document.getElementById('div_info_lot');
+        for (var x = 0; x < number_references; x++){
+            var number_lot =  x + 1
+            var HTML = `
+                <div class="col-lg-5 col-md-12 col-sm-12" name="divs_subproducts">
+                    <hr>
+                </div>
+                <div class="col-lg-2 col-md-12 col-sm-12" name="divs_subproducts">
+                    <center>Article ${number_lot}</center>
+                </div>
+                <div class="col-lg-5 col-md-12 col-sm-12" name="divs_subproducts">
+                    <hr>
+                </div>
+            `;
+
+            // Agrega el nuevo conjunto debajo del div existente
+            miDiv.insertAdjacentHTML('beforebegin', HTML);
+            for (var i = 0; i < list_info_lots.length; i++) {
+                var dict_lots = JSON.stringify(list_info_lots[i]);
+                var nuevoHTML = `
+                    <div class="col-lg-12 col-md-12 col-sm-12" name="divs_subproducts">
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 135px;"><b>Descripció:</b></span>
+                            <input type="text" class="form-control" aria-label="TTN" id="description${x}_${i}" value="${list_info_lots[i]['id_reactive']} || ${list_info_lots[i]['description']}" readonly>
+                        </div>
+                    </div>
+                    <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts">
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 135px;"><b>Lot :</b></span>
+                            <input type="text" class="form-control" id="lot${x}_${i}" aria-label="TTN">
+                        </div>
+                    </div>
+                    <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts">  
+                        <div class='input-group mb-3'>
+                            <span class='input-group-text' id='basic-addon1' style='width: 140px;'><b>Data caducitat :</b></span>
+                            <input type='text' class='form-control' id='expiry_date${x}_${i}' aria-label='TTN' aria-describedby='basic-addon1' oninput="replae_slash_with_hyphen(this)">
+                        </div>
+                    </div>
+                    <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts">
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 135px;"><b>Lot intern :</b></span>
+                            <input type="text" class="form-control" id="internal_lot${x}_${i}" aria-label="TTN" value="${internal_lot}_${x + 1}/${number_references}">
+                        </div>
+                    </div>
+                    <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts">
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>Unitats lot :</b></span>
+                            <select class="form-select" id="units_lot${x}_${i}">
+                                <option selected>1</option>
+                                {% for i in range(2, 1001) %}
+                                    <option>{{ i }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <input type='hidden' id='json_info_lot${x}_${i}' value='${dict_lots}' name="divs_subproducts">
+                `;
+
+                // Agrega el nuevo conjunto debajo del div existente
+                miDiv.insertAdjacentHTML('beforebegin', nuevoHTML);
+            }
+        }
+    }
+
+    
+    function add_more_lots_in_modal(number_references){
+        // Eliminar tots els div amb el name divs_subproduct
+        var elementosAEliminar = document.querySelectorAll('div[name="divs_new_lots"]');
+        elementosAEliminar.forEach(function(elemento) {
+            elemento.remove(); });
+
+        // obtenir i formatar la data
+        var miDiv = document.getElementById('div_info_new_lot');
+        for (var x = 0; x < number_references; x++){
+            var nuevoHTML = `
+                <div class="col-lg-6 col-md-6 col-sm-12" name="divs_new_lots">       
+                    <div class="input-group mb-3">
+                        <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>ID subreferencia :</b></span>
+                        <input type="text" class="form-control" id='id_reactiu${x}' aria-label="TTN" aria-describedby="basic-addon1"">
+                    </div>
+                </div>
+                <div class="col-lg-6 col-md-6 col-sm-12" name="divs_new_lots">       
+                    <div class="input-group mb-3">
+                        <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Temp. conservació :</b></span>
+                        <select class="form-select" id="temp_conservation${x}">
+                            <option>-20</option>
+                            <option>-80</option>
+                            <option>Ambient</option>
+                            <option>4</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-lg-12 col-md-12 col-sm-12" name="divs_new_lots">       
+                    <div class="input-group mb-3">
+                        <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Descripció Subref. :</b></span>
+                        <input type="text" class="form-control" id='description_subreference${x}' aria-label="TTN" aria-describedby="basic-addon1">
+                    </div>
+                </div>
+                `;
+
+                // Agrega el nuevo conjunto debajo del div existente
+                miDiv.insertAdjacentHTML('afterend', nuevoHTML);
+                
+            var number_lot =  number_references - x
+            var HTML = `
+                <div class="col-lg-5 col-md-12 col-sm-12" name="divs_new_lots">
+                    <hr>
+                </div>
+                <div class="col-lg-2 col-md-12 col-sm-12" name="divs_new_lots">
+                    <center>Article ${number_lot}</center>
+                </div>
+                <div class="col-lg-5 col-md-12 col-sm-12" name="divs_new_lots">
+                    <hr>
+                </div>
+            `;
+
+            // Agrega el nuevo conjunto debajo del div existente
+            miDiv.insertAdjacentHTML('afterend', HTML);
+        }
+        if (number_references === '0'){
+            var nuevoHTML = `
+                <div class="col-lg-6 col-md-6 col-sm-12" name="divs_new_lots">       
+                    <div class="input-group mb-3">
+                        <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Temp. conservació :</b></span>
+                        <select class="form-select" id="temp_conservation0">
+                            <option>-20</option>
+                            <option>-80</option>
+                            <option>Ambient</option>
+                            <option>4</option>
+                        </select>
+                    </div>
+                </div>
+                `;
+
+            // Agrega el nuevo conjunto debajo del div existente
+            miDiv.insertAdjacentHTML('afterend', nuevoHTML);
+        }
+    }
+
+    
+    function add_new_lot(){
+        // Crear form data
+        var form_data = new FormData();
+
+        // Carregar dades al form de l'html
+        const num_lots = document.getElementById('num_lots').value
+        const reference_catalog = document.getElementById('reference_catalog').value
+        const code_sap = document.getElementById('code_sap').value
+        const code_log = document.getElementById('code_log').value
+        const analytical_technique = document.getElementById('analytical_technique').value
+        const manufacturer = document.getElementById('manufacturer').value
+        const description = document.getElementById(`description`).value
+
+        var list_lots = []
+
+        if (num_lots === '0'){
+            const temp_conservation = document.getElementById('temp_conservation0').value
+            if (code_sap !== '' && code_log !== '' && analytical_technique !== '' && description !== '' && reference_catalog !== '' && manufacturer !== '' ) {
+                var dict_lots = {
+                    code_sap: code_sap,
+                    code_log: code_log,
+                    id_reactiu: '',
+                    analytical_technique: analytical_technique,
+                    manufacturer: manufacturer,
+                    description: description,
+                    temp_conservation: temp_conservation,
+                    description_subreference: '' }; }
+            else {  
+                alert("No es poden deixar els camps sense omplir.")
+                return
+            }
+            list_lots.push(dict_lots)
+        }
+
+        for (var x = 0; x < num_lots; x++){
+            const id_reactiu = document.getElementById(`id_reactiu${x}`).value
+            const description_subreference = document.getElementById(`description_subreference${x}`).value
+            const temp_conservation = document.getElementById(`temp_conservation${x}`).value
+            if (code_sap !== '' && code_log !== '' && id_reactiu !== '' && analytical_technique !== '' && description !== '' && reference_catalog !== '' && manufacturer !== '' ) {
+                var dict_lots = {
+                    code_sap: code_sap,
+                    code_log: code_log,
+                    id_reactiu: id_reactiu,
+                    analytical_technique: analytical_technique,
+                    manufacturer: manufacturer,
+                    description: description,
+                    temp_conservation: temp_conservation,
+                    description_subreference: description_subreference}; }
+            else {
+                alert("No es poden deixar els camps sense omplir.")
+                return
+            }
+
+            list_lots.push(dict_lots)
+        }
+
+        var jsonData = JSON.stringify(list_lots);
+
+        form_data.append('reference_catalog', reference_catalog)
+        form_data.append('list_lots', jsonData)
+
+        $('#add_new_lot').modal('hide');
+
+        // Creeem l'objecte per l'ajax
+        var xhr = new XMLHttpRequest();
+        // 1er argument si es pots o get
+        // 2n argument url o ruta
+        // 3r argumemt true sempre
+        xhr.open('POST', '/register_new_lot', true);
+        xhr.onload = function(){
+            if (xhr.status === 200) {
+                var response = xhr.responseText;
+                if (response.includes('False')){
+                    alert_type = 'danger'
+                    if (response === 'False_duplicate'){
+                        message = `Error, un o més lots ja estan entrats a la bd, no s'ha inserit cap camp, revisa els duplicats i tornar a inserir-lo. <button type="button" class="btn btn-link btn-sm" onclick="open_modal('add_new_lot')">lot</button>`}
+                    else{
+                        message = `Error, no s'ha pogut inserir el lot a la bd. <button type="button" class="btn btn-link btn-sm" onclick="open_modal('add_new_lot')">lot</button>`}}
+                else if (response === 'True'){
+                    message = "El lot s'ha introduït correctament."
+                    alert_type = 'success'} 
+                else{
+                    message = `Error inesperat. <button type="button" class="btn btn-link btn-sm" onclick="open_modal('add_new_lot')">lot</button>`
+                    alert_type = 'danger'}}
+            else {
+                message = `Error, No s'ha pogut realitzar l'operació. <button type="button" class="btn btn-link btn-sm" onclick="open_modal('add_new_lot')">lot</button>`
+                alert_type = 'danger' }
+
+            var flashContainer = document.querySelector(".d-flex.justify-content-center .row");
+            var newFlash = document.createElement("div");
+            newFlash.className = "alert alert-" + alert_type + " alert-dismissible fade show ml-3";
+            newFlash.role = "alert";
+            newFlash.innerHTML = "<span>" + message + "</span>" + 
+                                '<button type="button" class="close" data-dismiss="alert" aria-label="Close">' +
+                                '<span aria-hidden="true">&times;</span>' +
+                                '</button>';
+            flashContainer.appendChild(newFlash);
+            flashContainer.style.paddingTop = "20px";
+        }
+
+        xhr.send(form_data)
+    }
+
+    
+    function add_stock_lot(){
+        var check_format_date = /^[0-3]\d-[01]\d-[2][0][2-4]\d$/;
+        // Crear form data
+        var form_data = new FormData();
+        
+        // Carregar dades al form de l'html
+        const unit_lots = document.getElementById('unit_lots').value
+        const date_recepcion_lot = document.getElementById('date_recepcion_lot').value
+        if (!check_format_date.test(date_recepcion_lot)) {
+            alert("El format de la data no és correcta, ha de ser dd-mm-yyyy");
+            return }
+
+        const transport_conditions = document.getElementById('transport_conditions').value
+        const packaging = document.getElementById('packaging').value
+        const inspected_by = document.getElementById('inspected_by').value
+        const date_inspected = document.getElementById('date_inspected').value
+        const observations_inspection = document.getElementById('observations_inspection').value
+        const state = document.getElementById('state').value
+        const comand_number = document.getElementById('comand_number').value
+        const revised_by = document.getElementById('revised_by').value
+        const date_revised = document.getElementById('date_revised').value
+
+        if (transport_conditions === '' || packaging === '' || inspected_by === '' || date_inspected === '' || observations_inspection === '' || state === '' || comand_number === '' || revised_by === '' || date_revised === ''){
+            alert("No pots deixar camps buits, revisa els recepció de procute i QC recepció.")
+        }
+        
+        const file_delivery_note_input = document.getElementById('file_delivery_note')
+        const file_delivery_note = file_delivery_note_input.files[0];
+        const file_certificate_input = document.getElementById('file_certificate')
+        const file_certificate = file_certificate_input.files[0];
+
+
+        var list_lots = []
+        for (var x = 0; x < unit_lots; x++){
+            for (var i = 0; i < list_info_lots.length; i++){
+                const lot = document.getElementById(`lot${x}_${i}`).value
+                const expiry_date = document.getElementById(`expiry_date${x}_${i}`).value
+                const internal_lot = document.getElementById(`internal_lot${x}_${i}`).value
+                const units_lot = document.getElementById(`units_lot${x}_${i}`).value
+                if (!check_format_date.test(expiry_date)) {
+                    alert("El format de la data no és correcta, ha de ser dd-mm-yyyy");
+                    return }
+
+                if (lot !== '' && expiry_date !== '' && internal_lot !== ''){
+                    const json_info_lot = document.getElementById(`json_info_lot${x}_${i}`).value
+                    var dict_info_lot = JSON.parse(json_info_lot);
+                    dict_info_lot.reception_date = date_recepcion_lot
+                    dict_info_lot.lot = lot
+                    dict_info_lot.date_expiry = expiry_date 
+                    dict_info_lot.internal_lot = internal_lot 
+                    dict_info_lot.units_lot = units_lot
+                    dict_info_lot.transport_conditions = transport_conditions
+                    dict_info_lot.packaging = packaging
+                    dict_info_lot.inspected_by = inspected_by
+                    dict_info_lot.date_inspected = date_inspected
+                    dict_info_lot.observations_inspection = observations_inspection
+                    dict_info_lot.state = state
+                    dict_info_lot.comand_number = comand_number
+                    dict_info_lot.revised_by = revised_by
+                    dict_info_lot.date_revised = date_revised }
+                else{
+                    alert("No es poden deixar els camps sense omplir.") }
+                list_lots.push(dict_info_lot) }
+        }
+        var jsonData = JSON.stringify(list_lots);
+
+        form_data.append('list_lots', jsonData)
+        form_data.append('file_delivery_note', file_delivery_note)
+        form_data.append('file_certificate', file_certificate)
+
+        $('#add_lot_info').modal('hide');
+
+        // Creeem l'objecte per l'ajax
+        var xhr = new XMLHttpRequest();
+        // 1er argument si es pots o get
+        // 2n argument url o ruta
+        // 3r argumemt true sempre
+        xhr.open('POST', '/add_stock_lot', true);
+        xhr.onload = function(){
+            if (xhr.status === 200) {
+                var response = xhr.responseText;
+                if (response.includes('False')){
+                    alert_type = 'danger'
+                    if (response === 'False_duplicate'){
+                        message = `Error, un o més lots ja estan entrats a la bd, no s'ha inserit cap camp, revisa els duplicats i tornar a inserir-lo. <button type="button" class="btn btn-link btn-sm" onclick="open_modal('add_lot_info')">lot</button>`}
+                    else{
+                        message = `Error, no s'ha pogut inserir el lot a la bd. <button type="button" class="btn btn-link btn-sm" onclick="open_modal('add_lot_info')">lot</button>`}}
+                else if (response === 'True'){
+                    message = "El lot s'ha introduït correctament."
+                    alert_type = 'success'} 
+                else{
+                    message = `Error inesperat. <button type="button" class="btn btn-link btn-sm" onclick="open_modal('add_lot_info')">lot</button>`
+                    alert_type = 'danger'}}
+            else {
+                message = `Error, No s'ha pogut realitzar l'operació. <button type="button" class="btn btn-link btn-sm" onclick="open_modal('add_lot_info')">lot</button>`
+                alert_type = 'danger' }
+
+            var flashContainer = document.querySelector(".d-flex.justify-content-center .row");
+            var newFlash = document.createElement("div");
+            newFlash.className = "alert alert-" + alert_type + " alert-dismissible fade show ml-3";
+            newFlash.role = "alert";
+            newFlash.innerHTML = "<span>" + message + "</span>" + 
+                                '<button type="button" class="close" data-dismiss="alert" aria-label="Close">' +
+                                '<span aria-hidden="true">&times;</span>' +
+                                '</button>';
+            flashContainer.appendChild(newFlash);
+            flashContainer.style.paddingTop = "20px";
+        }
+
+        xhr.send(form_data)
+    }
+
+
+    function show_div_product(div1, div2, btn1, btn2){
+        document.getElementById(div2).classList.add('d-none');
+        document.getElementById(div1).classList.remove('d-none');
+
+        document.getElementById(btn1).classList.remove('btn-secondary');
+        document.getElementById(btn1).classList.add('btn-primary');
+        document.getElementById(btn2).classList.remove('btn-primary');
+        document.getElementById(btn2).classList.add('btn-secondary');
+    }
+
 </script>
+<style>
+    #add_lot_info {
+        overflow-y: auto;  /* Esto permitirá el scroll vertical si es necesario */
+    }
+
+    #add_new_lot {
+        overflow-y: auto;  /* Esto permitirá el scroll vertical si es necesario */
+    }
+</style>
 </head>
 
 <body>
     {% include 'NavBar/navBar.html' %}
     {% include 'ErrorFlash/errorFlash.html' %}
     <div class="jumbotron bg-grey text-black jomboton-imgae shadow" style="width: 90%; margin: 0 auto;">
-        <h1 class='mb-4' style="color: rgb(70, 70, 70); text-align: center;">Registre de ractius<hr></h1>
+        <h1 class='mb-4' style="color: rgb(70, 70, 70); text-align: center;">Registre de rectius<hr></h1>
         <div class="d-flex justify-content-center">
             <div class="row">
                 <div class="col-lg-6 col-md-6 col-sm-12">
@@ -161,8 +617,8 @@
                         <div class="col-6" style="padding-top: 10px;">
                             <div class="card" style="width: 22rem;height:100%">
                                 <div class="card-body">
-                                <h5 class="card-title"><b>1 - Insertar lots </b></h5>
-                                <p class="card-text">Aquí podreu afegir lots</p>
+                                    <h5 class="card-title"><b>1 - Recepcionar articles </b></h5>
+                                    <p class="card-text">Aquí podreu afegir articles</p>
                                     <button class="btn btn-outline-primary btn-sm" onclick="insert(`{{session['acronim']}}`)">Accedir</button>
                                 </div>
                             </div>
@@ -174,9 +630,9 @@
                         <div class="col-6" style="padding-top: 10px;">
                             <div class="card" style="width: 22rem;height:100%">
                                 <div class="card-body">
-                                    <h5 class="card-title"><b>2 - Cerca lots</b></h5>
-                                    <p class="card-text">Buscador de lots.</p>
-                                    <button class="btn btn-outline-primary btn-sm" onclick="search()">Accedir</button>
+                                    <h5 class="card-title"><b>2 - Cerca reactius</b></h5>
+                                    <p class="card-text">Buscador de reactius.</p>
+                                    <button type="button" data-toggle="modal" data-target="#search_lot" class="btn btn-outline-primary btn-sm">Accedir</button>
                                 </div>
                             </div>
                         </div>
@@ -186,11 +642,287 @@
         </div>
     </div>
 
+
     <div class="modal fade"  id="add_lot" tabindex="-1" role="dialog" aria-labelledby="editRegister" aria-hidden="true">
+        <div class="modal-dialog" tabindex="-1" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="title">Recepcionar Article</h5>
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="close_modal('add_lot')"><span aria-hidden="true">&times;</span></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-lg-12 col-md-12 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1"><b>Ref. proveïdor, SAP o LOG:</b></span>
+                            <input type="text" class="form-control" id='code_search' aria-label="TTN" aria-describedby="basic-addon1" value="lot1">
+                        </div>
+                    </div>
+                    <div class="col-lg-12 col-md-12 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <button type="button" class="btn btn-primary btn-sm" style="width: 150px;" onclick="add_lot()">Accepta</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+          </div>
+        </div>
+    </div>
+
+
+    <div class="modal fade"  id="add_new_lot" tabindex="-1" role="dialog" aria-labelledby="editRegister" aria-hidden="true">
+        <div class="modal-dialog modal-lg" tabindex="-1" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="title">Afegeix un nou article (dades comunes)</h5>
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="close_modal('add_new_lot')"><span aria-hidden="true">&times;</span></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-lg-6 col-md-12 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Ref. proveïdor :</b></span>
+                            <input type="text" class="form-control" id='reference_catalog' aria-label="TTN" aria-describedby="basic-addon1">
+                        </div>
+                    </div>
+                    <div class="col-lg-6 col-md-12 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 145px;"><b>Subreferències :</b></span>
+                            <select class="form-select" id="num_lots" onchange="add_more_lots_in_modal(this.value)">
+                                <option selected>0</option>
+                                {% for i in range(1, 15) %}
+                                    <option>{{ i }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-lg-6 col-md-12 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Codi SAP :</b></span>
+                            <input type="text" class="form-control" id='code_sap' aria-label="TTN" aria-describedby="basic-addon1">
+                        </div>
+                    </div>
+                    <div class="col-lg-6 col-md-12 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 145px;"><b>Codi LOG :</b></span>
+                            <input type="text" class="form-control" id='code_log' aria-label="TTN" aria-describedby="basic-addon1">
+                        </div>
+                    </div>
+                    <div class="col-lg-6 col-md-12 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Tècnica analítica :</b></span>
+                            <input type="text" class="form-control" id='analytical_technique' aria-label="TTN" aria-describedby="basic-addon1">
+                        </div>
+                    </div>
+                    <div class="col-lg-6 col-md-12 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 145px;"><b>Fabricant :</b></span>
+                            <input type="text" class="form-control" id='manufacturer' aria-label="TTN" aria-describedby="basic-addon1">
+                        </div>
+                    </div>
+                    <div class="col-lg-12 col-md-12 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Descripció :</b></span>
+                            <input type="text" class="form-control" id='description' aria-label="TTN" aria-describedby="basic-addon1">
+                        </div>
+                    </div>
+                    <div class="col-lg-6 col-md-6 col-sm-12" name="divs_new_lots">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Temp. conservació :</b></span>
+                            <select class="form-select" id="temp_conservation0">
+                                <option>-20</option>
+                                <option>-80</option>
+                                <option>Ambient</option>
+                                <option>4</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div id="div_info_new_lot"></div>
+
+                    <div class="col-lg-12 col-md-12 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <button type="button" class="btn btn-primary btn-sm" style="width: 168;" onclick="add_new_lot()"><i class="fa-solid fa-circle-plus"></i> Afegeix </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+          </div>
+        </div>
+    </div>
+
+
+    <div class="modal fade"  id="add_lot_info" tabindex="-1" role="dialog" aria-labelledby="editRegister" aria-hidden="true">
+        <div class="modal-dialog modal-lg" tabindex="-1" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+                <div class="d-flex justify-content-center w-100">
+                    <h5 class="modal-title" id="title" name="title_add_lots">Afegeix article</h5>
+                </div>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="close_modal('add_lot_info')"><span aria-hidden="true">&times;</span></button>
+            </div>
+            <div class="modal-header">
+                <div class="d-flex justify-content-center w-100">
+                    <!-- <div class="text-center"> -->
+                    <button type="button" class="btn btn-primary" id="btn_1" onclick="show_div_product('product_reception', 'qc_reception', 'btn_1', 'btn_2')" style="margin-right: 10px;">Recepció producte</button>
+                    <button type="button" class="btn btn-secondary" id="btn_2" onclick="show_div_product('qc_reception', 'product_reception', 'btn_2', 'btn_1')">QC recepció</button>
+                </div>
+            </div>
+            <!-- <div class="modal-header">
+                <h5 class="modal-title" id="title" name="title_add_lots" style="margin-right: 50px;">Afegeix article</h5>
+                <button type="button" class="btn btn-primary" id="btn_1" onclick="show_div_product('product_reception', 'qc_reception')" style="margin-right: 10px;">Recepció producte</button>
+                <button type="button" class="btn btn-secondary" id="btn_2" onclick="show_div_product('qc_reception', 'product_reception')">QC recepció</button>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="close_modal('add_lot_info')"><span aria-hidden="true">&times;</span></button>
+            </div> -->
+            <div class="modal-body">
+                <div class="row" id="product_reception">
+                    <div class="col-lg-6 col-md-12 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 135px;"><b>Lots diferents:</b></span>
+                            <!-- <input type="number" class="form-control" id='unit_lots' aria-label="TTN" aria-describedby="basic-addon1"> -->
+                            <select class="form-select" id="unit_lots" onchange="add_more_lines_in_modal(this.value)">
+                                <option selected>1</option>
+                                {% for i in range(2, 21) %}
+                                    <option>{{ i }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-lg-6 col-md-12 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>Data recepció:</b></span>
+                            <input type="text" class="form-control" id='date_recepcion_lot' aria-label="TTN" aria-describedby="basic-addon1">
+                        </div>
+                    </div>
+                    <div class="col-lg-12 col-md-12 col-sm-12">
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 135px;"><b>Descripció:</b></span>
+                            <!-- <input type="text" class="form-control" id="descripton" aria-label="TTN" value="${list_info_lots[i]['id_reactive']} || ${list_info_lots[i]['description']}" readonly> -->
+                            <input type="text" class="form-control" id="description_add_lot" aria-label="TTN" readonly>
+                        </div>
+                    </div>
+
+                    <div id="div_info_lot"></div>
+
+                    <div class="col-lg-12 col-md-12 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <button type="button" class="btn btn-primary btn-sm" onclick="add_stock_lot()">Afegir</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="row d-none" id="qc_reception">
+                    <div class="col-lg-6 col-md-12 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 185px;"><b>Condicions transport :</b></span>
+                            <input type="text" class="form-control" id='transport_conditions' aria-label="TTN" aria-describedby="basic-addon1">
+                        </div>
+                    </div>
+                    <div class="col-lg-6 col-md-12 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>Embalatge :</b></span>
+                            <input type="text" class="form-control" id='packaging' aria-label="TTN" aria-describedby="basic-addon1">
+                        </div>
+                    </div>
+
+                    <div class="col-lg-6 col-md-12 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 185px;"><b>Inspeccionat per :</b></span>
+                            <input type="text" class="form-control" id='inspected_by' aria-label="TTN" aria-describedby="basic-addon1">
+                        </div>
+                    </div>
+                    <div class="col-lg-6 col-md-12 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>Data inspecció :</b></span>
+                            <input type="text" class="form-control" id='date_inspected' aria-label="TTN" aria-describedby="basic-addon1">
+                        </div>
+                    </div>
+
+                    <div class="col-lg-12 col-md-12 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 185px;"><b>Obs. d'inspecció :</b></span>
+                            <input type="text" class="form-control" id='observations_inspection' aria-label="TTN" aria-describedby="basic-addon1">
+                        </div>
+                    </div>
+
+                    <div class="col-lg-6 col-md-12 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 185px;"><b>Estat:</b></span>
+                            <select class="form-select" id="state">
+                                <option>Acceptat</option>
+                                <option>Rebutjat</option>
+                                <option>Quarentena</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-lg-6 col-md-12 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>Num. comanda :</b></span>
+                            <input type="text" class="form-control" id='comand_number' aria-label="TTN" aria-describedby="basic-addon1">
+                        </div>
+                    </div>
+
+                    <div class="col-lg-12 col-md-12 col-sm-12">
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 185px;"><b>Albarà :</b></span>
+                            <div class="flex-grow-1">
+                                <input type="file" id="file_delivery_note" name="file_delivery_note" class="btn" style="border: 1px solid black; outline: none; width: 100%;">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-12 col-md-12 col-sm-12">
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 185px;"><b>Certificat d'anàlisi :</b></span>
+                            <div class="flex-grow-1">
+                                <input type="file" id="file_certificate" name="file_certificate" class="btn" style="border: 1px solid black; outline: none; width: 100%;">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-6 col-md-12 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 185px;"><b>Revisat per:</b></span>
+                            <input type="text" class="form-control" id='revised_by' aria-label="TTN" aria-describedby="basic-addon1">
+                        </div>
+                    </div>
+                    <div class="col-lg-6 col-md-12 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>Data revisat:</b></span>
+                            <input type="text" class="form-control" id='date_revised' aria-label="TTN" aria-describedby="basic-addon1">
+                        </div>
+                    </div>
+
+                    <div class="col-lg-12 col-md-12 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <button type="button" class="btn btn-primary btn-sm" onclick="add_stock_lot()">Afegir</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+          </div>
+        </div>
+    </div>
+
+    
+    <!-- <div class="col-lg-6 col-md-12 col-sm-12">  
+        <div class='input-group mb-3'>
+            <span class='input-group-text' id='basic-addon1' style='width: 135px;'><b>ID reactiu:</b></span>
+            <input type='text' class='form-control' id='id_reactiu' aria-label='TTN' aria-describedby='basic-addon1'>
+        </div>
+    </div>
+    <div class="col-lg-6 col-md-12 col-sm-12">  
+        <div class='input-group mb-3'>
+            <span class='input-group-text' id='basic-addon1' style='width: 135px;'><b>Ubicació :</b></span>
+            <input type='text' class='form-control' id='location' aria-label='TTN' aria-describedby='basic-addon1'>
+        </div>
+    </div> -->
+
+
+    <!-- <div class="modal fade"  id="add_lot" tabindex="-1" role="dialog" aria-labelledby="editRegister" aria-hidden="true">
         <div class="modal-dialog modal-xl" tabindex="-1" role="document">
           <div class="modal-content">
             <div class="modal-header">
-              <h5 class="modal-title" id="title">Afegeix lot</h5>
+              <h5 class="modal-title" id="title">Afegeix article</h5>
               <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="close_modal('add_lot')"><span aria-hidden="true">&times;</span></button>
             </div>
             <div class="modal-body">
@@ -338,7 +1070,7 @@
                         <hr>
                     </div>
                     <div class="col-lg-1 col-md-1 col-sm-1">       
-                    </div>   -->
+                    </div> <!--
 
                     <div class="col-lg-12 col-md-12 col-sm-12">       
                         <div class="input-group mb-3">
@@ -352,6 +1084,31 @@
                         </div>
                     </div>
                 </div>
+            </div>
+          </div>
+        </div>
+    </div> -->
+
+
+    <div class="modal fade"  id="search_lot" tabindex="-1" role="dialog" aria-labelledby="editRegister" aria-hidden="true">
+        <div class="modal-dialog modal-xs" tabindex="-1" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="title"> Cercar lots</h5>
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="close_modal('search_lot')"><span aria-hidden="true">&times;</span></button>
+            </div>
+            <div class="modal-body">
+                <form action="/search_lots" method="post">
+                    <div class="row">                                   
+                        <div class="col-lg-12 col-md-12 col-sm-12">       
+                            <div class="input-group mb-3">
+                                <span class="input-group-text" id="basic-addon1"><b>Codi Cataleg, SAP o LOG :</b></span>
+                                <input type="text" class="form-control" id='search_code' name="search_code" aria-label="TTN" aria-describedby="basic-addon1" required>
+                            </div>
+                        </div> 
+                        <center><input type="submit" value="Cercar lot" class="btn btn-success btn-sm"/></center>
+                    </div>
+                </form>
             </div>
           </div>
         </div>
