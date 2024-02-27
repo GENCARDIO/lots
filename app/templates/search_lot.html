@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    {% include 'Header/header.html' %}
+    <script>
+        function close_modal(modal_id){
+            $(`#${modal_id}`).modal('hide');
+        }
+
+
+        function download_doc(dir_name, name_doc, type_doc){
+            document.getElementById("name_doc").value = name_doc + type_doc;
+            document.getElementById("dir_name").value = dir_name;
+            document.getElementById("down_doc").submit();
+        }
+
+
+        function open_upload_documents(dir_name, group_insert){
+            document.getElementById("dir_name_upload").value = dir_name;
+            document.getElementById("group_insert").value = group_insert;
+            $('#upload_doc').modal('show');
+        }
+
+
+        function upload_documents(){
+            // Crear form data
+            var form_data = new FormData();
+
+            // Carregar dades al form de l'html
+            const dir_name = document.getElementById('dir_name_upload').value
+            const group_insert = document.getElementById('group_insert').value
+            
+            const file_input = document.getElementById('file')
+            const file = file_input.files[0];
+
+            form_data.append('dir_name', dir_name)
+            form_data.append('group_insert', group_insert)
+            form_data.append('file', file)
+
+            $('#upload_doc').modal('hide');
+
+            // Creeem l'objecte per l'ajax
+            var xhr = new XMLHttpRequest();
+            // 1er argument si es pots o get
+            // 2n argument url o ruta
+            // 3r argumemt true sempre
+            alert("sep")
+            xhr.open('POST', '/upload_docs', true);
+            xhr.onload = function(){
+                if (xhr.status === 200) {
+                    var response = xhr.responseText;
+                    if (response.includes('False')){
+                        alert_type = 'danger'
+                        if (response === 'False_duplicate'){
+                            message = `Error, un o més lots ja estan entrats a la bd, no s'ha inserit cap camp, revisa els duplicats i tornar a inserir-lo.`}
+                        else{
+                            message = `Error, no s'ha pogut inserir el lot a la bd.`}}
+                    else if (response.includes('True')){
+                        var split_response = response.split('///')
+                        var id_lots = split_response[1].split(';')
+
+                        message = "El document s'ha carregat correctament."
+                        alert_type = 'success'
+                        // Obtener la referencia al elemento tr por su ID
+                        for (var i = 0; i < id_lots.length; i++) {
+                            var buttonElement = document.getElementById(`${id_lots[i]}_${dir_name}`);
+                            buttonElement.classList.remove("btn-outline-danger");
+                            buttonElement.classList.add("btn-outline-success");
+
+                            if (dir_name == 'delivery_note'){
+                                buttonElement.setAttribute("onclick", "download_doc('albarans', `" + split_response[2] + "`, `" + split_response[3] + "`)");
+                            } else {
+                                buttonElement.setAttribute("onclick", "download_doc('certificats', `" + split_response[2] + "`, `" + split_response[3] + "`)");
+                            }
+                        }
+                    } else {
+                        message = `Error inesperat. Si persisteix l'error contacta amb un administrador`
+                        alert_type = 'danger'
+                    }
+                }
+                else {
+                    message = `Error, No s'ha pogut realitzar l'operació. Si persisteix l'error contacta amb un administrador`
+                    alert_type = 'danger' }
+
+                var flashContainer = document.querySelector(".d-flex.justify-content-center .row");
+                var newFlash = document.createElement("div");
+                newFlash.className = "alert alert-" + alert_type + " alert-dismissible fade show ml-3";
+                newFlash.role = "alert";
+                newFlash.innerHTML = "<span>" + message + "</span>" + 
+                                    '<button type="button" class="close" data-dismiss="alert" aria-label="Close">' +
+                                    '<span aria-hidden="true">&times;</span>' +
+                                    '</button>';
+                flashContainer.appendChild(newFlash);
+                flashContainer.style.paddingTop = "20px";
+            }
+
+            xhr.send(form_data)
+        }
+
+    </script>
+    <style>
+        #example thead input[type="text"] {
+            max-width: 100%; /* Ajusta este valor según tus necesidades */
+        }
+    </style>
+</head>
+<body>
+    {% include 'NavBar/navBar.html' %}
+    {% include 'ErrorFlash/errorFlash.html' %} 
+    <div class="jumbotron bg-grey text-black jomboton-imgae shadow d-flex justify-content-between align-items-center" style="width: 90%; height: 90px; margin: 0 auto; padding-top: 0px; padding-bottom: 0px;">
+        <div class="modal-body">
+            <div class="row">
+                <div class="col-lg-2 col-md-6 col-sm-6" style="padding-top: 15px;">       
+                    <div class="input-group mb-3">
+                        <span class="input-group-text" id="basic-addon1"><b>Codi SAP :</b></span>
+                        <input type="text" class="form-control" aria-label="TTN" aria-describedby="basic-addon1" value="{{select_lot[0].code_SAP}}" style="background-color: white; text-align: center;" readonly>
+                    </div>
+                </div>
+                <div class="col-lg-2 col-md-6 col-sm-6" style="padding-top: 15px;">       
+                    <div class="input-group mb-3">
+                        <span class="input-group-text" id="basic-addon1"><b>Codi LOG :</b></span>
+                        <input type="text" class="form-control" aria-label="TTN" aria-describedby="basic-addon1" value="{{select_lot[0].code_LOG}}" style="background-color: white; text-align: center;" readonly>
+                    </div>
+                </div>
+                <div class="col-lg-2 col-md-6 col-sm-6" style="padding-top: 15px;">       
+                    <div class="input-group mb-3">
+                        <span class="input-group-text" id="basic-addon1"><b>Codi proveïdor :</b></span>
+                        <input type="text" class="form-control" aria-label="TTN" aria-describedby="basic-addon1" value="{{select_lot[0].catalog_reference}}" style="background-color: white; text-align: center;" readonly>
+                    </div>
+                </div>  
+                <div class="col-lg-6 col-md-6 col-sm-6" style="padding-top: 15px;">       
+                    <div class="input-group mb-3">
+                        <span class="input-group-text" id="basic-addon1"><b>Descripció :</b></span>
+                        <input type="text" class="form-control" aria-label="TTN" aria-describedby="basic-addon1" value="{{select_lot[0].description}}" style="background-color: white; text-align: center;" readonly>
+                    </div>
+                </div>  
+            </div>
+        </div>
+    </div>
+    
+    <div class="d-flex justify-content-center pt-3 mt-3 rounded">
+        <div class="container-fluid rounded table-responsive" style="width: 90%; text-align: center;">
+            <div id="table1" name="table1">
+                <table id="example" class="display">
+                    <thead>
+                        <tr id="thcolor">
+                            <th style="min-width: 70px;  max-width: 120px;">Subreferència</th>
+                            <th style="min-width: 70px;  max-width: 120px;">Lot</th>
+                            <th style="min-width: 70px;  max-width: 120px;">Lot intern</th>
+                            <th style="min-width: 70px;  max-width: 120px;">Unitats</th>
+                            <th style="min-width: 70px;  max-width: 120px;">Data arribada</th>
+                            <th style="min-width: 70px;  max-width: 120px;">Caducitat</th>
+                            <th style="min-width: 120px;  max-width: 160px;">Docs.</th>
+                            <th>Observacions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for lot in select_lot %}
+                            <tr id="{{lot.id}}">
+                                <td>{{lot.id_reactive}}</td>
+                                <td>{{lot.lot}}</td>
+                                <td>{{lot.internal_lot}}</td>
+                                <td>{{lot.units_lot}}</td>
+                                <td>{{lot.reception_date}}</td>
+                                <td>{{lot.date_expiry}}</td>
+                                <td>
+                                    <div style=" display: inline;">
+                                    {% if lot.delivery_note == '' %}
+                                        <button type="button" class="btn btn-outline-danger btn-sm" id='{{lot.id}}_delivery_note' onclick="open_upload_documents('delivery_note', `{{lot.group_insert}}`)"><i class="fa-solid fa-file-arrow-up"></i> Albarà</button>
+                                    {% else %}
+                                        <button type="button" class="btn btn-outline-success btn-sm" id='{{lot.id}}_delivery_note' onclick="download_doc('albarans', `{{lot.delivery_note}}`, `{{type_doc_delivery}}`)"><i class="fa-solid fa-file-arrow-down"></i> Albarà</button>
+                                    {% endif %}
+
+                                    {% if lot.certificate == '' %}
+                                        <button type="button" class="btn btn-outline-danger btn-sm" id='{{lot.id}}_certificate' onclick="open_upload_documents(`certificate`, `{{lot.group_insert}}`)"><i class="fa-solid fa-file-arrow-up"></i> Certificat</button>
+                                    {% else %}
+                                        <button type="button" class="btn btn-outline-success btn-sm" id='{{lot.id}}_certificate' onclick="download_doc('certificats', `{{lot.certificate}}`, `{{lot.type_doc_certificate}}`)"><i class="fa-solid fa-file-arrow-down"></i> Certificat</button>
+                                    {% endif %}
+                                    </div>
+                                </td>
+                                <td>{{lot.observations}}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <form action="/download_docs" id="down_doc" method="post">
+                    <input type="hidden" id="name_doc" name="name_doc" value="">
+                    <input type="hidden" id="dir_name" name="dir_name" value="">
+                </form>
+            </div>
+            <br>
+        </div>
+    </div>
+
+    <div class="modal fade"  id="upload_doc" tabindex="-1" role="dialog" aria-labelledby="editRegister" aria-hidden="true">
+        <div class="modal-dialog modal-lg" tabindex="-1" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="title"> Carregar document</h5>
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="close_modal('upload_doc')"><span aria-hidden="true">&times;</span></button>
+            </div>
+            <div class="modal-body">
+                <form action="/upload_docs" method="post">
+                    <div class="row">                                   
+                        <div class="col-lg-12 col-md-12 col-sm-12">
+                            <div class="input-group mb-3">
+                                <span class="input-group-text" id="basic-addon1"><b>Document :</b></span>
+                                <div class="flex-grow-1">
+                                    <input type="file" id="file" name="file" class="btn" style="border: 1px solid black; outline: none; width: 100%;">
+                                </div>
+                            </div>
+                        </div>
+                        <input type="hidden" id="dir_name_upload" name="dir_name_upload" value="">
+                        <input type="hidden" id="group_insert" name="group_insert" value="">
+                        <center><input type="button" value="Carregar" class="btn btn-success btn-sm" onclick="upload_documents()"/></center>
+                    </div>
+                </form>
+            </div>
+          </div>
+        </div>
+    </div>
+    <script>
+        $(document).ready(function() {
+            // Setup - add a text input to each footer cell
+            $('#example thead tr').clone(true).appendTo( '#example thead' );
+            $('#example thead tr:eq(1) th').each( function (i) {
+                var title = $(this).text();
+                if (title !== ''){
+                    if (title === 'Técnic') {
+                        $(this).html('');
+                    } else {
+                        $(this).html( '<input type="text" placeholder=""/>' );
+                
+                        $( 'input', this ).on( 'keyup change', function () {
+                            if ( table.column(i).search() !== this.value ) {
+                                table
+                                    .column(i)
+                                    .search( this.value )
+                                    .draw();
+                            }
+                        } );
+                    }
+                }
+            } );
+        
+            var table = $('#example').DataTable( {
+                orderCellsTop: true,
+                fixedHeader: true,
+                columnDefs: [
+                    {
+                        targets: 0, // Índice de la columna con las fechas
+                        type: 'numeric', // Usar orden numérico personalizado
+                        render: function(data, type, row) {
+                            // Transformar la fecha en formato DD/MM/YYYY a un número YYYYMMDD para ordenar
+                            if (type === 'sort') {
+                                var parts = data.split('/');
+                                return parseInt(parts[2] + parts[1] + parts[0]);
+                            }
+                            return data; // Mantener el formato original para mostrar
+                        },
+                    },
+                ],
+                order: [[0, 'desc']],
+            } );
+
+            // Adjust column widths to content
+            table.columns.adjust().draw();
+        } );
+    </script>
+    
+    <script src="/static/js/bootstrap.js"></script>
+</body>
+</html>

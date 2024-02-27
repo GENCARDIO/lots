@@ -12,11 +12,11 @@ from functools import wraps
 def requires_auth(f):
     @wraps(f)
     def decorated_function(*args):
-        if session['rol'] == 'None' or session['rol'] is None or session['rol'] == '':
-            url = f'{IP_HOME}logout/You dont have permissions'
-            return redirect(url)
-        else:
-            pass
+        # if session['rol'] == 'None' or session['rol'] is None or session['rol'] == '':
+        #     url = f'{IP_HOME}logout/You dont have permissions'
+        #     return redirect(url)
+        # else:
+        #     pass
         return f(*args)
     return decorated_function
 
