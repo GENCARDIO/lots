@@ -64,7 +64,7 @@
         var regex = /^\s*$/;
         var only_space = regex.test(code_search);
         if (only_space){alert("El camp no pot estar buït"); return}
-        if (code_search.length < 3){alert("No pots deixar el camp : " + alert_message + "."); return }
+        if (code_search.length < 3){alert("El codi no to tenir menys de 3 caràcters."); return }
                     
         form_data.append('code_search', code_search)
 
@@ -93,6 +93,18 @@
                         document.getElementById('reference_catalog').value = "";            
                         $('#add_new_lot').modal('show'); }
                     else {
+                        show_div_product('product_reception', 'qc_reception', 'btn_1', 'btn_2')
+                        document.getElementById('transport_conditions').value = ''
+                        document.getElementById('inspected_by').value = ''
+                        document.getElementById('packaging').value = ''
+                        document.getElementById('date_inspected').value = ''
+                        document.getElementById('observations_inspection').value = ''
+                        document.getElementById('state').value = 'Acceptat'
+                        document.getElementById('comand_number').value = ''
+                        document.getElementById('file_delivery_note').value = ''
+                        document.getElementById('file_certificate').value = ''
+                        document.getElementById('revised_by').value = ''
+                        document.getElementById('date_revised').value = ''
                         // Eliminar tots els div amb el name divs_subproduct
                         var elementosAEliminar = document.querySelectorAll('div[name="divs_subproducts"]');
                         elementosAEliminar.forEach(function(elemento) {
@@ -318,6 +330,15 @@
                         </select>
                     </div>
                 </div>
+                <div class="col-lg-6 col-md-6 col-sm-12" name="divs_new_lots">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Reactiu o fungible :</b></span>
+                            <select class="form-select" id="react_or_fungible${x}">
+                                <option>Reactiu</option>
+                                <option>Fungible</option>
+                            </select>
+                        </div>
+                    </div>
                 <div class="col-lg-12 col-md-12 col-sm-12" name="divs_new_lots">       
                     <div class="input-group mb-3">
                         <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Descripció Subref. :</b></span>
@@ -383,6 +404,7 @@
 
         if (num_lots === '0'){
             const temp_conservation = document.getElementById('temp_conservation0').value
+            const react_or_fungible = document.getElementById('react_or_fungible0').value
             if (code_sap !== '' && code_log !== '' && analytical_technique !== '' && description !== '' && reference_catalog !== '' && manufacturer !== '' ) {
                 var dict_lots = {
                     code_sap: code_sap,
@@ -392,6 +414,7 @@
                     manufacturer: manufacturer,
                     description: description,
                     temp_conservation: temp_conservation,
+                    react_or_fungible: react_or_fungible,
                     description_subreference: '' }; }
             else {  
                 alert("No es poden deixar els camps sense omplir.")
@@ -404,6 +427,7 @@
             const id_reactiu = document.getElementById(`id_reactiu${x}`).value
             const description_subreference = document.getElementById(`description_subreference${x}`).value
             const temp_conservation = document.getElementById(`temp_conservation${x}`).value
+            const react_or_fungible = document.getElementById(`react_or_fungible${x}`).value
             if (code_sap !== '' && code_log !== '' && id_reactiu !== '' && analytical_technique !== '' && description !== '' && reference_catalog !== '' && manufacturer !== '' ) {
                 var dict_lots = {
                     code_sap: code_sap,
@@ -413,6 +437,7 @@
                     manufacturer: manufacturer,
                     description: description,
                     temp_conservation: temp_conservation,
+                    react_or_fungible: react_or_fungible,
                     description_subreference: description_subreference}; }
             else {
                 alert("No es poden deixar els camps sense omplir.")
@@ -583,7 +608,7 @@
     }
 
 
-    function show_div_product(div1, div2, btn1, btn2){
+    function show_div_product(div1, div2, btn1, btn2, show){
         document.getElementById(div2).classList.add('d-none');
         document.getElementById(div1).classList.remove('d-none');
 
@@ -591,6 +616,10 @@
         document.getElementById(btn1).classList.add('btn-primary');
         document.getElementById(btn2).classList.remove('btn-primary');
         document.getElementById(btn2).classList.add('btn-secondary');
+
+        if (show == 'show'){
+            document.getElementById('add_div').style.display = 'block';
+        }
     }
 
 </script>
@@ -612,10 +641,10 @@
         <h1 class='mb-4' style="color: rgb(70, 70, 70); text-align: center;">Registre de rectius<hr></h1>
         <div class="d-flex justify-content-center">
             <div class="row">
-                <div class="col-lg-6 col-md-6 col-sm-12">
+                <div class="col-lg-4 col-md-6 col-sm-12">
                     <div class="row">
                         <div class="col-6" style="padding-top: 10px;">
-                            <div class="card" style="width: 22rem;height:100%">
+                            <div class="card" style="width: 19rem;height:100%">
                                 <div class="card-body">
                                     <h5 class="card-title"><b>1 - Recepcionar articles </b></h5>
                                     <p class="card-text">Aquí podreu afegir articles</p>
@@ -625,14 +654,27 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-lg-6 col-md-6 col-sm-12">
+                <div class="col-lg-4 col-md-6 col-sm-12">
                     <div class="row">
                         <div class="col-6" style="padding-top: 10px;">
-                            <div class="card" style="width: 22rem;height:100%">
+                            <div class="card" style="width: 19rem;height:100%">
                                 <div class="card-body">
                                     <h5 class="card-title"><b>2 - Cerca reactius</b></h5>
                                     <p class="card-text">Buscador de reactius.</p>
                                     <button type="button" data-toggle="modal" data-target="#search_lot" class="btn btn-outline-primary btn-sm">Accedir</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6 col-sm-12">
+                    <div class="row">
+                        <div class="col-6" style="padding-top: 10px;">
+                            <div class="card" style="width: 19rem;height:100%">
+                                <div class="card-body">
+                                    <h5 class="card-title"><b>3 - Obrir/tancar lot reactius</b></h5>
+                                    <p class="card-text">Obrir o tancar lots.</p>
+                                    <button type="button" data-toggle="modal" data-target="#open_close_lot" class="btn btn-outline-primary btn-sm">Accedir</button>
                                 </div>
                             </div>
                         </div>
@@ -654,7 +696,8 @@
                 <div class="row">
                     <div class="col-lg-12 col-md-12 col-sm-12">       
                         <div class="input-group mb-3">
-                            <span class="input-group-text" id="basic-addon1"><b>Ref. proveïdor, SAP o LOG:</b></span>
+                            <!-- <span class="input-group-text" id="basic-addon1"><b>Ref. proveïdor, SAP o LOG:</b></span> -->
+                            <span class="input-group-text" id="basic-addon1"><b>Ref. proveïdor o LOG:</b></span>
                             <input type="text" class="form-control" id='code_search' aria-label="TTN" aria-describedby="basic-addon1" value="lot1">
                         </div>
                     </div>
@@ -737,7 +780,15 @@
                             </select>
                         </div>
                     </div>
-
+                    <div class="col-lg-6 col-md-6 col-sm-12" name="divs_new_lots">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Reactiu o fungible :</b></span>
+                            <select class="form-select" id="react_or_fungible0">
+                                <option>Reactiu</option>
+                                <option>Fungible</option>
+                            </select>
+                        </div>
+                    </div>
                     <div id="div_info_new_lot"></div>
 
                     <div class="col-lg-12 col-md-12 col-sm-12">       
@@ -764,8 +815,8 @@
             <div class="modal-header">
                 <div class="d-flex justify-content-center w-100">
                     <!-- <div class="text-center"> -->
-                    <button type="button" class="btn btn-primary" id="btn_1" onclick="show_div_product('product_reception', 'qc_reception', 'btn_1', 'btn_2')" style="margin-right: 10px;">Recepció producte</button>
-                    <button type="button" class="btn btn-secondary" id="btn_2" onclick="show_div_product('qc_reception', 'product_reception', 'btn_2', 'btn_1')">QC recepció</button>
+                    <button type="button" class="btn btn-primary" id="btn_1" onclick="show_div_product('product_reception', 'qc_reception', 'btn_1', 'btn_2', '--')" style="margin-right: 10px;">Recepció producte</button>
+                    <button type="button" class="btn btn-secondary" id="btn_2" onclick="show_div_product('qc_reception', 'product_reception', 'btn_2', 'btn_1', 'show')">QC recepció</button>
                 </div>
             </div>
             <!-- <div class="modal-header">
@@ -782,7 +833,7 @@
                             <!-- <input type="number" class="form-control" id='unit_lots' aria-label="TTN" aria-describedby="basic-addon1"> -->
                             <select class="form-select" id="unit_lots" onchange="add_more_lines_in_modal(this.value)">
                                 <option selected>1</option>
-                                {% for i in range(2, 21) %}
+                                {% for i in range(2, 5) %}
                                     <option>{{ i }}</option>
                                 {% endfor %}
                             </select>
@@ -804,11 +855,8 @@
 
                     <div id="div_info_lot"></div>
 
-                    <div class="col-lg-12 col-md-12 col-sm-12">       
-                        <div class="input-group mb-3">
-                            <button type="button" class="btn btn-primary btn-sm" onclick="add_stock_lot()">Afegir</button>
-                        </div>
-                    </div>
+
+                    <center><button type="button" class="btn btn-primary btn-sm" onclick="add_stock_lot()" id="add_div" style="display: none;">Afegir</button></center>
                 </div>
                 <div class="row d-none" id="qc_reception">
                     <div class="col-lg-6 col-md-12 col-sm-12">       
@@ -892,11 +940,7 @@
                         </div>
                     </div>
 
-                    <div class="col-lg-12 col-md-12 col-sm-12">       
-                        <div class="input-group mb-3">
-                            <button type="button" class="btn btn-primary btn-sm" onclick="add_stock_lot()">Afegir</button>
-                        </div>
-                    </div>
+                    <center><button type="button" class="btn btn-primary btn-sm" onclick="add_stock_lot()">Afegir</button></center>
                 </div>
             </div>
           </div>
@@ -1102,7 +1146,8 @@
                     <div class="row">                                   
                         <div class="col-lg-12 col-md-12 col-sm-12">       
                             <div class="input-group mb-3">
-                                <span class="input-group-text" id="basic-addon1"><b>Codi Cataleg, SAP o LOG :</b></span>
+                                <!-- <span class="input-group-text" id="basic-addon1"><b>Codi Cataleg, SAP o LOG :</b></span> -->
+                                <span class="input-group-text" id="basic-addon1"><b>Codi Cataleg o LOG :</b></span>
                                 <input type="text" class="form-control" id='search_code' name="search_code" aria-label="TTN" aria-describedby="basic-addon1" required>
                             </div>
                         </div> 

@@ -11,69 +11,42 @@
         }
 
 
-        function download_doc(dir_name, name_doc, type_doc){
-            document.getElementById("name_doc").value = name_doc + type_doc;
-            document.getElementById("dir_name").value = dir_name;
-            document.getElementById("down_doc").submit();
-        }
-
-
-        function open_upload_documents(dir_name, group_insert){
-            document.getElementById("dir_name_upload").value = dir_name;
-            document.getElementById("group_insert").value = group_insert;
-            $('#upload_doc').modal('show');
-        }
-
-
-        function upload_documents(){
+        function show_modal_open_close_lot(id_lot, action){
             // Crear form data
             var form_data = new FormData();
 
-            // Carregar dades al form de l'html
-            const dir_name = document.getElementById('dir_name_upload').value
-            const group_insert = document.getElementById('group_insert').value
-            
-            const file_input = document.getElementById('file')
-            const file = file_input.files[0];
-
-            form_data.append('dir_name', dir_name)
-            form_data.append('group_insert', group_insert)
-            form_data.append('file', file)
-
-            $('#upload_doc').modal('hide');
+            form_data.append('id_lot', id_lot)
+            form_data.append('action', action)
 
             // Creeem l'objecte per l'ajax
             var xhr = new XMLHttpRequest();
             // 1er argument si es pots o get
             // 2n argument url o ruta
             // 3r argumemt true sempre
-            
-            xhr.open('POST', '/upload_docs', true);
+            xhr.open('POST', '/open_close_lots', true);
             xhr.onload = function(){
                 if (xhr.status === 200) {
                     var response = xhr.responseText;
+                    split_response = response.split('_')
+                    message = split_response[1]
                     if (response.includes('False')){
-                        alert_type = 'danger'
-                        if (response === 'False_duplicate'){
-                            message = `Error, un o més lots ja estan entrats a la bd, no s'ha inserit cap camp, revisa els duplicats i tornar a inserir-lo.`}
-                        else{
-                            message = `Error, no s'ha pogut inserir el lot a la bd.`}}
+                        alert_type = 'danger'}
                     else if (response.includes('True')){
-                        var split_response = response.split('///')
-                        var id_lots = split_response[1].split(';')
-
-                        message = "El document s'ha carregat correctament."
                         alert_type = 'success'
-                        // Obtener la referencia al elemento tr por su ID
-                        for (var i = 0; i < id_lots.length; i++) {
-                            var buttonElement = document.getElementById(`${id_lots[i]}_${dir_name}`);
-                            buttonElement.classList.remove("btn-outline-danger");
-                            buttonElement.classList.add("btn-outline-success");
-
-                            if (dir_name == 'delivery_note'){
-                                buttonElement.setAttribute("onclick", "download_doc('albarans', `" + split_response[2] + "`, `" + split_response[3] + "`)");
-                            } else {
-                                buttonElement.setAttribute("onclick", "download_doc('certificats', `" + split_response[2] + "`, `" + split_response[3] + "`)");
+                        if (action == 'close'){
+                            var trElement = document.getElementById(id_lot);
+                            var tdValue = trElement.cells[4].textContent;
+                            var newValue = parseInt(tdValue, 10) - 1;
+                            trElement.cells[4].textContent = newValue.toString();
+                            if (split_response[1].includes("Aquesta referència s'ha esgotat,")){
+                                lis_ids_lots = split_response[2].split(';')
+                                lis_ids_lots.forEach(function(id){
+                                    var tr_table = document.getElementById(id);
+                                    if (tr_table) {
+                                        // Elimina el elemento tr del DOM si existe
+                                        tr_table.parentNode.removeChild(tr_table);
+                                    }
+                                });
                             }
                         }
                     } else {
@@ -86,6 +59,9 @@
                     alert_type = 'danger' }
 
                 var flashContainer = document.querySelector(".d-flex.justify-content-center .row");
+                // Eliminar la alerta anterior, si existe
+                if (flashContainer.children.length > 0) {
+                    flashContainer.removeChild(flashContainer.children[0]); }
                 var newFlash = document.createElement("div");
                 newFlash.className = "alert alert-" + alert_type + " alert-dismissible fade show ml-3";
                 newFlash.role = "alert";
@@ -100,6 +76,76 @@
             xhr.send(form_data)
         }
 
+
+        function show_history_lot(id_lot){
+            // Crear form data
+            var form_data = new FormData();
+
+            form_data.append('id_lot', id_lot)
+
+            // Creeem l'objecte per l'ajax
+            var xhr = new XMLHttpRequest();
+            // 1er argument si es pots o get
+            // 2n argument url o ruta
+            // 3r argumemt true sempre
+            xhr.open('POST', '/history_lot', true);
+            xhr.onload = function(){
+                show_message = true
+                if (xhr.status === 200) {
+                    var response = xhr.responseText;
+                    split_response = response.split('_//_')
+                    message = split_response[1]
+                    if (response.includes('False')){
+                        alert_type = 'danger'}
+                    else if (response.includes('True')){
+                        show_message = false
+                        $('#history_lot').modal('show');
+
+                        var list_history_lots = JSON.parse(split_response[1]);
+
+                        var table = $('#table_history_lots').DataTable();
+                        table.clear().draw();
+
+                        for (var i = 0; i < list_history_lots.length; i++) {
+                            var newRowData = [];
+                            // Crea un nuevo elemento td para cada valor en la lista
+                            for (var key in list_history_lots[i]) {
+                                if (list_history_lots[i].hasOwnProperty(key)) {
+                                    if (key !== 'id' && key !== 'id_lot') {
+                                        newRowData.push(list_history_lots[i][key])
+                                    }
+                                }
+                            }
+                            var newRow = table.row.add(newRowData).draw(false).node();
+                        }
+                    } else {
+                        message = `Error inesperat. Si persisteix l'error contacta amb un administrador`
+                        alert_type = 'danger'
+                    }
+                }
+                else {
+                    message = `Error, No s'ha pogut realitzar l'operació. Si persisteix l'error contacta amb un administrador`
+                    alert_type = 'danger' }
+                
+                if (show_message){
+                    var flashContainer = document.querySelector(".d-flex.justify-content-center .row");
+                    // Eliminar la alerta anterior, si existe
+                    if (flashContainer.children.length > 0) {
+                        flashContainer.removeChild(flashContainer.children[0]); }
+                    var newFlash = document.createElement("div");
+                    newFlash.className = "alert alert-" + alert_type + " alert-dismissible fade show ml-3";
+                    newFlash.role = "alert";
+                    newFlash.innerHTML = "<span>" + message + "</span>" + 
+                                        '<button type="button" class="close" data-dismiss="alert" aria-label="Close">' +
+                                        '<span aria-hidden="true">&times;</span>' +
+                                        '</button>';
+                    flashContainer.appendChild(newFlash);
+                    flashContainer.style.paddingTop = "20px";
+                }
+            }
+
+            xhr.send(form_data)
+        }
     </script>
     <style>
         #example thead input[type="text"] {
@@ -110,7 +156,7 @@
 <body>
     {% include 'NavBar/navBar.html' %}
     {% include 'ErrorFlash/errorFlash.html' %} 
-    <div class="jumbotron bg-grey text-black jomboton-imgae shadow d-flex justify-content-between align-items-center" style="width: 90%; height: 90px; margin: 0 auto; padding-top: 0px; padding-bottom: 0px;">
+    <!-- <div class="jumbotron bg-grey text-black jomboton-imgae shadow d-flex justify-content-between align-items-center" style="width: 90%; height: 90px; margin: 0 auto; padding-top: 0px; padding-bottom: 0px;">
         <div class="modal-body">
             <div class="row">
                 <div class="col-lg-2 col-md-6 col-sm-6" style="padding-top: 15px;">       
@@ -139,7 +185,7 @@
                 </div>  
             </div>
         </div>
-    </div>
+    </div> -->
     
     <div class="d-flex justify-content-center pt-3 mt-3 rounded">
         <div class="container-fluid rounded table-responsive" style="width: 90%; text-align: center;">
@@ -147,19 +193,20 @@
                 <table id="example" class="display">
                     <thead>
                         <tr id="thcolor">
+                            <th style="min-width: 70px;  max-width: 120px;">Ref. Proveïdor</th>
                             <th style="min-width: 70px;  max-width: 120px;">Subreferència</th>
                             <th style="min-width: 70px;  max-width: 120px;">Lot</th>
                             <th style="min-width: 70px;  max-width: 120px;">Lot intern</th>
                             <th style="min-width: 70px;  max-width: 120px;">Unitats</th>
                             <th style="min-width: 70px;  max-width: 120px;">Data arribada</th>
                             <th style="min-width: 70px;  max-width: 120px;">Caducitat</th>
-                            <th style="min-width: 120px;  max-width: 160px;">Docs.</th>
-                            <th>Observacions</th>
+                            <th style="min-width: 120px;  max-width: 180px;">Accions</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for lot in select_lot %}
                             <tr id="{{lot.id}}">
+                                <td>{{lot.catalog_reference}}</td>
                                 <td>{{lot.id_reactive}}</td>
                                 <td>{{lot.lot}}</td>
                                 <td>{{lot.internal_lot}}</td>
@@ -168,56 +215,44 @@
                                 <td>{{lot.date_expiry}}</td>
                                 <td>
                                     <div style=" display: inline;">
-                                    {% if lot.delivery_note == '' %}
-                                        <button type="button" class="btn btn-outline-danger btn-sm" id='{{lot.id}}_delivery_note' onclick="open_upload_documents('delivery_note', `{{lot.group_insert}}`)"><i class="fa-solid fa-file-arrow-up"></i> Albarà</button>
-                                    {% else %}
-                                        <button type="button" class="btn btn-outline-success btn-sm" id='{{lot.id}}_delivery_note' onclick="download_doc('albarans', `{{lot.delivery_note}}`, `{{type_doc_delivery}}`)"><i class="fa-solid fa-file-arrow-down"></i> Albarà</button>
-                                    {% endif %}
-
-                                    {% if lot.certificate == '' %}
-                                        <button type="button" class="btn btn-outline-danger btn-sm" id='{{lot.id}}_certificate' onclick="open_upload_documents(`certificate`, `{{lot.group_insert}}`)"><i class="fa-solid fa-file-arrow-up"></i> Certificat</button>
-                                    {% else %}
-                                        <button type="button" class="btn btn-outline-success btn-sm" id='{{lot.id}}_certificate' onclick="download_doc('certificats', `{{lot.certificate}}`, `{{lot.type_doc_certificate}}`)"><i class="fa-solid fa-file-arrow-down"></i> Certificat</button>
-                                    {% endif %}
+                                        <button type="button" class="btn btn-outline-success btn-sm" onclick="show_modal_open_close_lot(`{{lot.id}}`, 'open')"><i class="fa-solid fa-file-arrow-up"></i> Obrir</button>
+                                        <button type="button" class="btn btn-outline-danger btn-sm" onclick="show_modal_open_close_lot(`{{lot.id}}`, 'close')"><i class="fa-solid fa-file-arrow-down"></i> Tancar</button>
+                                        <button type="button" class="btn btn-outline-primary btn-sm" onclick="show_history_lot(`{{lot.id}}`)"><i class="fa-solid fa-file-arrow-down"></i> Registres</button>
                                     </div>
                                 </td>
-                                <td>{{lot.observations}}</td>
                             </tr>
                         {% endfor %}
                     </tbody>
                 </table>
-                <form action="/download_docs" id="down_doc" method="post">
-                    <input type="hidden" id="name_doc" name="name_doc" value="">
-                    <input type="hidden" id="dir_name" name="dir_name" value="">
-                </form>
             </div>
             <br>
         </div>
     </div>
 
-    <div class="modal fade"  id="upload_doc" tabindex="-1" role="dialog" aria-labelledby="editRegister" aria-hidden="true">
+    <div class="modal fade"  id="history_lot" tabindex="-1" role="dialog" aria-labelledby="editRegister" aria-hidden="true">
         <div class="modal-dialog modal-lg" tabindex="-1" role="document">
           <div class="modal-content">
             <div class="modal-header">
-              <h5 class="modal-title" id="title"> Carregar document</h5>
-              <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="close_modal('upload_doc')"><span aria-hidden="true">&times;</span></button>
+              <h5 class="modal-title" id="title"> Historial</h5>
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="close_modal('history_lot')"><span aria-hidden="true">&times;</span></button>
             </div>
             <div class="modal-body">
-                <form action="/upload_docs" method="post">
-                    <div class="row">                                   
-                        <div class="col-lg-12 col-md-12 col-sm-12">
-                            <div class="input-group mb-3">
-                                <span class="input-group-text" id="basic-addon1"><b>Document :</b></span>
-                                <div class="flex-grow-1">
-                                    <input type="file" id="file" name="file" class="btn" style="border: 1px solid black; outline: none; width: 100%;">
-                                </div>
-                            </div>
-                        </div>
-                        <input type="hidden" id="dir_name_upload" name="dir_name_upload" value="">
-                        <input type="hidden" id="group_insert" name="group_insert" value="">
-                        <center><input type="button" value="Carregar" class="btn btn-success btn-sm" onclick="upload_documents()"/></center>
+                <div class="row">                                   
+                    <div class="col-lg-12 col-md-12 col-sm-12">
+                        <table id="table_history_lots" class="table table-sm table-striped table-bordered display nowrap mt-1" style="width:100%;background-color:white;">
+                            <thead>
+                                <tr>
+                                    <th>data opertura</th>
+                                    <th>user</th>
+                                    <th>data tancament</th>
+                                    <th>user</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table>
                     </div>
-                </form>
+                </div>
             </div>
           </div>
         </div>
@@ -268,6 +303,15 @@
 
             // Adjust column widths to content
             table.columns.adjust().draw();
+        } );
+
+        $(document).ready(function() {
+            var table = $('#table_history_lots').DataTable( {
+                order: [ 0, 'desc' ],
+                columnDefs: [
+                    { width: '25%', targets: [0, 1, 2, 3] } // Establece el ancho de todas las columnas al 25%
+                ]
+            } );
         } );
     </script>
     

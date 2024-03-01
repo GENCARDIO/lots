@@ -1,9 +1,8 @@
 from flask import render_template, request, flash, redirect, send_file, session
 from app import app
-from app.utils import get_data, create_excel, check_finish_sample, insert_register, read_excel, convert_xls_with_xlsx, \
-                      check_excel, add_date, search_hgvsg, check_duplidates, instant_date, requires_auth
-from app.models import IP_HOME, session1, Lots, Logs, Stock_lots
-from sqlalchemy import or_, func, and_
+from app.utils import instant_date, requires_auth, save_log
+from app.models import IP_HOME, session1, Lots, Stock_lots, Lot_consumptions
+from sqlalchemy import func
 from werkzeug.utils import secure_filename
 import os
 import jwt
@@ -16,13 +15,16 @@ from config import main_dir_docs
 @requires_auth
 def main():
     '''
-        Redirigeix al home
+        Redirigeix al home de lots
     '''
     return render_template('home.html')
 
 
 @app.route('/logout')
 def logout():
+    '''
+        Redirigeix a l'applicació home/logout
+    '''
     url = IP_HOME + 'logout'
 
     return redirect(url)
@@ -31,6 +33,10 @@ def logout():
 @app.route('/apps')
 @requires_auth
 def apps():
+    '''
+        Guardem les cookies en un tocken i les enviem a home/apps, perque puguin obrir cualsevol applicació a la que
+        tinguin acceès.
+    '''
     tocken_cookies = {'user_tok': session['user'], 'rols_tok': session['rols'], 'email_tok': session['email'],
                       'id_client_tok': session['idClient'], 'rol_tok': 'None', 'acronim_tok': session['acronim']}
     secret_key = '12345'
@@ -42,6 +48,9 @@ def apps():
 
 @app.route('/receive_token')
 def receive_token():
+    '''
+        Rebem el tocken i assignem a la nostre sessions els valors.
+    '''
     received_token = request.args.get('token')
     secret_key = '12345'  # Debe ser la misma clave utilizada para generar el token
 
@@ -69,32 +78,41 @@ def receive_token():
 def search_add_lot():
     '''
         Busquem a la BD si el lot ja existeix.
+        Si existeix agafem tota la informació la posem en una llista de diccionaris i la enviem per ajax.
+        Si no existesix enviem una resposta per ajex avisan de que no tenim el lot registrat.
+
+        :param str code_search: codi que hem de buscar a la BD
+
+        :return: json amb un True o un False i la informació requerida.
+        :rtype: json
     '''
     code_search = request.form.get("code_search")
 
     select_lot = session1.query(Lots).filter(Lots.catalog_reference == code_search).filter(Lots.active == 1).all()
     if not select_lot:
         select_lot = session1.query(Lots).filter(Lots.code_LOG == code_search).filter(Lots.active == 1).all()
-        if not select_lot:
-            select_lot = session1.query(Lots).filter(Lots.code_SAP == code_search).filter(Lots.active == 1).all()
+        # if not select_lot:
+        #     select_lot = session1.query(Lots).filter(Lots.code_SAP == code_search).filter(Lots.active == 1).all()
 
     try:
         if not select_lot:
             return 'True_//_new'
         else:
             list_lots = []
-            for log in select_lot:
-                dict_lots = {'key': log.key,
-                             'catalog_reference': log.catalog_reference,
-                             'manufacturer': log.manufacturer,
-                             'description': log.description,
-                             'description_subreference': log.description_subreference,
-                             'analytical_technique': log.analytical_technique,
-                             'reference_units': log.reference_units,
-                             'id_reactive': log.id_reactive,
-                             'code_SAP': log.code_SAP,
-                             'code_LOG': log.code_LOG,
-                             'active': log.active}
+            for lot in select_lot:
+                dict_lots = {'key': lot.key,
+                             'catalog_reference': lot.catalog_reference,
+                             'manufacturer': lot.manufacturer,
+                             'description': lot.description,
+                             'description_subreference': lot.description_subreference,
+                             'analytical_technique': lot.analytical_technique,
+                             'reference_units': lot.reference_units,
+                             'id_reactive': lot.id_reactive,
+                             'code_SAP': lot.code_SAP,
+                             'code_LOG': lot.code_LOG,
+                             'active': lot.active,
+                             'temp_conservation': lot.temp_conservation,
+                             'react_or_fungible': lot.react_or_fungible}
                 list_lots.append(dict_lots)
             json_data = json.dumps(list_lots)
             return f'True_//_{json_data}'
@@ -106,12 +124,22 @@ def search_add_lot():
 @requires_auth
 def register_new_lot():
     '''
-        Recullim la informació, mirem que la no estigui duplicada i si no ho esta afegim la informació a la BD.
+        Recullim la informació, i com que es un registre nou inserim la informació a la BD.
+        Guardarem un log de l'inserció.
+
+        :param str reference_catalog: Referencia del proveÑidor del producte seleccionat
+        :param str list_lots: llista amb la informació dels lots que hem de modificar
+
+        :function: save_log(dict)
+
+        :return: json amb un True o un False i si es False una paraula amb el motiu.
+        :rtype: json
     '''
     reference_catalog = request.form.get("reference_catalog")
     list_lots_json = request.form.get("list_lots")
 
     list_lots = json.loads(list_lots_json)
+    date = instant_date()
 
     for lots in list_lots:
         try:
@@ -125,8 +153,20 @@ def register_new_lot():
                               code_LOG=lots['code_log'],
                               active=1,
                               temp_conservation=lots['temp_conservation'],
+                              react_or_fungible=lots['react_or_fungible'],
                               description_subreference=lots['description_subreference'])
             session1.add(insert_lot)
+
+            json_lots = json.dumps(lots)
+
+            select_lot = session1.query(Lots).order_by(Lots.key.desc()).first()
+            info_lot = {'id_lot': select_lot.key,
+                        'type': 'insert new lot',
+                        'info': json_lots,
+                        'user': session['acronim'],
+                        'id_user': session['idClient'],
+                        'date': date}
+            save_log(info_lot)
         except Exception:
             session1.rollback()
             return 'False_error'
@@ -138,9 +178,24 @@ def register_new_lot():
 @requires_auth
 def add_stock_lot():
     '''
-        Recullim la informació, mirem que la no estigui duplicada i si no ho esta afegim la informació a la BD.
+        1 - Recollim la informació de l'ajax.
+        2 - Assignem el següent número de grup a la inserció.
+        3 - Guardem els 2 documents que ens han pujat, no és obligatori que carreguin fitxers.
+        4 - Transformem la informació de l'ajax en una llista de diccionaris.
+        5 - Iterem sobre la llista i primer buscarem si el lot ja estava introduït.
+        5.1 - Si o esta sumarem les unitats actuals més les que entren i actualitzaré el lot
+        5.2 - Si no afegirem a l'estoc el lot.
+        6 - Guardarem un log de l'operació.
+
+        :param str list_lots_json: json amb la informació del lots que hem d'inserir.
+        :param str file_delivery_note: Document que ens ha facilitat l'usuari.
+        :param str file_certificate: Document que ens ha facilitat l'usuari.
+
+        :return: json amb un True o un False i si es falte una paraula amb el motiu.
+        :rtype: json
     '''
     list_lots_json = request.form.get("list_lots")
+    date = instant_date()
 
     max_number_group_insert = session1.query(func.max(Stock_lots.group_insert)).scalar()
     if max_number_group_insert is not None:
@@ -185,45 +240,59 @@ def add_stock_lot():
     list_lots = json.loads(list_lots_json)
 
     for lots in list_lots:
-        # try:
-        select_lot = session1.query(Stock_lots).filter_by(code_SAP=lots['code_SAP'], code_LOG=lots['code_LOG'], lot=lots['lot'], date_expiry=lots['date_expiry'], spent=0).first()
-        if select_lot:
-            select_lot.units_lot = int(select_lot.units_lot) + int(lots['units_lot'])
-        else:
-            insert_lot = Stock_lots(id_lot=lots['key'],
-                                    catalog_reference=lots['catalog_reference'],
-                                    manufacturer=lots['manufacturer'],
-                                    description=lots['description'],
-                                    description_subreference=lots['description_subreference'],
-                                    analytical_technique=lots['analytical_technique'],
-                                    id_reactive=lots['id_reactive'],
-                                    code_SAP=lots['code_SAP'],
-                                    code_LOG=lots['code_LOG'],
-                                    date_expiry=lots['date_expiry'],
-                                    lot=lots['lot'],
-                                    spent=0,
-                                    reception_date=lots['reception_date'],
-                                    units_lot=lots['units_lot'],
-                                    internal_lot=lots['internal_lot'],
-                                    transport_conditions=lots['transport_conditions'],
-                                    packaging=lots['packaging'],
-                                    inspected_by=lots['inspected_by'],
-                                    date_inspected=lots['date_inspected'],
-                                    observations_inspection=lots['observations_inspection'],
-                                    state=lots['state'],
-                                    comand_number=lots['comand_number'],
-                                    revised_by=lots['revised_by'],
-                                    date_revised=lots['date_revised'],
-                                    delivery_note=filename_delivery,
-                                    certificate=filename_certificate,
-                                    type_doc_certificate=type_doc_certificate,
-                                    type_doc_delivery=type_doc_delivery,
-                                    group_insert=group_insert_number)
-            session1.add(insert_lot)
-        # except Exception:
-        #     print("ha petat")
-        #     session1.rollback()
-        #     return 'False_error'
+        try:
+            json_lots = json.dumps(lots)
+            select_lot = session1.query(Stock_lots).filter_by(code_SAP=lots['code_SAP'], code_LOG=lots['code_LOG'], lot=lots['lot'], date_expiry=lots['date_expiry'], internal_lot=lots['internal_lot'], spent=0).first()
+            if select_lot:
+                select_lot.units_lot = int(select_lot.units_lot) + int(lots['units_lot'])
+                type_log = 'insert add stock'
+            else:
+                type_log = 'insert new stock'
+                insert_lot = Stock_lots(id_lot=lots['key'],
+                                        catalog_reference=lots['catalog_reference'],
+                                        manufacturer=lots['manufacturer'],
+                                        description=lots['description'],
+                                        description_subreference=lots['description_subreference'],
+                                        analytical_technique=lots['analytical_technique'],
+                                        id_reactive=lots['id_reactive'],
+                                        code_SAP=lots['code_SAP'],
+                                        code_LOG=lots['code_LOG'],
+                                        date_expiry=lots['date_expiry'],
+                                        lot=lots['lot'],
+                                        spent=0,
+                                        reception_date=lots['reception_date'],
+                                        units_lot=lots['units_lot'],
+                                        internal_lot=lots['internal_lot'],
+                                        transport_conditions=lots['transport_conditions'],
+                                        packaging=lots['packaging'],
+                                        inspected_by=lots['inspected_by'],
+                                        date_inspected=lots['date_inspected'],
+                                        observations_inspection=lots['observations_inspection'],
+                                        state=lots['state'],
+                                        comand_number=lots['comand_number'],
+                                        revised_by=lots['revised_by'],
+                                        date_revised=lots['date_revised'],
+                                        delivery_note=filename_delivery,
+                                        certificate=filename_certificate,
+                                        type_doc_certificate=type_doc_certificate,
+                                        type_doc_delivery=type_doc_delivery,
+                                        group_insert=group_insert_number,
+                                        temp_conservation=lots['temp_conservation'],
+                                        react_or_fungible=lots['react_or_fungible'])
+
+                session1.add(insert_lot)
+
+            select_lot = session1.query(Lots).order_by(Lots.key.desc()).first()
+            info_lot = {'id_lot': select_lot.key,
+                        'type': type_log,
+                        'info': json_lots,
+                        'user': session['acronim'],
+                        'id_user': session['idClient'],
+                        'date': date}
+            save_log(info_lot)
+        except Exception:
+            session1.rollback()
+            return 'False_error'
     session1.commit()
     return 'True'
 
@@ -232,8 +301,15 @@ def add_stock_lot():
 @requires_auth
 def search_lots():
     '''
-        Creem la llista que passarem al html.
-        Redirigim a estadistiques.html
+        1 - Recollim la informació de l'html
+        2 - Busquem a la BD amb la informació que ens han facilitat
+        2.1 - Si no es troba coincidència retornem un missatge d'error a l'html
+        2.2 - Si es troba coincidència retornarem el que hem trobat a l'html.
+
+        :param str search_code: Codi a buscar.
+
+        :return: La informació dels lots trobada i un int que és l'id de lot.
+        :rtype: render_template, object, int
     '''
     search_code = request.form['search_code']
     select_lot = session1.query(Stock_lots).filter_by(catalog_reference=search_code, spent=0).all()
@@ -252,22 +328,40 @@ def search_lots():
 @requires_auth
 def download_docs():
     """
-        Creem la llista que passarem al html.
-        Redirigim a estadistiques.html
+        1 - Recollim la informació
+        2 - Preparem la ruta on estan els documents
+        3 - Descarreguem el document i li formatem el nom.
+
+        :param str dir_name: Nom de la carpeta on hi ha el document.
+        :param str name_doc: Nom del document.
+
+        :return: Retorna l'arxiu que ha estat carregat previament
+        :rtype: archive
     """
     dir_name = request.form["dir_name"]
     name_doc = request.form["name_doc"]
 
     path = f"{main_dir_docs}/{dir_name}/{name_doc}"
     return send_file(path, as_attachment=True, download_name=f"{dir_name}_{name_doc}")
-    # return send_file(path, as_attachment=True)
 
 
 @app.route('/upload_docs', methods=['POST'])
 @requires_auth
 def upload_docs():
     '''
-        Recullim la informació, mirem que la no estigui duplicada i si no ho esta afegim la informació a la BD.
+        1 - Recollim la informació de l'ajax
+        2 - Busquem si aquest lot va ser introduït amb algun lot addicional
+        3 - Mirem quin nom li toca al document
+        4 - Guardem el document a la carpeta que toca.
+        5 - Actualitzem a stock_lots els camps que facin falta.
+        6 - Retornem la resposta a l'ajax de si el procés ha anat bé o no.
+
+        :param str dir_name: Nom de la carpeta on hi ha el document.
+        :param str group_insert: Referència que ens diu quins stock_lots s'han inserit junts.
+        :param str file: Document que ens carrega l'usuari.
+
+        :return: Retorna True o False, si és True també enviem diverses dades que es necessiten.
+        :rtype: json
     '''
     dir_name = request.form.get("dir_name")
     group_insert = request.form.get("group_insert")
@@ -317,71 +411,160 @@ def upload_docs():
     return f'True///{id_lots}///{new_filename}///{type_doc}'
 
 
-# @app.route('/change_status', methods=['POST'])
-# @requires_auth
-# def change_status():
-#     '''
-#         Caviem l'estat del lot a la BD
-#     '''
-#     id_lot = request.form.get("id_lot")
-#     accion = request.form.get("accion")
-#     send_text = 'False'
+@app.route('/search_lots_open_close', methods=['POST'])
+@requires_auth
+def search_lots_open_close():
+    '''
+        1 - Recuperem la informació de l'html
+        2 - Busquem a Stock_lots la informació requerida
+        2.1 - Si no la trobem, retornem un missatge comunicant que no hi ha dades
+        2.2 - Si en trobem, Retornem la informació de la Bd i id_lot
 
-#     select_lot = session1.query(Lots).filter(Lots.id == id_lot).first()
-#     if select_lot is None:
-#         return 'False'
+        :param str reference: Referència per buscar a stock_lots
 
-#     date = instant_date()
+        :return: Retorem una llista d'objectes amb la informació que hem trobat a la BD i el id_lot
+        :rtype: object, int
+    '''
+    reference = request.form['reference']
+    select_lot = session1.query(Stock_lots).filter_by(catalog_reference=reference, react_or_fungible='Reactiu', spent=0).all()
+    if not select_lot:
+        select_lot = session1.query(Stock_lots).filter_by(id_reactive=reference, react_or_fungible='Reactiu', spent=0).all()
+        if not select_lot:
+            flash(f"No s'ha trobat cap coincidencia amb el codi entrat --> {reference}", "warning")
+            return render_template('home.html')
 
-#     if accion == 'close':
-#         select_lot.data_close = date
-#         select_lot.tecnic_close = session['acronim']
-#         select_lot.status = 'F'
-#         send_text = f"{date} - {session['acronim']}-"
-#     elif accion == 'open':
-#         select_lot.data_open = date
-#         select_lot.tecnic_open = session['acronim']
-#         select_lot.status = 'O'
-#         send_text = f"{date} - {session['acronim']}-"
-#     else:
-#         return 'False'
-
-#     session1.commit()
-#     return f'True_{send_text}'
+    return render_template('open_close_lots.html', select_lot=select_lot, lot=select_lot[0])
 
 
-# @app.route('/info_edit_lot', methods=['POST'])
-# @requires_auth
-# def info_edit_lot():
-#     '''
-#         Caviem l'estat del lot a la BD
-#     '''
-#     id_lot = request.form.get("id_lot")
+@app.route('/open_close_lots', methods=['POST'])
+@requires_auth
+def open_close_lots():
+    '''
+        1 - Recollim les dades de l'ajax
+        2 - Busquem la informació a la BD amb l'id que ens donen.
+        2.1 - Si no el trobem retornarem un False amb l'explicació de l'error.
+        3 - Busquem a Lot_consumption quan lots tenim oberts amb l'id que ens han donat, també guardarem la posició del\
+            primer lot que no tingui data_tancament, aquest serà el lot que tancarem.
+        4 - Obtenim la data actual
+        5 - Si l'acció és obrir un lot
+        5.1 - Comprovem que hi hagin lots per obrir
+        5.2 - Si no hi ha lots retornem un False amb l'explicació de l'error.
+        5.3 - Si hi ha lots per obrir, inserirem una obertura de lot a Lot_consumptins amb les dades necessàries.
+        5.4 - Retornarem un True amb un missatge d'informació per l'usuari.
+        6 - Si l'acció és tancar un lot
+        6.1 - Comprovem que hi hagin lots per tancar
+        6.2 - Si no hi ha lots per tancar retornem un False amb l'explicació de l'error
+        6.3 - Actualitzem les dades de Lot_consumption
+        6.4 - Si al actualitzar les dades les unitats arriben a 0, tots els lots que comparteixen grup s'han de tancar\
+            i bloquejar, ja que quan un arriba a 0 els altres ja no es poden fer servir.
+        7 - Retornem un missatge amb True o False, dependent de si tot a sortit bé o no i també afegirem una explicació\
+            per l'usuari
 
-#     select_lot = session1.query(Lots).filter(Lots.id == id_lot).first()
-#     if select_lot is None:
-#         return 'False/-/False'
+        :param str id_lot: Identificador unit del lot
+        :param str action: Tipu d'acció que es realitza
 
-#     dict_lot = {}
-#     dict_lot['id'] = select_lot.id
-#     dict_lot['type_lot'] = select_lot.type_lot
-#     dict_lot['lot_name'] = select_lot.lot_name
-#     dict_lot['reference'] = select_lot.reference
-#     dict_lot['trademark'] = select_lot.trademark
-#     dict_lot['preserved_in'] = select_lot.preserved_in
-#     dict_lot['stock_minimum'] = select_lot.stock_minimum
-#     dict_lot['date_arrived'] = select_lot.date_arrived
-#     dict_lot['supplier_lot'] = select_lot.supplier_lot
-#     dict_lot['expiry'] = select_lot.expiry
-#     dict_lot['internal_lot'] = select_lot.internal_lot
-#     dict_lot['tecnic'] = select_lot.tecnic
-#     dict_lot['data_open'] = select_lot.data_open
-#     dict_lot['tecnic_open'] = select_lot.tecnic_open
-#     dict_lot['data_close'] = select_lot.data_close
-#     dict_lot['tecnic_close'] = select_lot.tecnic_close
-#     dict_lot['observations'] = select_lot.observations
-#     dict_lot['status'] = select_lot.status
-    
-#     json_text = json.dumps(dict_lot)
+        :return: True o False i una explicació per l'usuari
+        :rtype: json
+    '''
+    id_lot = request.form.get("id_lot")
+    action = request.form.get("action")
+    num_lots_open = 0
+    pos_close = -1
+    message = ''
+    str_id_lots = ''
+    try:
+        select_lots = session1.query(Stock_lots).filter_by(id=id_lot).first()
+        if select_lots is None:
+            return 'False_No hem trobat el lot seleccionat.'
 
-#     return f'True/-/{json_text}'
+        select_consumptions = session1.query(Lot_consumptions).filter_by(id_lot=id_lot).all()
+        if select_consumptions:
+            lot_open = 0
+            lot_close = 0
+            for index, consumptions in enumerate(select_consumptions):
+                if consumptions.date_close != '':
+                    lot_open += 1
+                    lot_close += 1
+                else:
+                    lot_open += 1
+                    if pos_close == -1:
+                        pos_close = index
+
+            num_lots_open = lot_open - lot_close
+
+        date = instant_date()
+        if action == 'open':
+            if num_lots_open >= select_lots.units_lot:
+                return "False_Tots els lots d'aquesta referència estan oberts."
+            insert_consump = Lot_consumptions(id_lot=id_lot, date_open=date, user_open=session['acronim'], date_close='')
+            session1.add(insert_consump)
+            if num_lots_open + 1 == 1:
+                message = f"El lot s'ha obert correctament, tens {num_lots_open + 1} unitat oberta d'aquesta referència."
+            else:
+                message = f"El lot s'ha obert correctament, tens {num_lots_open + 1} unitats obertes d'aquesta referència."
+        elif action == 'close':
+            if num_lots_open > 0:
+                select_consumptions[pos_close].date_close = date
+                select_consumptions[pos_close].user_close = session['acronim']
+                select_lots.units_lot = select_lots.units_lot - 1
+                message = "El lot s'ha tancat correctament"
+                if select_lots.units_lot == 0:
+                    select_group_lots = session1.query(Stock_lots).filter_by(group_insert=select_lots.group_insert).all()
+                    for lot_group in select_group_lots:
+                        lot_group.spent = 1
+                        str_id_lots += f'{lot_group.id};'
+                        if lot_group.units_lot != 0:
+                            select_lot_consumptions = session1.query(Lot_consumptions).filter_by(id_lot=lot_group.id, date_close='').all()
+                            for lot_consumptions in select_lot_consumptions:
+                                lot_consumptions.date_close = date
+                                lot_consumptions.user_close = session['acronim']
+                            lot_group.units_lot = lot_group.units_lot - len(select_lot_consumptions)
+                    str_id_lots = str_id_lots[:-1]
+                    message = f"El lot s'ha tancat correctament, Aquesta referència s'ha esgotat, ella i totes les subreferències han set posades com ha gastades._{str_id_lots}"
+            else:
+                return 'False_No es pot tancar cap lot amb aquesta referència, obre primer un lot.'
+        session1.commit()
+    except Exception:
+        return "False_No s'ha pogut accedir a la BD, si l'error persisteix contacta amb un administrador."
+    return f'True_{message}'
+
+
+@app.route('/history_lot', methods=['POST'])
+@requires_auth
+def history_lot():
+    '''
+        1 - Recollim la informació de l'ajax
+        2 - Comprovem si aquest lot té història.
+        2.1 - Si no en té retornem False més un missatge d'explicació per l'usuari.
+        2.2 - Si és que si agafem la informació que hem trobat la posem en una llista de diccionaris.
+        3 - Convertim la llista de diccionaris en un json
+        4 - Retornem un True més la llista de diccionaris convertida a json.
+
+        :param str id_lot: Identificador unit del lot
+
+        :return: True i la llista de diccionaris amb la info o False i una explicació per l'usuari
+        :rtype: json
+    '''
+    id_lot = request.form.get("id_lot")
+
+    try:
+        select_consumptions = session1.query(Lot_consumptions).filter_by(id_lot=id_lot).all()
+        if not select_consumptions:
+            return 'False_//_No hi ha cap consumisio registrada.'
+
+        list_consumptions = []
+        for consumption in select_consumptions:
+            dict_consumption = {}
+            dict_consumption['id'] = consumption.id
+            dict_consumption['id_lot'] = consumption.id_lot
+            dict_consumption['date_open'] = consumption.date_open
+            dict_consumption['user_open'] = consumption.user_open
+            dict_consumption['date_close'] = consumption.date_close
+            dict_consumption['user_close'] = consumption.user_close
+            list_consumptions.append(dict_consumption)
+
+        json_data = json.dumps(list_consumptions)
+    except Exception:
+        return "False_ No s'ha pogut accedir a la informació dels consums."
+
+    return f'True_//_{json_data}'
