@@ -32,6 +32,7 @@ class Lots(Base):
     active = Column(Integer())
     temp_conservation = Column(String())
     description_subreference = Column(String())
+    react_or_fungible = Column(String())
 
 
 class Stock_lots(Base):
@@ -46,6 +47,9 @@ class Stock_lots(Base):
     id_reactive = Column(String())
     code_SAP = Column(String())
     code_LOG = Column(String())
+    temp_conservation = Column(String())
+    description_subreference = Column(String())
+    react_or_fungible = Column(String())
     date_expiry = Column(String())
     lot = Column(String())
     spent = Column(Integer())
@@ -63,7 +67,6 @@ class Stock_lots(Base):
     date_revised = Column(String())
     delivery_note = Column(String())
     certificate = Column(String())
-    description_subreference = Column(String())
     type_doc_certificate = Column(String())
     type_doc_delivery = Column(String())
     group_insert = Column(Integer())
@@ -73,10 +76,20 @@ class Logs(Base):
     __tablename__ = 'logs'
 
     id = Column(Integer(), primary_key=True)
-    field = Column(String())
-    old_info = Column(String())
-    new_info = Column(String())
-    reason_change = Column(String())
+    id_lot = Column(Integer())
+    type = Column(String())
+    info = Column(String())
     user = Column(String())
     id_user = Column(String())
     date = Column(String())
+
+
+class Lot_consumptions(Base):
+    __tablename__ = 'lot_consumptions'
+
+    id = Column(Integer(), primary_key=True)
+    id_lot = Column(Integer())
+    date_open = Column(String())
+    user_open = Column(String())
+    date_close = Column(String())
+    user_close = Column(String())

@@ -2,16 +2,9 @@
     <a class="navbar-brand" style="color:white;" href="/"><b>REACTIUS</b></a>
     <div class="collapse navbar-collapse" id="navbarNavDarkDropdown">
         <ul class="navbar-nav mr-auto"> 
-            <!-- <form action="/look_register" method="post" name="look_reg" id="look_reg">
-                <li class="nav-item dropdown" style="display: inline; color:white;padding:5px;">
-                    <a class="btn btn-link btn-sm mr-3 navbar-brand" style="color:white;" id="navbarDarkDropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"> Veure registres</i></a>
-                    <ul class="dropdown-menu" aria-labelledby="navbarDarkDropdownMenuLink">
-                        <li><a class="dropdown-item" onclick="submit('Sanger')">Sanger</a></li>
-                        <li><a class="dropdown-item" onclick="submit('Extraccio')">Extracció</a></li>
-                        <input id="type" name="type" type="hidden" value=""/>
-                    </ul>
-                </li>  
-            </form> -->
+            <li class="nav-item">
+                <a class="navbar btn mr-1" style="color:white;padding:5px;" data-toggle="modal" data-target="#open_close_lot"><b><i class="fa-solid fa-plus-minus"></i>&nbsp;Obri/tancar lot</a></b>
+            </li>
     </div>
 
     <ul class="navbar-nav ml-auto">
@@ -30,3 +23,27 @@
 
 </div>
 
+
+<div class="modal fade"  id="open_close_lot" tabindex="-1" role="dialog" aria-labelledby="editRegister" aria-hidden="true">
+    <div class="modal-dialog modal-lg" tabindex="-1" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="title"> Obrir/tancar lots</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="close_modal('open_lot')"><span aria-hidden="true">&times;</span></button>
+        </div>
+        <div class="modal-body">
+            <form action="/search_lots_open_close" method="post">
+                <div class="row">                                   
+                    <div class="col-lg-12 col-md-12 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1"><b>Ref. proveïdor o subreferencia :</b></span>
+                            <input type="text" class="form-control" id='reference' name="reference" aria-label="TTN" aria-describedby="basic-addon1" required>
+                        </div>
+                    </div> 
+                    <center><input type="submit" value="Cercar lot" class="btn btn-success btn-sm"/></center>
+                </div>
+            </form>
+        </div>
+      </div>
+    </div>
+</div>
