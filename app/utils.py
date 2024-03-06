@@ -2,17 +2,19 @@
 from datetime import datetime
 from app.models import Logs, session1
 from functools import wraps
+from flask import session, redirect
+from app.models import IP_HOME
 
 
 # Authentication
 def requires_auth(f):
     @wraps(f)
     def decorated_function(*args):
-        # if session['rol'] == 'None' or session['rol'] is None or session['rol'] == '':
-        #     url = f'{IP_HOME}logout/You dont have permissions'
-        #     return redirect(url)
-        # else:
-        #     pass
+        if session['rol'] == 'None' or session['rol'] is None or session['rol'] == '':
+            url = f'{IP_HOME}logout/You dont have permissions'
+            return redirect(url)
+        else:
+            pass
         return f(*args)
     return decorated_function
 
@@ -50,7 +52,7 @@ def save_log(dict_info_lot):
                           id_user=dict_info_lot['id_user'],
                           date=dict_info_lot['date'])
         session1.add(insert_log)
-        session1.commit()
+        # session1.commit()
     except Exception:
         return "False"
     return 'True'

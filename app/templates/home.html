@@ -8,18 +8,21 @@
 <script>
     var list_info_lots;
 
+    /**
+     * Canvia totes les barras ("/") en el valor d'entrada per guions ("-").
+     * @param {object} input L'element d'entrada que conte el valor a modificarr.
+     * @returns {void} No retorna cap valor.
+     */
     function replae_slash_with_hyphen(input) {
         input.value = input.value.replace(/\//g, '-');
     }
 
-    
-    function nobackbutton(){
-        window.location.hash="no-back-button";
-        window.location.hash="Again-No-back-button" //chrome
-        window.onhashchange=function(){window.location.hash="no-back-button";}	
-    }
 
-
+    /**
+     * Neteja els camps d'entrada y mostra el modal de add_lote.
+     * @param {string} acronim És l'acronim de l'usuari.
+     * @returns {void} No retorna cap valor.
+     */
     function insert(acronim){
         // document.getElementById('type_lot').value = ''
         // document.getElementById('lot_name').value = ''
@@ -41,19 +44,43 @@
         $('#add_lot').modal('show');
     }
 
-
+    /**
+     * Tanquem el modal amb l'id que ens passen per paràmetre.
+     * @param {string} modal_id És l'identificador únic del modal
+     * @returns {void} No retorna cap valor.
+     */
     function close_modal(modal_id){
         $(`#${modal_id}`).modal('hide');
         // document.getElementById("type_selected").value = '0';
     }
 
 
+    /**
+     * Obrim el modal amb l'id que ens passen per paràmetre.
+     * @param {string} modal_id És l'identificador únic del modal
+     * @returns {void} No retorna cap valor.
+     */
     function open_modal(modal_id){
         $(`#${modal_id}`).modal('show');
     }
     
 
-    function add_lot(){
+    /**
+     * La funció mira si el codi que hem entrat ja el tenim a la base de dades, si no el tenim s'ha d'afegir 
+     * un lot nou i en cas que el tinguem afegirem stock a la BD. Cada acció obrirà un modal diferent.
+     * 
+     * @param {string} acronim L'acrònim utilitzat per configurar alguns camps.
+     * @param {string} code_search Codi que farem servir per buscar a la BD.
+     * @returns {void} No retorna cap valor.
+     * 
+     * @descriptor Aquesta funció executa diverses accions, com ara l'enviament de dades a través d'una 
+     * sol·licitud AJAX, la configuració de camps de formulari i la manipulació de l'estructura HTML per mostrar
+     * la informació del lot afegit. Quan ens retornen la informació amb xhr.responseText agafem la resposta i la
+     * tractarem per veure com ha anat, depèn de la resposta que obtinguem farem les accions pertinents.
+     * També es fan comprobacions de que el que ens ha entrat per paràmetre sigui correcta.
+     * 
+     */
+    function info_add_lot(acronim){
         document.getElementById('unit_lots').value = 1;
         // Crear form data
         var form_data = new FormData();
@@ -85,31 +112,47 @@
                 if (split_response[0] === 'True'){
                     message = ''
                     if (split_response[1] === 'new'){
-                        document.getElementById("code_log").value = '';
-                        document.getElementById("code_sap").value = '';
+                        document.getElementById("code_log").value = code_search;
+                        document.getElementById("code_sap").value = code_search;
                         document.getElementById("manufacturer").value = '';
                         document.getElementById("analytical_technique").value = '';
+                        document.getElementById("description").value = '';
                         document.getElementById('num_lots').value = 0;            
-                        document.getElementById('reference_catalog').value = "";            
+                        document.getElementById('reference_catalog').value = code_search;      
+
+                        // Eliminar tots els divs amb el name divs_new_lots
+                        var elementosAEliminar = document.querySelectorAll('div[name="divs_new_lots"]');
+                            elementosAEliminar.forEach(function(elemento) {
+                                elemento.remove(); });
+
+                        var miDiv = document.getElementById('div_info_new_lot');
+                        var nuevoHTML = `
+                            <div class="col-lg-6 col-md-6 col-sm-12" name="divs_new_lots">       
+                                <div class="input-group mb-3">
+                                    <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Temp. conservació :</b></span>
+                                    <select class="form-select" id="temp_conservation0">
+                                        <option>-20</option>
+                                        <option>-80</option>
+                                        <option>Ambient</option>
+                                        <option>4</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-lg-6 col-md-6 col-sm-12" name="divs_new_lots">       
+                                <div class="input-group mb-3">
+                                    <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Reactiu o fungible :</b></span>
+                                    <select class="form-select" id="react_or_fungible0">
+                                        <option>Reactiu</option>
+                                        <option>Fungible</option>
+                                    </select>
+                                </div>
+                            </div>
+                            `;
+
+                        // Agrega el nuevo conjunto debajo del div existente
+                        miDiv.insertAdjacentHTML('afterend', nuevoHTML);
                         $('#add_new_lot').modal('show'); }
                     else {
-                        show_div_product('product_reception', 'qc_reception', 'btn_1', 'btn_2')
-                        document.getElementById('transport_conditions').value = ''
-                        document.getElementById('inspected_by').value = ''
-                        document.getElementById('packaging').value = ''
-                        document.getElementById('date_inspected').value = ''
-                        document.getElementById('observations_inspection').value = ''
-                        document.getElementById('state').value = 'Acceptat'
-                        document.getElementById('comand_number').value = ''
-                        document.getElementById('file_delivery_note').value = ''
-                        document.getElementById('file_certificate').value = ''
-                        document.getElementById('revised_by').value = ''
-                        document.getElementById('date_revised').value = ''
-                        // Eliminar tots els div amb el name divs_subproduct
-                        var elementosAEliminar = document.querySelectorAll('div[name="divs_subproducts"]');
-                        elementosAEliminar.forEach(function(elemento) {
-                            elemento.remove(); });
-
                         // obtenir i formatar la data
                         var current_date = new Date();
                         var day = current_date.getDate();
@@ -119,6 +162,23 @@
                         month = month < 10 ? '0' + month : month;
                         var formated_date = day + '-' + month + '-' + year;
                         var internal_lot = year + month + day
+
+                        show_div_product('product_reception', 'qc_reception', 'btn_1', 'btn_2')
+                        document.getElementById('transport_conditions').value = ''
+                        document.getElementById('inspected_by').value = acronim
+                        document.getElementById('packaging').value = ''
+                        document.getElementById('date_inspected').value = formated_date
+                        document.getElementById('observations_inspection').value = ''
+                        document.getElementById('state').value = 'Acceptat'
+                        document.getElementById('comand_number').value = ''
+                        document.getElementById('file_delivery_note').value = ''
+                        document.getElementById('file_certificate').value = ''
+                        document.getElementById('revised_by').value = acronim
+                        document.getElementById('date_revised').value = formated_date
+                        // Eliminar tots els div amb el name divs_subproduct
+                        var elementosAEliminar = document.querySelectorAll('div[name="divs_subproducts"], input[name="divs_subproducts"]');
+                        elementosAEliminar.forEach(function(elemento) {
+                            elemento.remove(); });
 
                         document.getElementById('date_recepcion_lot').value = formated_date;
                         
@@ -156,7 +216,7 @@
                                 </div>
                                 <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts">
                                     <div class="input-group mb-3">
-                                        <span class="input-group-text" id="basic-addon1" style="width: 135px;"><b>Lots :</b></span>
+                                        <span class="input-group-text" id="basic-addon1" style="width: 135px;"><b>Lot :</b></span>
                                         <input type="text" class="form-control" id="lot0_${i}" aria-label="TTN">
                                     </div>
                                 </div>
@@ -192,7 +252,7 @@
                             miDiv.insertAdjacentHTML('beforebegin', nuevoHTML);}
 
                         $('#add_lot_info').modal('show');
-                    }}
+                        }}
                 else if (split_response === 'False'){
                     message = "La cerca del lot ha fallat."
                     alert_type = 'danger'} 
@@ -205,6 +265,10 @@
             
             if (message !== ''){
                 var flashContainer = document.querySelector(".d-flex.justify-content-center .row");
+                // Eliminar la alerta anterior, si existe
+                if (flashContainer.children.length > 0) {
+                    flashContainer.removeChild(flashContainer.children[0]); }
+
                 var newFlash = document.createElement("div");
                 newFlash.className = "alert alert-" + alert_type + " alert-dismissible fade show ml-3";
                 newFlash.role = "alert";
@@ -219,10 +283,24 @@
         xhr.send(form_data)
     }
 
-    
+
+    /**
+     * Afegeix un nombre específic de línies al modal per introduir referències.
+     * 
+     * Aquesta funció elimina les referències anteriors i afegeix un nombre específic
+     * de línies al modal per introduir referències. Cada línia conté camps per a la 
+     * descripció, el lot, la data de caducitat, el lot intern i les unitats del lot.
+     * 
+     * @param {number} number_references El nombre de línies que es vol afegir al modal.
+     * @returns {void} No retorna cap valor.
+     * 
+     * @descriptor Aquesta funció executa diverses accions, com ara eliminar les referències
+     * anteriors, obtenir la data actual i formatar-la, i generar l'estructura HTML per a les
+     * noves línies del modal.
+     */
     function add_more_lines_in_modal(number_references){
         // Eliminar tots els div amb el name divs_subproduct
-        var elementosAEliminar = document.querySelectorAll('div[name="divs_subproducts"]');
+        var elementosAEliminar = document.querySelectorAll('div[name="divs_subproducts"], input[name="divs_subproducts"]');
         elementosAEliminar.forEach(function(elemento) {
             elemento.remove(); });
 
@@ -257,11 +335,12 @@
             miDiv.insertAdjacentHTML('beforebegin', HTML);
             for (var i = 0; i < list_info_lots.length; i++) {
                 var dict_lots = JSON.stringify(list_info_lots[i]);
-                var nuevoHTML = `
-                    <div class="col-lg-12 col-md-12 col-sm-12" name="divs_subproducts">
+                var nuevoHTML_variable = `<div class="col-lg-12 col-md-12 col-sm-12" name="divs_subproducts" style="display: none;">`
+                var nuevoHTML_variable2 = `<div class="col-lg-12 col-md-12 col-sm-12" name="divs_subproducts">`
+                var nuevoHTML_context = `
                         <div class="input-group mb-3">
                             <span class="input-group-text" id="basic-addon1" style="width: 135px;"><b>Descripció:</b></span>
-                            <input type="text" class="form-control" aria-label="TTN" id="description${x}_${i}" value="${list_info_lots[i]['id_reactive']} || ${list_info_lots[i]['description']}" readonly>
+                            <input type="text" class="form-control" aria-label="TTN" id="description${x}_${i}" value="${list_info_lots[i]['id_reactive']} || ${list_info_lots[i]['description_subreference']}" readonly>
                         </div>
                     </div>
                     <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts">
@@ -295,6 +374,9 @@
                     </div>
                     <input type='hidden' id='json_info_lot${x}_${i}' value='${dict_lots}' name="divs_subproducts">
                 `;
+                if (list_info_lots[i]['description_subreference'] === '' || list_info_lots[i]['description_subreference'] === null || list_info_lots[i]['description_subreference'] === undefined){ 
+                    var nuevoHTML = nuevoHTML_variable + nuevoHTML_context}
+                else { var nuevoHTML = nuevoHTML_variable2 + nuevoHTML_context }
 
                 // Agrega el nuevo conjunto debajo del div existente
                 miDiv.insertAdjacentHTML('beforebegin', nuevoHTML);
@@ -302,7 +384,21 @@
         }
     }
 
-    
+   
+    /**
+     * Afegeix un nombre específic de nous lots al modal.
+     * 
+     * Aquesta funció elimina els lots anteriors i afegeix un nombre específic de
+     * nous lots al modal. Per a cada lot, es proporcionen camps per a la identificació
+     * de la subreferència, la temperatura de conservació, si és reactiu o fungible, i
+     * una descripció de la subreferència.
+     * 
+     * @param {number} number_references El nombre de nous lots a afegir al modal.
+     * @returns {void} No retorna cap valor.
+     * 
+     * @descriptor Aquesta funció executa diverses accions, com ara eliminar els lots
+     * anteriors, generar camps HTML per als nous lots i afegir-los al modal.
+     */
     function add_more_lots_in_modal(number_references){
         // Eliminar tots els div amb el name divs_subproduct
         var elementosAEliminar = document.querySelectorAll('div[name="divs_new_lots"]');
@@ -379,6 +475,15 @@
                         </select>
                     </div>
                 </div>
+                <div class="col-lg-6 col-md-6 col-sm-12" name="divs_new_lots">       
+                    <div class="input-group mb-3">
+                        <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Reactiu o fungible :</b></span>
+                        <select class="form-select" id="react_or_fungible0">
+                            <option>Reactiu</option>
+                            <option>Fungible</option>
+                        </select>
+                    </div>
+                </div>
                 `;
 
             // Agrega el nuevo conjunto debajo del div existente
@@ -387,6 +492,18 @@
     }
 
     
+    /**
+     * Afegeix un nou lot al sistema a partir de les dades introduïdes en un formulari modal.
+     * 
+     * Aquesta funció recopila les dades introduïdes en el formulari modal per afegir un nou lot
+     * al sistema. Verifica si els camps necessaris estan omplerts correctament i, si és així, envia
+     * les dades a través d'una sol·licitud AJAX al servidor per a la inserció del lot a la base de dades.
+     * 
+     * @returns {void} No retorna cap valor.
+     * 
+     * @descriptor Aquesta funció recull les dades del formulari modal, verifica si estan correctament omplertes,
+     * crea un objecte FormData per a l'enviament a través d'una sol·licitud AJAX i gestiona la resposta del servidor.
+     */
     function add_new_lot(){
         // Crear form data
         var form_data = new FormData();
@@ -399,6 +516,11 @@
         const analytical_technique = document.getElementById('analytical_technique').value
         const manufacturer = document.getElementById('manufacturer').value
         const description = document.getElementById(`description`).value
+
+        if (reference_catalog === code_sap || reference_catalog === code_log || code_sap === code_log) {
+            alert("Els camps ref. proveïdor, codi SAP i codi LOG no poden ser iguals")
+            return
+        } 
 
         var list_lots = []
 
@@ -480,6 +602,10 @@
                 alert_type = 'danger' }
 
             var flashContainer = document.querySelector(".d-flex.justify-content-center .row");
+            // Eliminar la alerta anterior, si existe
+            if (flashContainer.children.length > 0) {
+                flashContainer.removeChild(flashContainer.children[0]); }
+
             var newFlash = document.createElement("div");
             newFlash.className = "alert alert-" + alert_type + " alert-dismissible fade show ml-3";
             newFlash.role = "alert";
@@ -495,6 +621,16 @@
     }
 
     
+    /**
+     * Afegeix informació a la BD stock_lots utilitzant les dades introduïdes en un modal.
+     * Realitza validacions del format de data i assegura que els camps requerits no estiguin buits.
+     * Un cop s'ha realitzar l'operació mostra un missatge per pantalla a l'usuari.
+     * 
+     * @returns {void} No retorna cap valor.
+     * 
+     * @descriptor Aquesta funció afegeix informació sobre els lots al magatzem a partir de les dades introduïdes en un modal.
+     * També realitza validacions del format de data i assegura que els camps requerits no estiguin buits abans de l'enviament de les dades.
+     */
     function add_stock_lot(){
         var check_format_date = /^[0-3]\d-[01]\d-[2][0][2-4]\d$/;
         // Crear form data
@@ -516,18 +652,26 @@
         const comand_number = document.getElementById('comand_number').value
         const revised_by = document.getElementById('revised_by').value
         const date_revised = document.getElementById('date_revised').value
-
-        if (transport_conditions === '' || packaging === '' || inspected_by === '' || date_inspected === '' || observations_inspection === '' || state === '' || comand_number === '' || revised_by === '' || date_revised === ''){
-            alert("No pots deixar camps buits, revisa els recepció de procute i QC recepció.")
-        }
         
+        if (transport_conditions === '' || packaging === '' || inspected_by === '' || date_inspected === '' || observations_inspection === '' || state === '' || comand_number === '' || revised_by === '' || date_revised === ''){
+            alert("No pots deixar camps buits, revisa els camps de recepció de procute i QC recepció.")
+            return }
+        
+        if (!check_format_date.test(date_inspected)) {
+            alert("El format de la data no és correcta, ha de ser dd-mm-yyyy");
+            return }
+
+        if (!check_format_date.test(date_revised)) {
+            alert("El format de la data no és correcta, ha de ser dd-mm-yyyy");
+            return }
+
         const file_delivery_note_input = document.getElementById('file_delivery_note')
         const file_delivery_note = file_delivery_note_input.files[0];
         const file_certificate_input = document.getElementById('file_certificate')
         const file_certificate = file_certificate_input.files[0];
 
-
         var list_lots = []
+
         for (var x = 0; x < unit_lots; x++){
             for (var i = 0; i < list_info_lots.length; i++){
                 const lot = document.getElementById(`lot${x}_${i}`).value
@@ -556,8 +700,9 @@
                     dict_info_lot.revised_by = revised_by
                     dict_info_lot.date_revised = date_revised }
                 else{
-                    alert("No es poden deixar els camps sense omplir.") }
-                list_lots.push(dict_info_lot) }
+                    alert("No es poden deixar els camps sense omplir.") 
+                    return}
+                list_lots.push(dict_info_lot)}
         }
         var jsonData = JSON.stringify(list_lots);
 
@@ -593,6 +738,10 @@
                 alert_type = 'danger' }
 
             var flashContainer = document.querySelector(".d-flex.justify-content-center .row");
+            // Eliminar la alerta anterior, si existe
+            if (flashContainer.children.length > 0) {
+                flashContainer.removeChild(flashContainer.children[0]); }
+
             var newFlash = document.createElement("div");
             newFlash.className = "alert alert-" + alert_type + " alert-dismissible fade show ml-3";
             newFlash.role = "alert";
@@ -608,6 +757,25 @@
     }
 
 
+    /**
+     * Mostra o amaga divs i canvia l'estil dels botons associats.
+     * 
+     * Aquesta funció controla la visibilitat dels divs especificats i canvia l'estil dels botons associats
+     * per indicar el div visible. Per defecte, amaga el div2 i mostra el div1, canviant els estils dels botons
+     * btn1 i btn2. Si el paràmetre 'show' és 'show', es mostra addicionalment el div amb l'id 'add_div'.
+     * 
+     * @param {string} div1 Id del primer div a mostrar.
+     * @param {string} div2 Id del segon div a amagar.
+     * @param {string} btn1 Id del primer botó a destacar.
+     * @param {string} btn2 Id del segon botó a destacar.
+     * @param {string} show Indica si es mostra addicionalment el div amb l'id 'add_div' ('show' o 'hide').
+     * @returns {void} No retorna cap valor.
+     * 
+     * @descriptor Aquesta funció controla la visibilitat de diversos divs a la interfície de l'usuari.
+     * Permet alternar entre dos divs mostrant-ne un i amagant l'altre, i canvia l'estil dels botons per
+     * reflectir el div visible. També pot mostrar addicionalment un tercer div si s'especifica el paràmetre
+     * 'show' com a 'show'.
+     */
     function show_div_product(div1, div2, btn1, btn2, show){
         document.getElementById(div2).classList.add('d-none');
         document.getElementById(div1).classList.remove('d-none');
@@ -703,7 +871,7 @@
                     </div>
                     <div class="col-lg-12 col-md-12 col-sm-12">       
                         <div class="input-group mb-3">
-                            <button type="button" class="btn btn-primary btn-sm" style="width: 150px;" onclick="add_lot()">Accepta</button>
+                            <button type="button" class="btn btn-primary btn-sm" style="width: 150px;" onclick="info_add_lot(`{{session['acronim']}}`)">Accepta</button>
                         </div>
                     </div>
                 </div>
@@ -730,7 +898,7 @@
                     </div>
                     <div class="col-lg-6 col-md-12 col-sm-12">       
                         <div class="input-group mb-3">
-                            <span class="input-group-text" id="basic-addon1" style="width: 145px;"><b>Subreferències :</b></span>
+                            <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Subreferències :</b></span>
                             <select class="form-select" id="num_lots" onchange="add_more_lots_in_modal(this.value)">
                                 <option selected>0</option>
                                 {% for i in range(1, 15) %}
@@ -747,7 +915,7 @@
                     </div>
                     <div class="col-lg-6 col-md-12 col-sm-12">       
                         <div class="input-group mb-3">
-                            <span class="input-group-text" id="basic-addon1" style="width: 145px;"><b>Codi LOG :</b></span>
+                            <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Codi LOG :</b></span>
                             <input type="text" class="form-control" id='code_log' aria-label="TTN" aria-describedby="basic-addon1">
                         </div>
                     </div>
@@ -759,7 +927,7 @@
                     </div>
                     <div class="col-lg-6 col-md-12 col-sm-12">       
                         <div class="input-group mb-3">
-                            <span class="input-group-text" id="basic-addon1" style="width: 145px;"><b>Fabricant :</b></span>
+                            <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Fabricant :</b></span>
                             <input type="text" class="form-control" id='manufacturer' aria-label="TTN" aria-describedby="basic-addon1">
                         </div>
                     </div>
@@ -769,26 +937,7 @@
                             <input type="text" class="form-control" id='description' aria-label="TTN" aria-describedby="basic-addon1">
                         </div>
                     </div>
-                    <div class="col-lg-6 col-md-6 col-sm-12" name="divs_new_lots">       
-                        <div class="input-group mb-3">
-                            <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Temp. conservació :</b></span>
-                            <select class="form-select" id="temp_conservation0">
-                                <option>-20</option>
-                                <option>-80</option>
-                                <option>Ambient</option>
-                                <option>4</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="col-lg-6 col-md-6 col-sm-12" name="divs_new_lots">       
-                        <div class="input-group mb-3">
-                            <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Reactiu o fungible :</b></span>
-                            <select class="form-select" id="react_or_fungible0">
-                                <option>Reactiu</option>
-                                <option>Fungible</option>
-                            </select>
-                        </div>
-                    </div>
+
                     <div id="div_info_new_lot"></div>
 
                     <div class="col-lg-12 col-md-12 col-sm-12">       
@@ -819,18 +968,11 @@
                     <button type="button" class="btn btn-secondary" id="btn_2" onclick="show_div_product('qc_reception', 'product_reception', 'btn_2', 'btn_1', 'show')">QC recepció</button>
                 </div>
             </div>
-            <!-- <div class="modal-header">
-                <h5 class="modal-title" id="title" name="title_add_lots" style="margin-right: 50px;">Afegeix article</h5>
-                <button type="button" class="btn btn-primary" id="btn_1" onclick="show_div_product('product_reception', 'qc_reception')" style="margin-right: 10px;">Recepció producte</button>
-                <button type="button" class="btn btn-secondary" id="btn_2" onclick="show_div_product('qc_reception', 'product_reception')">QC recepció</button>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="close_modal('add_lot_info')"><span aria-hidden="true">&times;</span></button>
-            </div> -->
             <div class="modal-body">
                 <div class="row" id="product_reception">
                     <div class="col-lg-6 col-md-12 col-sm-12">       
                         <div class="input-group mb-3">
                             <span class="input-group-text" id="basic-addon1" style="width: 135px;"><b>Lots diferents:</b></span>
-                            <!-- <input type="number" class="form-control" id='unit_lots' aria-label="TTN" aria-describedby="basic-addon1"> -->
                             <select class="form-select" id="unit_lots" onchange="add_more_lines_in_modal(this.value)">
                                 <option selected>1</option>
                                 {% for i in range(2, 5) %}
@@ -848,13 +990,11 @@
                     <div class="col-lg-12 col-md-12 col-sm-12">
                         <div class="input-group mb-3">
                             <span class="input-group-text" id="basic-addon1" style="width: 135px;"><b>Descripció:</b></span>
-                            <!-- <input type="text" class="form-control" id="descripton" aria-label="TTN" value="${list_info_lots[i]['id_reactive']} || ${list_info_lots[i]['description']}" readonly> -->
                             <input type="text" class="form-control" id="description_add_lot" aria-label="TTN" readonly>
                         </div>
                     </div>
 
                     <div id="div_info_lot"></div>
-
 
                     <center><button type="button" class="btn btn-primary btn-sm" onclick="add_stock_lot()" id="add_div" style="display: none;">Afegir</button></center>
                 </div>
@@ -946,193 +1086,6 @@
           </div>
         </div>
     </div>
-
-    
-    <!-- <div class="col-lg-6 col-md-12 col-sm-12">  
-        <div class='input-group mb-3'>
-            <span class='input-group-text' id='basic-addon1' style='width: 135px;'><b>ID reactiu:</b></span>
-            <input type='text' class='form-control' id='id_reactiu' aria-label='TTN' aria-describedby='basic-addon1'>
-        </div>
-    </div>
-    <div class="col-lg-6 col-md-12 col-sm-12">  
-        <div class='input-group mb-3'>
-            <span class='input-group-text' id='basic-addon1' style='width: 135px;'><b>Ubicació :</b></span>
-            <input type='text' class='form-control' id='location' aria-label='TTN' aria-describedby='basic-addon1'>
-        </div>
-    </div> -->
-
-
-    <!-- <div class="modal fade"  id="add_lot" tabindex="-1" role="dialog" aria-labelledby="editRegister" aria-hidden="true">
-        <div class="modal-dialog modal-xl" tabindex="-1" role="document">
-          <div class="modal-content">
-            <div class="modal-header">
-              <h5 class="modal-title" id="title">Afegeix article</h5>
-              <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="close_modal('add_lot')"><span aria-hidden="true">&times;</span></button>
-            </div>
-            <div class="modal-body">
-                <div class="row">
-                    <div class="col-lg-4 col-md-6 col-sm-12">       
-                        <div class="input-group mb-3">
-                            <span class="input-group-text" id="basic-addon1" style="width: 150px;"><b>Tipu lot :</b></span>
-                            <select class="form-select" id="type_lot" required>
-                                <option selected></option>
-                                <option>AGAROSA</option>
-                                <option>COVID</option>
-                                <option>EXTRACCIÓ</option>
-                                <option>FABRICACIÓ</option>
-                                <option>Genotipat</option>
-                                <option>MLPA-QPCR</option>
-                                <option>NGS</option>
-                                <option>qPCR-RT</option>
-                                <option>RT-PCR</option>
-                                <option>SANGER</option>
-                                <option>varis</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="col-lg-4 col-md-6 col-sm-12">       
-                        <div class="input-group mb-3">
-                            <span class="input-group-text" id="basic-addon1" style="width: 150px;"><b>Nom lot :</b></span>
-                            <input type="text" class="form-control" id='lot_name' aria-label="TTN" aria-describedby="basic-addon1">
-                        </div>
-                    </div>
-                    <div class="col-lg-4 col-md-6 col-sm-12">       
-                        <div class="input-group mb-3">
-                            <span class="input-group-text" id="basic-addon1" style="width: 150px;"><b>Referencia :</b></span>
-                            <input type="text" class="form-control" id='reference' aria-label="TTN" aria-describedby="basic-addon1">
-                        </div>
-                    </div>
-                    <div class="col-lg-4 col-md-6 col-sm-12">       
-                        <div class="input-group mb-3">
-                            <span class="input-group-text" id="basic-addon1" style="width: 150px;"><b>Marca comercial :</b></span>
-                            <input type="text" class="form-control" id='trademark' aria-label="TTN" aria-describedby="basic-addon1">
-                        </div>
-                    </div>
-                    <div class="col-lg-4 col-md-6 col-sm-12">       
-                        <div class="input-group mb-3">
-                            <span class="input-group-text" id="basic-addon1" style="width: 150px;"><b>Conservat a :</b></span>
-                            <input type="text" class="form-control" id='preserved_in' aria-label="TTN" aria-describedby="basic-addon1">
-                        </div>
-                    </div>
-                    <div class="col-lg-4 col-md-6 col-sm-12">       
-                        <div class="input-group mb-3">
-                            <span class="input-group-text" id="basic-addon1" style="width: 150px;"><b>Stock mínim:</b></span>
-                            <input type="number" class="form-control" id='stock_minimum' aria-label="TTN" aria-describedby="basic-addon1" oninput="this.value = this.value.replace(/[^0-9]/g, '');">
-                        </div>
-                    </div>
-
-                    <div class="col-lg-1 col-md-1 col-sm-1">       
-                    </div>  
-                    <div class="col-lg-10 col-md-10 col-sm-10" style="padding-bottom: 10px;">       
-                        <hr>
-                    </div>
-                    <div class="col-lg-1 col-md-1 col-sm-1">       
-                    </div>  
-
-                    <div class="col-lg-4 col-md-6 col-sm-12">       
-                        <div class="input-group mb-3">
-                            <span class="input-group-text" id="basic-addon1" style="width: 150px;"><b>Data d'arribada :</b></span>
-                            <input type="text" class="form-control" id='date_arrived' aria-label="TTN" aria-describedby="basic-addon1" placeholder="01/01/2023">
-                        </div>
-                    </div>
-                    <div class="col-lg-4 col-md-6 col-sm-12">       
-                        <div class="input-group mb-3">
-                            <span class="input-group-text" id="basic-addon1" style="width: 150px;"><b>Lot proveïdor :</b></span>
-                            <input type="text" class="form-control" id='supplier_lot' aria-label="TTN" aria-describedby="basic-addon1">
-                        </div>
-                    </div>
-                    <div class="col-lg-4 col-md-6 col-sm-12">       
-                        <div class="input-group mb-3">
-                            <span class="input-group-text" id="basic-addon1" style="width: 150px;"><b>Caducitat :</b></span>
-                            <input type="text" class="form-control" id='expiry' aria-label="TTN" aria-describedby="basic-addon1" placeholder="01/01/2023">
-                        </div>
-                    </div>
-                    <div class="col-lg-4 col-md-6 col-sm-12">       
-                        <div class="input-group mb-3">
-                            <span class="input-group-text" id="basic-addon1" style="width: 150px;"><b>Lot intern :</b></span>
-                            <input type="text" class="form-control" id='internal_lot' aria-label="TTN" aria-describedby="basic-addon1">
-                        </div>
-                    </div>
-                    <div class="col-lg-4 col-md-6 col-sm-12">       
-                        <div class="input-group mb-3">
-                            <span class="input-group-text" id="basic-addon1" style="width: 150px;"><b>Tecnic :</b></span>
-                            <input type="text" class="form-control" id='tecnic' aria-label="TTN" aria-describedby="basic-addon1" style="background-color: white;" readonly>
-                        </div>
-                    </div>
-                    <div class="col-lg-4 col-md-6 col-sm-12">       
-                    </div>
-
-                    <div class="col-lg-1 col-md-1 col-sm-1">       
-                    </div>  
-                    <div class="col-lg-10 col-md-10 col-sm-10" style="padding-bottom: 10px;">       
-                        <hr>
-                    </div>
-                    <div class="col-lg-1 col-md-1 col-sm-1">       
-                    </div>  
-
-                    <!-- <div class="col-lg-4 col-md-6 col-sm-12">       
-                        <div class="input-group mb-3">
-                            <span class="input-group-text" id="basic-addon1" style="width: 150px;"><b>Data obertura :</b></span>
-                            <input type="text" class="form-control" id='data_open' aria-label="TTN" aria-describedby="basic-addon1" placeholder="01/01/2023">
-                        </div>
-                    </div>                     
-                    <div class="col-lg-4 col-md-6 col-sm-12">       
-                        <div class="input-group mb-3">
-                            <span class="input-group-text" id="basic-addon1" style="width: 150px;"><b>Tecnic obertura :</b></span>
-                            <input type="text" class="form-control" id='tecnic_open' aria-label="TTN" aria-describedby="basic-addon1">
-                        </div>
-                    </div> 
-                    <div class="col-lg-4 col-md-6 col-sm-12">       
-                    </div>
-
-                    <div class="col-lg-1 col-md-1 col-sm-1">       
-                    </div>  
-                    <div class="col-lg-10 col-md-10 col-sm-10" style="padding-bottom: 10px;">       
-                        <hr>
-                    </div>
-                    <div class="col-lg-1 col-md-1 col-sm-1">       
-                    </div>  
-
-                    <div class="col-lg-4 col-md-6 col-sm-12">       
-                        <div class="input-group mb-3">
-                            <span class="input-group-text" id="basic-addon1" style="width: 150px;"><b>Data d'acabat :</b></span>
-                            <input type="text" class="form-control" id='data_close' aria-label="TTN" aria-describedby="basic-addon1" placeholder="01/01/2023">
-                        </div>
-                    </div> 
-                    <div class="col-lg-4 col-md-6 col-sm-12">       
-                        <div class="input-group mb-3">
-                            <span class="input-group-text" id="basic-addon1" style="width: 150px;"><b>Tecnic acabat:</b></span>
-                            <input type="text" class="form-control" id='tecnic_close' aria-label="TTN" aria-describedby="basic-addon1">
-                        </div>
-                    </div> 
-                    <div class="col-lg-4 col-md-6 col-sm-12">       
-                    </div>
-
-                    <div class="col-lg-1 col-md-1 col-sm-1">       
-                    </div>  
-                    <div class="col-lg-10 col-md-10 col-sm-10" style="padding-bottom: 10px;">       
-                        <hr>
-                    </div>
-                    <div class="col-lg-1 col-md-1 col-sm-1">       
-                    </div> <!--
-
-                    <div class="col-lg-12 col-md-12 col-sm-12">       
-                        <div class="input-group mb-3">
-                            <span class="input-group-text" id="basic-addon1" style="width: 150px;"><b>Observacions :</b></span>
-                            <input type="text" class="form-control" id='observations' aria-label="TTN" aria-describedby="basic-addon1">
-                        </div>
-                    </div> 
-                    <div class="col-lg-3 col-md-6 col-sm-12">       
-                        <div class="input-group mb-3">
-                            <button type="button" class="btn btn-primary btn-sm" style="width: 150px;" onclick="add_lot()">Accepta</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-          </div>
-        </div>
-    </div> -->
-
 
     <div class="modal fade"  id="search_lot" tabindex="-1" role="dialog" aria-labelledby="editRegister" aria-hidden="true">
         <div class="modal-dialog modal-xs" tabindex="-1" role="document">
