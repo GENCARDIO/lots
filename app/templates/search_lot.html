@@ -6,11 +6,33 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     {% include 'Header/header.html' %}
     <script>
+        /**
+         * Tanquem el modal amb l'id que ens passen per paràmetre.
+         * @param {string} modal_id És l'identificador únic del modal
+         * @returns {void} No retorna cap valor.
+         */
         function close_modal(modal_id){
             $(`#${modal_id}`).modal('hide');
         }
 
 
+        /**
+         * Descarrega un document específic.
+         * 
+         * Aquesta funció estableix els valors dels camps d'un formulari per descarregar un document
+         * específic. Els paràmetres especificats s'utilitzen per establir el nom del document i la
+         * ruta del directori on es troba. Posteriorment, s'envia el formulari per iniciar la descàrrega
+         * del document.
+         * 
+         * @param {string} dir_name La ruta del directori on es troba el document a descarregar.
+         * @param {string} name_doc El nom del document a descarregar.
+         * @param {string} type_doc El tipus de document (extensió de l'arxiu) a descarregar.
+         * @returns {void} No retorna cap valor.
+         * 
+         * @descriptor Aquesta funció facilita la descàrrega de documents específics mitjançant l'ús
+         * d'un formulari. Estableix els valors dels camps del formulari i els envia per descarregar el
+         * document corresponent.
+         */
         function download_doc(dir_name, name_doc, type_doc){
             document.getElementById("name_doc").value = name_doc + type_doc;
             document.getElementById("dir_name").value = dir_name;
@@ -18,6 +40,21 @@
         }
 
 
+        /**
+         * Obre el modal per pujar documents.
+         * 
+         * Aquesta funció estableix els valors dels camps d'un formulari per indicar la ruta del
+         * directori on es pujaran els documents i el grup d'inserció corresponent. Posteriorment,
+         * obre el modal per a la pujada de documents.
+         * 
+         * @param {string} dir_name La ruta del directori on es pujaran els documents.
+         * @param {string} group_insert El grup d'inserció associat als documents a pujar.
+         * @returns {void} No retorna cap valor.
+         * 
+         * @descriptor Aquesta funció facilita l'obertura del modal per pujar documents. Estableix
+         * els valors dels camps del formulari corresponent i mostra el modal d'acord amb les dades
+         * proporcionades.
+         */
         function open_upload_documents(dir_name, group_insert){
             document.getElementById("dir_name_upload").value = dir_name;
             document.getElementById("group_insert").value = group_insert;
@@ -25,6 +62,21 @@
         }
 
 
+        /**
+         * Pujar documents al servidor.
+         * 
+         * Aquesta funció envia una sol·licitud AJAX al servidor per pujar un document,
+         * juntament amb la informació associada, com la ruta del directori on es pujarà
+         * el document, el grup d'inserció corresponent i el propi document. Després d'enviar
+         * la sol·licitud, s'amaga el modal de pujada de documents i s'executa el maneig de la
+         * resposta del servidor.
+         * 
+         * @returns {void} No retorna cap valor.
+         * 
+         * @descriptor Aquesta funció executa una operació asíncrona per enviar una sol·licitud
+         * al servidor per pujar un document, mostrant alertes d'èxit o error en funció de la
+         * resposta rebuda. També actualitza l'aparença dels botons associats al document pujat.
+         */
         function upload_documents(){
             // Crear form data
             var form_data = new FormData();

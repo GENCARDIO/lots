@@ -6,11 +6,34 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     {% include 'Header/header.html' %}
     <script>
+        /**
+         * Tanquem el modal amb l'id que ens passen per paràmetre.
+         * @param {string} modal_id És l'identificador únic del modal
+         * @returns {void} No retorna cap valor.
+         */
         function close_modal(modal_id){
             $(`#${modal_id}`).modal('hide');
         }
 
-
+        /**
+         * Mostrar el modal per obrir o tancar un lot.
+         * 
+         * Aquesta funció envia una sol·licitud AJAX al servidor per obrir o tancar un lot
+         * específic, i després mostra una alerta amb el resultat de l'operació. També actualitza
+         * la taula de lots si s'ha tancat un lot i aquest s'ha esgotat completament. Arribant a eliminar
+         * totes les lines que estiguin associades ja que si un lot es tanca la resta de lots associat,
+         * també s'han de tancar.
+         * 
+         * @param {string} id_lot L'identificador únic del lot a obrir o tancar.
+         * @param {string} action L'acció a realitzar: "open" per obrir o "close" per tancar el lot.
+         * @returns {void} No retorna cap valor.
+         * 
+         * @descriptor Aquesta funció executa una operació asíncrona per enviar una sol·licitud
+         * al servidor per obrir o tancar un lot, mostrant alertes d'èxit o error en funció de la
+         * resposta rebuda. També actualitza la taula de lots si s'ha tancat un lot i aquest s'ha
+         * esgotat completament. Si s'esgota completament eliminarem la linia i totes les linies que
+         * estigun associades a ella.
+         */
         function show_modal_open_close_lot(id_lot, action){
             // Crear form data
             var form_data = new FormData();
@@ -77,6 +100,22 @@
         }
 
 
+        /**
+         * Mostrar l'historial del lot en un modal.
+         * 
+         * Aquesta funció envia una sol·licitud AJAX al servidor per obtenir l'historial
+         * d'un lot específic i mostra aquest historial en un modal. Si s'obté l'historial
+         * amb èxit, s'omple una taula amb les dades de l'historial i s'obre el modal per
+         * mostrar aquesta informació.
+         * 
+         * @param {string} id_lot L'identificador únic del lot del qual es vol consultar l'historial.
+         * @returns {void} No retorna cap valor.
+         * 
+         * @descriptor Aquesta funció executa una operació asíncrona per enviar una sol·licitud
+         * al servidor per obtenir l'historial d'un lot específic. Si s'obté l'historial amb èxit,
+         * omple una taula amb les dades corresponents i mostra aquesta informació en un modal. En
+         * cas contrari, mostra una alerta amb el missatge d'error rebut del servidor.
+         */
         function show_history_lot(id_lot){
             // Crear form data
             var form_data = new FormData();
@@ -147,6 +186,7 @@
             xhr.send(form_data)
         }
     </script>
+
     <style>
         #example thead input[type="text"] {
             max-width: 100%; /* Ajusta este valor según tus necesidades */

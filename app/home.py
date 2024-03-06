@@ -88,9 +88,10 @@ def search_add_lot():
     '''
     code_search = request.form.get("code_search")
 
-    select_lot = session1.query(Lots).filter(Lots.catalog_reference == code_search).filter(Lots.active == 1).all()
+    select_lot = session1.query(Lots).filter(func.lower(Lots.catalog_reference) == code_search.lower()).filter(Lots.active == 1).all()
+    # select_lot = session1.query(Lots).filter(Lots.catalog_reference == code_search).filter(Lots.active == 1).all()
     if not select_lot:
-        select_lot = session1.query(Lots).filter(Lots.code_LOG == code_search).filter(Lots.active == 1).all()
+        select_lot = session1.query(Lots).filter(func.lower(Lots.code_LOG) == code_search.lower()).filter(Lots.active == 1).all()
         # if not select_lot:
         #     select_lot = session1.query(Lots).filter(Lots.code_SAP == code_search).filter(Lots.active == 1).all()
 
@@ -248,6 +249,7 @@ def add_stock_lot():
                 type_log = 'insert add stock'
             else:
                 type_log = 'insert new stock'
+
                 insert_lot = Stock_lots(id_lot=lots['key'],
                                         catalog_reference=lots['catalog_reference'],
                                         manufacturer=lots['manufacturer'],
@@ -282,8 +284,8 @@ def add_stock_lot():
 
                 session1.add(insert_lot)
 
-            select_lot = session1.query(Lots).order_by(Lots.key.desc()).first()
-            info_lot = {'id_lot': select_lot.key,
+            select_lot = session1.query(Stock_lots).order_by(Stock_lots.id.desc()).first()
+            info_lot = {'id_lot': select_lot.id,
                         'type': type_log,
                         'info': json_lots,
                         'user': session['acronim'],
@@ -312,11 +314,14 @@ def search_lots():
         :rtype: render_template, object, int
     '''
     search_code = request.form['search_code']
-    select_lot = session1.query(Stock_lots).filter_by(catalog_reference=search_code, spent=0).all()
+    # select_lot = session1.query(Stock_lots).filter_by(catalog_reference=search_code, spent=0).all()
+    select_lot = session1.query(Stock_lots).filter(func.lower(Stock_lots.catalog_reference) == search_code.lower(), Stock_lots.spent == 0).all()
     if not select_lot:
-        select_lot = session1.query(Stock_lots).filter_by(code_SAP=search_code, spent=0).all()
+        # select_lot = session1.query(Stock_lots).filter_by(code_SAP=search_code, spent=0).all()
+        select_lot = session1.query(Stock_lots).filter(func.lower(Stock_lots.code_SAP) == search_code.lower(), Stock_lots.spent == 0).all()
         if not select_lot:
-            select_lot = session1.query(Stock_lots).filter_by(code_LOG=search_code, spent=0).all()
+            # select_lot = session1.query(Stock_lots).filter_by(code_LOG=search_code, spent=0).all()
+            select_lot = session1.query(Stock_lots).filter(func.lower(Stock_lots.code_LOG) == search_code.lower(), Stock_lots.spent == 0).all()
             if not select_lot:
                 flash(f"No s'ha trobat cap coincidencia amb el text entrat --> {search_code}", "warning")
                 return render_template('home.html')
@@ -426,9 +431,11 @@ def search_lots_open_close():
         :rtype: object, int
     '''
     reference = request.form['reference']
-    select_lot = session1.query(Stock_lots).filter_by(catalog_reference=reference, react_or_fungible='Reactiu', spent=0).all()
+    # select_lot = session1.query(Stock_lots).filter_by(catalog_reference=reference, react_or_fungible='Reactiu', spent=0).all()
+    select_lot = session1.query(Stock_lots).filter(func.lower(Stock_lots.catalog_reference) == reference.lower(), Stock_lots.spent == 0, Stock_lots.react_or_fungible == 'Reactiu').all()
     if not select_lot:
-        select_lot = session1.query(Stock_lots).filter_by(id_reactive=reference, react_or_fungible='Reactiu', spent=0).all()
+        # select_lot = session1.query(Stock_lots).filter_by(id_reactive=reference, react_or_fungible='Reactiu', spent=0).all()
+        select_lot = session1.query(Stock_lots).filter(func.lower(Stock_lots.id_reactive) == reference.lower(), Stock_lots.spent == 0, Stock_lots.react_or_fungible == 'Reactiu').all()
         if not select_lot:
             flash(f"No s'ha trobat cap coincidencia amb el codi entrat --> {reference}", "warning")
             return render_template('home.html')
