@@ -33,6 +33,7 @@ class Lots(Base):
     temp_conservation = Column(String())
     description_subreference = Column(String())
     react_or_fungible = Column(String())
+    code_panel = Column(String())
 
 
 class Stock_lots(Base):
@@ -70,6 +71,7 @@ class Stock_lots(Base):
     type_doc_certificate = Column(String())
     type_doc_delivery = Column(String())
     group_insert = Column(Integer())
+    code_panel = Column(String())
 
 
 class Logs(Base):
