@@ -87,13 +87,12 @@ def search_add_lot():
         :rtype: json
     '''
     code_search = request.form.get("code_search")
+    code_panel = request.form.get("code_panel")
 
-    select_lot = session1.query(Lots).filter(func.lower(Lots.catalog_reference) == code_search.lower()).filter(Lots.active == 1).all()
-    # select_lot = session1.query(Lots).filter(Lots.catalog_reference == code_search).filter(Lots.active == 1).all()
-    if not select_lot:
-        select_lot = session1.query(Lots).filter(func.lower(Lots.code_LOG) == code_search.lower()).filter(Lots.active == 1).all()
-        # if not select_lot:
-        #     select_lot = session1.query(Lots).filter(Lots.code_SAP == code_search).filter(Lots.active == 1).all()
+    if code_panel == '':
+        select_lot = session1.query(Lots).filter(func.lower(Lots.catalog_reference) == code_search.lower()).filter(Lots.active == 1).all()
+    else:
+        select_lot = session1.query(Lots).filter(func.lower(Lots.catalog_reference) == code_search.lower()).filter(func.lower(Lots.code_panel) == code_panel.lower()).filter(Lots.active == 1).all()
 
     try:
         if not select_lot:
@@ -113,7 +112,8 @@ def search_add_lot():
                              'code_LOG': lot.code_LOG,
                              'active': lot.active,
                              'temp_conservation': lot.temp_conservation,
-                             'react_or_fungible': lot.react_or_fungible}
+                             'react_or_fungible': lot.react_or_fungible,
+                             'code_panel': lot.code_panel}
                 list_lots.append(dict_lots)
             json_data = json.dumps(list_lots)
             return f'True_//_{json_data}'
@@ -155,7 +155,8 @@ def register_new_lot():
                               active=1,
                               temp_conservation=lots['temp_conservation'],
                               react_or_fungible=lots['react_or_fungible'],
-                              description_subreference=lots['description_subreference'])
+                              description_subreference=lots['description_subreference'],
+                              code_panel=lots['code_panel'])
             session1.add(insert_lot)
 
             json_lots = json.dumps(lots)
@@ -240,6 +241,12 @@ def add_stock_lot():
 
     list_lots = json.loads(list_lots_json)
 
+    suma_units_lot = 0
+    number_unit_lot = 0
+    # Iterar sobre cada diccionario y sumar los valores de 'units_lot'
+    for diccionario in list_lots:
+        suma_units_lot += int(diccionario.get('units_lot', 0))
+
     for lots in list_lots:
         try:
             json_lots = json.dumps(lots)
@@ -250,39 +257,41 @@ def add_stock_lot():
             else:
                 type_log = 'insert new stock'
 
-                insert_lot = Stock_lots(id_lot=lots['key'],
-                                        catalog_reference=lots['catalog_reference'],
-                                        manufacturer=lots['manufacturer'],
-                                        description=lots['description'],
-                                        description_subreference=lots['description_subreference'],
-                                        analytical_technique=lots['analytical_technique'],
-                                        id_reactive=lots['id_reactive'],
-                                        code_SAP=lots['code_SAP'],
-                                        code_LOG=lots['code_LOG'],
-                                        date_expiry=lots['date_expiry'],
-                                        lot=lots['lot'],
-                                        spent=0,
-                                        reception_date=lots['reception_date'],
-                                        units_lot=lots['units_lot'],
-                                        internal_lot=lots['internal_lot'],
-                                        transport_conditions=lots['transport_conditions'],
-                                        packaging=lots['packaging'],
-                                        inspected_by=lots['inspected_by'],
-                                        date_inspected=lots['date_inspected'],
-                                        observations_inspection=lots['observations_inspection'],
-                                        state=lots['state'],
-                                        comand_number=lots['comand_number'],
-                                        revised_by=lots['revised_by'],
-                                        date_revised=lots['date_revised'],
-                                        delivery_note=filename_delivery,
-                                        certificate=filename_certificate,
-                                        type_doc_certificate=type_doc_certificate,
-                                        type_doc_delivery=type_doc_delivery,
-                                        group_insert=group_insert_number,
-                                        temp_conservation=lots['temp_conservation'],
-                                        react_or_fungible=lots['react_or_fungible'])
-
-                session1.add(insert_lot)
+                for i in range(int(lots['units_lot'])):
+                    number_unit_lot += 1
+                    insert_lot = Stock_lots(id_lot=lots['key'],
+                                            catalog_reference=lots['catalog_reference'],
+                                            manufacturer=lots['manufacturer'],
+                                            description=lots['description'],
+                                            description_subreference=lots['description_subreference'],
+                                            analytical_technique=lots['analytical_technique'],
+                                            id_reactive=lots['id_reactive'],
+                                            code_SAP=lots['code_SAP'],
+                                            code_LOG=lots['code_LOG'],
+                                            date_expiry=lots['date_expiry'],
+                                            lot=lots['lot'],
+                                            spent=0,
+                                            reception_date=lots['reception_date'],
+                                            units_lot=1,
+                                            internal_lot=f"{lots['internal_lot']}_{number_unit_lot}/{suma_units_lot}",
+                                            transport_conditions=lots['transport_conditions'],
+                                            packaging=lots['packaging'],
+                                            inspected_by=lots['inspected_by'],
+                                            date_inspected=lots['date_inspected'],
+                                            observations_inspection=lots['observations_inspection'],
+                                            state=lots['state'],
+                                            comand_number=lots['comand_number'],
+                                            revised_by=lots['revised_by'],
+                                            date_revised=lots['date_revised'],
+                                            delivery_note=filename_delivery,
+                                            certificate=filename_certificate,
+                                            type_doc_certificate=type_doc_certificate,
+                                            type_doc_delivery=type_doc_delivery,
+                                            group_insert=group_insert_number,
+                                            temp_conservation=lots['temp_conservation'],
+                                            react_or_fungible=lots['react_or_fungible'],
+                                            code_panel=lots['code_panel'])
+                    session1.add(insert_lot)
 
             select_lot = session1.query(Stock_lots).order_by(Stock_lots.id.desc()).first()
             info_lot = {'id_lot': select_lot.id,
@@ -314,17 +323,15 @@ def search_lots():
         :rtype: render_template, object, int
     '''
     search_code = request.form['search_code']
-    # select_lot = session1.query(Stock_lots).filter_by(catalog_reference=search_code, spent=0).all()
-    select_lot = session1.query(Stock_lots).filter(func.lower(Stock_lots.catalog_reference) == search_code.lower(), Stock_lots.spent == 0).all()
+    code_panel = request.form['code_panel_search']
+
+    if code_panel == '':
+        select_lot = session1.query(Stock_lots).filter(func.lower(Stock_lots.catalog_reference) == search_code.lower(), Stock_lots.spent == 0).all()
+    else:
+        select_lot = session1.query(Stock_lots).filter(func.lower(Stock_lots.catalog_reference) == search_code.lower(), func.lower(Stock_lots.code_panel) == code_panel.lower(), Stock_lots.spent == 0).all()
     if not select_lot:
-        # select_lot = session1.query(Stock_lots).filter_by(code_SAP=search_code, spent=0).all()
-        select_lot = session1.query(Stock_lots).filter(func.lower(Stock_lots.code_SAP) == search_code.lower(), Stock_lots.spent == 0).all()
-        if not select_lot:
-            # select_lot = session1.query(Stock_lots).filter_by(code_LOG=search_code, spent=0).all()
-            select_lot = session1.query(Stock_lots).filter(func.lower(Stock_lots.code_LOG) == search_code.lower(), Stock_lots.spent == 0).all()
-            if not select_lot:
-                flash(f"No s'ha trobat cap coincidencia amb el text entrat --> {search_code}", "warning")
-                return render_template('home.html')
+        flash(f"No s'ha trobat cap coincidencia amb el text entrat --> {search_code}", "warning")
+        return render_template('home.html')
 
     return render_template('search_lot.html', select_lot=select_lot, lot=select_lot[0])
 
@@ -479,44 +486,54 @@ def open_close_lots():
     pos_close = -1
     message = ''
     str_id_lots = ''
-    try:
-        select_lots = session1.query(Stock_lots).filter_by(id=id_lot).first()
-        if select_lots is None:
-            return 'False_No hem trobat el lot seleccionat.'
+    # try:
+    select_lots = session1.query(Stock_lots).filter_by(id=id_lot).first()
+    if select_lots is None:
+        return 'False_No hem trobat el lot seleccionat.'
 
-        select_consumptions = session1.query(Lot_consumptions).filter_by(id_lot=id_lot).all()
-        if select_consumptions:
-            lot_open = 0
-            lot_close = 0
-            for index, consumptions in enumerate(select_consumptions):
-                if consumptions.date_close != '':
-                    lot_open += 1
-                    lot_close += 1
-                else:
-                    lot_open += 1
-                    if pos_close == -1:
-                        pos_close = index
-
-            num_lots_open = lot_open - lot_close
-
-        date = instant_date()
-        if action == 'open':
-            if num_lots_open >= select_lots.units_lot:
-                return "False_Tots els lots d'aquesta referència estan oberts."
-            insert_consump = Lot_consumptions(id_lot=id_lot, date_open=date, user_open=session['acronim'], date_close='')
-            session1.add(insert_consump)
-            if num_lots_open + 1 == 1:
-                message = f"El lot s'ha obert correctament, tens {num_lots_open + 1} unitat oberta d'aquesta referència."
+    select_consumptions = session1.query(Lot_consumptions).filter_by(id_lot=id_lot).all()
+    if select_consumptions:
+        lot_open = 0
+        lot_close = 0
+        for index, consumptions in enumerate(select_consumptions):
+            if consumptions.date_close != '':
+                lot_open += 1
+                lot_close += 1
             else:
-                message = f"El lot s'ha obert correctament, tens {num_lots_open + 1} unitats obertes d'aquesta referència."
-        elif action == 'close':
-            if num_lots_open > 0:
-                select_consumptions[pos_close].date_close = date
-                select_consumptions[pos_close].user_close = session['acronim']
-                select_lots.units_lot = select_lots.units_lot - 1
-                message = "El lot s'ha tancat correctament"
-                if select_lots.units_lot == 0:
-                    select_group_lots = session1.query(Stock_lots).filter_by(group_insert=select_lots.group_insert).all()
+                lot_open += 1
+                if pos_close == -1:
+                    pos_close = index
+
+        num_lots_open = lot_open - lot_close
+
+    date = instant_date()
+    if action == 'open':
+        if num_lots_open >= select_lots.units_lot:
+            return "False_Tots els lots d'aquesta referència estan oberts."
+        insert_consump = Lot_consumptions(id_lot=id_lot, date_open=date, user_open=session['acronim'], date_close='')
+        session1.add(insert_consump)
+        if num_lots_open + 1 == 1:
+            message = f"El lot s'ha obert correctament, tens {num_lots_open + 1} unitat oberta d'aquesta referència."
+        else:
+            message = f"El lot s'ha obert correctament, tens {num_lots_open + 1} unitats obertes d'aquesta referència."
+    elif action == 'close':
+        if num_lots_open > 0:
+            select_consumptions[pos_close].date_close = date
+            select_consumptions[pos_close].user_close = session['acronim']
+            select_lots.units_lot = select_lots.units_lot - 1
+            message = "El lot s'ha tancat correctament"
+            if select_lots.units_lot == 0:
+                select_group_lots = session1.query(Stock_lots).filter_by(group_insert=select_lots.group_insert).all()
+                sublot = 0
+                for lot_group in select_group_lots:
+                    split_internal_lot = str(lot_group.internal_lot).split('_')
+                    split_internal_lot_2 = str(select_lots.internal_lot).split('_')
+                    if lot_group.id_reactive == select_lots.id_reactive and \
+                        split_internal_lot[0] == split_internal_lot_2[0] and \
+                        lot_group.units_lot > 0:
+                        sublot += 1
+                        print(sublot)
+                if sublot == 0:
                     for lot_group in select_group_lots:
                         lot_group.spent = 1
                         str_id_lots += f'{lot_group.id};'
@@ -528,11 +545,11 @@ def open_close_lots():
                             lot_group.units_lot = lot_group.units_lot - len(select_lot_consumptions)
                     str_id_lots = str_id_lots[:-1]
                     message = f"El lot s'ha tancat correctament, Aquesta referència s'ha esgotat, ella i totes les subreferències han set posades com ha gastades._{str_id_lots}"
-            else:
-                return 'False_No es pot tancar cap lot amb aquesta referència, obre primer un lot.'
-        session1.commit()
-    except Exception:
-        return "False_No s'ha pogut accedir a la BD, si l'error persisteix contacta amb un administrador."
+        else:
+            return 'False_No es pot tancar cap lot amb aquesta referència, obre primer un lot.'
+    session1.commit()
+    # except Exception:
+    #     return "False_No s'ha pogut accedir a la BD, si l'error persisteix contacta amb un administrador."
     return f'True_{message}'
 
 
@@ -571,6 +588,53 @@ def history_lot():
             list_consumptions.append(dict_consumption)
 
         json_data = json.dumps(list_consumptions)
+    except Exception:
+        return "False_ No s'ha pogut accedir a la informació dels consums."
+
+    return f'True_//_{json_data}'
+
+
+@app.route('/search_lot_db', methods=['POST'])
+@requires_auth
+def search_lot_db():
+    '''
+        1 - Recollim la informació de l'ajax
+        2 - Comprovem si aquest lot té història.
+        2.1 - Si no en té retornem False més un missatge d'explicació per l'usuari.
+        2.2 - Si és que si agafem la informació que hem trobat la posem en una llista de diccionaris.
+        3 - Convertim la llista de diccionaris en un json
+        4 - Retornem un True més la llista de diccionaris convertida a json.
+
+        :param str id_lot: Identificador unit del lot
+
+        :return: True i la llista de diccionaris amb la info o False i una explicació per l'usuari
+        :rtype: json
+    '''
+    try:
+        select_lots = session1.query(Lots).filter(Lots.active == 1).all()
+        if not select_lots:
+            return 'False_//_No hi ha cap lot a la BD.'
+
+        list_lots = []
+        for lot in select_lots:
+            dict_lots = {}
+            # dict_lots['key'] = lot.key
+            # dict_lots['manufacturer'] = lot.manufacturer
+            # dict_lots['analytical_technique'] = lot.analytical_technique
+            # dict_lots['reference_units'] = lot.reference_units
+            # dict_lots['id_reactive'] = lot.id_reactive
+            dict_lots['code_SAP'] = lot.code_SAP
+            dict_lots['code_LOG'] = lot.code_LOG
+            dict_lots['catalog_reference'] = lot.catalog_reference
+            dict_lots['description'] = lot.description
+            dict_lots['description_subreference'] = lot.description_subreference
+            # dict_lots['active'] = lot.active
+            # dict_lots['temp_conservation'] = lot.temp_conservation
+            # dict_lots['react_or_fungible'] = lot.react_or_fungible
+
+            list_lots.append(dict_lots)
+
+        json_data = json.dumps(list_lots)
     except Exception:
         return "False_ No s'ha pogut accedir a la informació dels consums."
 

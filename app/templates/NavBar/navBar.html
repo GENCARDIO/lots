@@ -5,6 +5,9 @@
             <li class="nav-item">
                 <a class="navbar btn mr-1" style="color:white;padding:5px;" data-toggle="modal" data-target="#open_close_lot"><b><i class="fa-solid fa-plus-minus"></i>&nbsp;Obri/tancar lot</a></b>
             </li>
+            <li class="nav-item">
+                <a class="navbar btn mr-1" style="color:white;padding:5px;" onclick="search_lots_db()"><b><i class="fa-solid fa-eye"></i>&nbsp;Veure lots</a></b>
+            </li>
     </div>
 
     <ul class="navbar-nav ml-auto">
@@ -20,7 +23,6 @@
     </ul>
 </nav>
 <div style="height: 45px;">
-
 </div>
 
 
@@ -47,3 +49,114 @@
       </div>
     </div>
 </div>
+
+
+<div class="modal fade modal-custom"  id="info_lots_bd" tabindex="-1" role="dialog" aria-labelledby="editRegister" aria-hidden="true">
+    <div class="modal-dialog modal-xl" tabindex="-1" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="title"> Lots</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="close_modal('info_lots_bd')"><span aria-hidden="true">&times;</span></button>
+        </div>
+        <div class="modal-body">
+            <div class="row">                                   
+                <div class="col-lg-12 col-md-12 col-sm-12">       
+                    <table id="table_info_lots_db" class="display" style="width: 100%;">
+                        <thead>
+                            <tr id="thcolor">
+                                <th style="width: 80px;">Codi SAP</th>
+                                <th style="width: 80px;">Code LOG</th>
+                                <th style="width: 100px;">Ref. Proveïdor</th>
+                                <th style="width: 350px;">Descripció lot</th>
+                                <th style="width: 350px;">Descripció Subref.</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                    </table>
+                </div> 
+            </div>
+        </div>
+      </div>
+    </div>
+</div>
+
+
+<script>
+    function search_lots_db(){
+        // Crear form data
+        var form_data = new FormData();
+        
+        // Creeem l'objecte per l'ajax
+        var xhr = new XMLHttpRequest();
+        // 1er argument si es pots o get
+        // 2n argument url o ruta
+        // 3r argumemt true sempre
+        xhr.open('POST', '/search_lot_db', true);
+        xhr.onload = function(){
+            show_message = true
+            if (xhr.status === 200) {
+                var response = xhr.responseText;
+                split_response = response.split('_//_')
+                message = split_response[1]
+                if (response.includes('False')){
+                    alert_type = 'danger'}
+                else if (response.includes('True')){
+                    show_message = false
+                    $('#info_lots_bd').modal('show');
+
+                    var list_lots = JSON.parse(split_response[1]);
+
+                    var table = $('#table_info_lots_db').DataTable();
+                    table.clear().draw();
+
+                    for (var i = 0; i < list_lots.length; i++) {
+                        var new_row_data = [];
+                        // Crea un nuevo elemento td para cada valor en la lista
+                        for (var key in list_lots[i]) {
+                            if (list_lots[i].hasOwnProperty(key)) {
+                                if (key !== 'id' && key !== 'id_lot') {
+                                    new_row_data.push(list_lots[i][key])
+                                }
+                            }
+                        }
+                        var new_row = table.row.add(new_row_data).draw(false).node();
+                    }
+                } else {
+                    message = `Error inesperat. Si persisteix l'error contacta amb un administrador`
+                    alert_type = 'danger'
+                }
+            }
+            else {
+                message = `Error, No s'ha pogut realitzar l'operació. Si persisteix l'error contacta amb un administrador`
+                alert_type = 'danger' }
+            
+            if (show_message){
+                var flashContainer = document.querySelector(".d-flex.justify-content-center .row");
+                // Eliminar la alerta anterior, si existe
+                if (flashContainer.children.length > 0) {
+                    flashContainer.removeChild(flashContainer.children[0]); }
+                var newFlash = document.createElement("div");
+                newFlash.className = "alert alert-" + alert_type + " alert-dismissible fade show ml-3";
+                newFlash.role = "alert";
+                newFlash.innerHTML = "<span>" + message + "</span>" + 
+                                    '<button type="button" class="close" data-dismiss="alert" aria-label="Close">' +
+                                    '<span aria-hidden="true">&times;</span>' +
+                                    '</button>';
+                flashContainer.appendChild(newFlash);
+                flashContainer.style.paddingTop = "20px";
+            }
+        }
+
+        xhr.send(form_data)
+    }
+
+
+    $(document).ready(function() {
+        var table = $('#table_info_lots_db').DataTable( {
+            order: [ 0, 'desc' ],
+            autoWidth: true
+        } );
+    } );
+
+</script>

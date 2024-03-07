@@ -41,8 +41,11 @@
         // document.getElementById('tecnic_close').value = ''
         // document.getElementById('observations').value = ''
         document.getElementById('code_search').value = ''
+        document.getElementById('code_panel').value = ''
+        document.getElementById('div_panel').style.display = 'none'
         $('#add_lot').modal('show');
     }
+
 
     /**
      * Tanquem el modal amb l'id que ens passen per paràmetre.
@@ -87,6 +90,7 @@
         
         // Carregar dades al form de l'html
         const code_search = document.getElementById('code_search').value
+        const code_panel = document.getElementById('code_panel').value
 
         var regex = /^\s*$/;
         var only_space = regex.test(code_search);
@@ -94,6 +98,7 @@
         if (code_search.length < 3){alert("El codi no to tenir menys de 3 caràcters."); return }
                     
         form_data.append('code_search', code_search)
+        form_data.append('code_panel', code_panel)
 
         $('#add_lot').modal('hide');
 
@@ -112,8 +117,8 @@
                 if (split_response[0] === 'True'){
                     message = ''
                     if (split_response[1] === 'new'){
-                        document.getElementById("code_log").value = code_search;
-                        document.getElementById("code_sap").value = code_search;
+                        document.getElementById("code_log").value = '';
+                        document.getElementById("code_sap").value = '';
                         document.getElementById("manufacturer").value = '';
                         document.getElementById("analytical_technique").value = '';
                         document.getElementById("description").value = '';
@@ -145,6 +150,12 @@
                                         <option>Reactiu</option>
                                         <option>Fungible</option>
                                     </select>
+                                </div>
+                            </div>
+                            <div class="col-lg-6 col-md-6 col-sm-12" name="divs_new_lots">       
+                                <div class="input-group mb-3">
+                                    <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Id panell(*) :</b></span>
+                                    <input type="text" class="form-control" aria-label="TTN" id="code_panel0" value='${code_panel}'>
                                 </div>
                             </div>
                             `;
@@ -358,7 +369,7 @@
                     <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts">
                         <div class="input-group mb-3">
                             <span class="input-group-text" id="basic-addon1" style="width: 135px;"><b>Lot intern :</b></span>
-                            <input type="text" class="form-control" id="internal_lot${x}_${i}" aria-label="TTN" value="${internal_lot}_${x + 1}/${number_references}">
+                            <input type="text" class="form-control" id="internal_lot${x}_${i}" aria-label="TTN" value="${internal_lot}">
                         </div>
                     </div>
                     <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts">
@@ -435,6 +446,12 @@
                             </select>
                         </div>
                     </div>
+                <div class="col-lg-6 col-md-6 col-sm-12" name="divs_new_lots">       
+                    <div class="input-group mb-3">
+                        <span class="input-group-text" id="basic-addon1" style="width: 135px;"><b>Id panell(*) :</b></span>
+                        <input type="text" class="form-control" aria-label="TTN" id="code_panel${x}">
+                    </div>
+                </div>
                 <div class="col-lg-12 col-md-12 col-sm-12" name="divs_new_lots">       
                     <div class="input-group mb-3">
                         <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Descripció Subref. :</b></span>
@@ -527,6 +544,7 @@
         if (num_lots === '0'){
             const temp_conservation = document.getElementById('temp_conservation0').value
             const react_or_fungible = document.getElementById('react_or_fungible0').value
+            const code_panel = document.getElementById('code_panel0').value
             if (code_sap !== '' && code_log !== '' && analytical_technique !== '' && description !== '' && reference_catalog !== '' && manufacturer !== '' ) {
                 var dict_lots = {
                     code_sap: code_sap,
@@ -537,7 +555,8 @@
                     description: description,
                     temp_conservation: temp_conservation,
                     react_or_fungible: react_or_fungible,
-                    description_subreference: '' }; }
+                    description_subreference: '',
+                    code_panel: code_panel }; }
             else {  
                 alert("No es poden deixar els camps sense omplir.")
                 return
@@ -550,6 +569,7 @@
             const description_subreference = document.getElementById(`description_subreference${x}`).value
             const temp_conservation = document.getElementById(`temp_conservation${x}`).value
             const react_or_fungible = document.getElementById(`react_or_fungible${x}`).value
+            const code_panel = document.getElementById(`code_panel${x}`).value
             if (code_sap !== '' && code_log !== '' && id_reactiu !== '' && analytical_technique !== '' && description !== '' && reference_catalog !== '' && manufacturer !== '' ) {
                 var dict_lots = {
                     code_sap: code_sap,
@@ -560,7 +580,8 @@
                     description: description,
                     temp_conservation: temp_conservation,
                     react_or_fungible: react_or_fungible,
-                    description_subreference: description_subreference}; }
+                    description_subreference: description_subreference,
+                    code_panel: code_panel}; }
             else {
                 alert("No es poden deixar els camps sense omplir.")
                 return
@@ -671,7 +692,7 @@
         const file_certificate = file_certificate_input.files[0];
 
         var list_lots = []
-
+        
         for (var x = 0; x < unit_lots; x++){
             for (var i = 0; i < list_info_lots.length; i++){
                 const lot = document.getElementById(`lot${x}_${i}`).value
@@ -790,6 +811,43 @@
         }
     }
 
+
+    /**
+     * Mostrar o oculta un div
+     * 
+     * @param {string} div_panel Id del div.
+     * @returns {void} No retorna cap valor.
+     * 
+     * @descriptor Agafem l'element amb l'id que ens han passat per paràmetre, comprobem el seu style i així
+     * sabre si esta ocult o no, si esta ocult el posem visible i si esta visible el posem en ocult.
+     */
+    function show_panel_input(div_panel){
+        // Obtener el elemento por su ID
+        var element = document.getElementById(div_panel);
+        var estiloDisplay = window.getComputedStyle(element).display;
+        // Verificar si el estilo de visualización es 'block' o 'none' y hacer algo en consecuencia
+        if (estiloDisplay === 'block') {
+            document.getElementById(div_panel).style.display = 'none';
+        } else if (estiloDisplay === 'none') {
+            document.getElementById(div_panel).style.display = 'block';
+        }
+    }
+
+
+    /**
+     * Obra el modal, oculata un div i posa en blanc un value.
+     * 
+     * @returns {void} No retorna cap valor.
+     * 
+     * @descriptor Obrim el modal search_lot, despres ens asegurem qeu el div div_panel_search esta ocult i
+     * per últim posarem en blanc el camp code_panel_search.
+     */
+    function open_search_lot(){
+        open_modal('search_lot')
+        document.getElementById('code_panel_search').value = ''
+        document.getElementById('div_panel_search').style.display = 'none';
+    }
+
 </script>
 <style>
     #add_lot_info {
@@ -829,7 +887,7 @@
                                 <div class="card-body">
                                     <h5 class="card-title"><b>2 - Cerca reactius</b></h5>
                                     <p class="card-text">Buscador de reactius.</p>
-                                    <button type="button" data-toggle="modal" data-target="#search_lot" class="btn btn-outline-primary btn-sm">Accedir</button>
+                                    <button type="button" onclick="open_search_lot()" class="btn btn-outline-primary btn-sm">Accedir</button>
                                 </div>
                             </div>
                         </div>
@@ -865,8 +923,15 @@
                     <div class="col-lg-12 col-md-12 col-sm-12">       
                         <div class="input-group mb-3">
                             <!-- <span class="input-group-text" id="basic-addon1"><b>Ref. proveïdor, SAP o LOG:</b></span> -->
-                            <span class="input-group-text" id="basic-addon1"><b>Ref. proveïdor o LOG:</b></span>
+                            <span class="input-group-text" id="basic-addon1"><b>Ref. proveïdor:</b></span>
                             <input type="text" class="form-control" id='code_search' aria-label="TTN" aria-describedby="basic-addon1" value="lot1">
+                            <button type="button" class="btn btn-secondary btn-sm" onclick="show_panel_input('div_panel')"><i class="fa-solid fa-plus"></i> panell</button>
+                        </div>
+                    </div>
+                    <div class="col-lg-12 col-md-12 col-sm-12" style="display: none;" id="div_panel">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1"><b>Codi panell (*):</b></span>
+                            <input type="text" class="form-control" id='code_panel' aria-label="TTN" aria-describedby="basic-addon1">
                         </div>
                     </div>
                     <div class="col-lg-12 col-md-12 col-sm-12">       
@@ -1087,6 +1152,7 @@
         </div>
     </div>
 
+    
     <div class="modal fade"  id="search_lot" tabindex="-1" role="dialog" aria-labelledby="editRegister" aria-hidden="true">
         <div class="modal-dialog modal-xs" tabindex="-1" role="document">
           <div class="modal-content">
@@ -1100,10 +1166,17 @@
                         <div class="col-lg-12 col-md-12 col-sm-12">       
                             <div class="input-group mb-3">
                                 <!-- <span class="input-group-text" id="basic-addon1"><b>Codi Cataleg, SAP o LOG :</b></span> -->
-                                <span class="input-group-text" id="basic-addon1"><b>Codi Cataleg o LOG :</b></span>
+                                <span class="input-group-text" id="basic-addon1"><b>Codi Cataleg :</b></span>
                                 <input type="text" class="form-control" id='search_code' name="search_code" aria-label="TTN" aria-describedby="basic-addon1" required>
+                                <button type="button" class="btn btn-secondary btn-sm" onclick="show_panel_input('div_panel_search')"><i class="fa-solid fa-plus"></i> panell</button>
                             </div>
-                        </div> 
+                        </div>
+                        <div class="col-lg-12 col-md-12 col-sm-12" style="display: none;" id="div_panel_search">       
+                            <div class="input-group mb-3">
+                                <span class="input-group-text" id="basic-addon1"><b>Codi panell (*):</b></span>
+                                <input type="text" class="form-control" id='code_panel_search' name='code_panel_search' aria-label="TTN" aria-describedby="basic-addon1">
+                            </div>
+                        </div>    
                         <center><input type="submit" value="Cercar lot" class="btn btn-success btn-sm"/></center>
                     </div>
                 </form>

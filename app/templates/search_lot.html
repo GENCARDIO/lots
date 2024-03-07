@@ -199,20 +199,27 @@
                 <table id="example" class="display">
                     <thead>
                         <tr id="thcolor">
-                            <th style="min-width: 70px;  max-width: 120px;">Subreferència</th>
-                            <th style="min-width: 70px;  max-width: 120px;">Lot</th>
-                            <th style="min-width: 70px;  max-width: 120px;">Lot intern</th>
-                            <th style="min-width: 70px;  max-width: 120px;">Unitats</th>
-                            <th style="min-width: 70px;  max-width: 120px;">Data arribada</th>
-                            <th style="min-width: 70px;  max-width: 120px;">Caducitat</th>
-                            <th style="min-width: 120px;  max-width: 160px;">Docs.</th>
+                            <th style="min-width: 70px; max-width: 100px;">Subreferència</th>
+                            <th style="min-width: 70px; max-width: 300px;">Descripció</th>
+                            <th style="min-width: 70px; max-width: 120px;">Lot</th>
+                            <th style="min-width: 70px; max-width: 110px;">Lot intern</th>
+                            <th style="min-width: 70px; max-width: 90px;">Unitats</th>
+                            <th style="min-width: 70px; max-width: 110px;">Data arribada</th>
+                            <th style="min-width: 70px; max-width: 110px;">Caducitat</th>
+                            <th style="max-width: 160px;">Docs.</th>
                             <th>Observacions</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for lot in select_lot %}
                             <tr id="{{lot.id}}">
-                                <td>{{lot.id_reactive}}</td>
+                                {% if lot.id_reactive == '' %}
+                                    <td>{{lot.catalog_reference}}</td>
+                                    <td>{{lot.description_subreference}}</td>
+                                {% else %}
+                                    <td>{{lot.id_reactive}}</td>
+                                    <td>{{lot.description}}</td>
+                                {% endif %}
                                 <td>{{lot.lot}}</td>
                                 <td>{{lot.internal_lot}}</td>
                                 <td>{{lot.units_lot}}</td>
@@ -233,7 +240,7 @@
                                     {% endif %}
                                     </div>
                                 </td>
-                                <td>{{lot.observations}}</td>
+                                <td>{{lot.observations_inspection}}</td>
                             </tr>
                         {% endfor %}
                     </tbody>
