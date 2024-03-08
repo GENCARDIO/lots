@@ -642,7 +642,53 @@ def search_lot_db():
     return f'True_//_{json_data}'
 
 
-@app.route('/charge_excel')
+@app.route('/history_lots', methods=['POST'])
+@requires_auth
+def history_lots():
+    '''
+        1 - Recollim la informació de l'ajax
+        2 - Comprovem si aquest lot té història.
+        2.1 - Si no en té retornem False més un missatge d'explicació per l'usuari.
+        2.2 - Si és que si agafem la informació que hem trobat la posem en una llista de diccionaris.
+        3 - Convertim la llista de diccionaris en un json
+        4 - Retornem un True més la llista de diccionaris convertida a json.
+
+        :param str id_lot: Identificador unit del lot
+
+        :return: True i la llista de diccionaris amb la info o False i una explicació per l'usuari
+        :rtype: json
+    '''
+    historic_code_lot = request.form.get("historic_code_lot")
+
+    try:
+        info_history = session1.query(Stock_lots, Lot_consumptions).\
+                       join(Lot_consumptions, Stock_lots.id == Lot_consumptions.id_lot).\
+                       filter(Stock_lots.lot == historic_code_lot).\
+                       all()
+        if not info_history:
+            return 'False_//_No hi ha informació sobre aquest lot.'
+
+        list_consumptions = []
+        for stock_lot, consumption in info_history:
+            dict_consumption = {}
+            dict_consumption['id'] = consumption.id
+            dict_consumption['id_lot'] = consumption.id_lot
+            dict_consumption['lot'] = stock_lot.lot
+            dict_consumption['internal_lot'] = stock_lot.internal_lot
+            dict_consumption['date_open'] = consumption.date_open
+            dict_consumption['user_open'] = consumption.user_open
+            dict_consumption['date_close'] = consumption.date_close
+            dict_consumption['user_close'] = consumption.user_close
+            list_consumptions.append(dict_consumption)
+
+        json_data = json.dumps(list_consumptions)
+    except Exception:
+        return "False_ No s'ha pogut accedir a la informació dels consums."
+
+    return f'True_//_{json_data}'
+
+
+'''@app.route('/charge_excel')
 def charge_excel():
     try:
         # Llegim el directori i el convertim en una llista
@@ -675,4 +721,4 @@ def charge_excel():
         except Exception:
             print("error")
     session1.commit()
-    return "fet"
+    return "fet"'''
