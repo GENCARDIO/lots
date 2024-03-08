@@ -26,9 +26,21 @@
     vertical-align: middle;
 }
 
+#tbl_history_lots td {
+    text-align: center;
+    vertical-align: middle;
+}
+
 /* Estilo personalizado para el modal */
 .modal-custom .modal-dialog {
     max-width: 85%; /* Ajusta el ancho máximo del modal */
     max-height: 85%; /* Ajusta la altura máxima del modal */
+    margin: 1.75rem auto; /* Centra el modal verticalmente y le da un pequeño margen superior */
+}
+
+/* Estilo personalizado para el modal */
+.modal-custom2 .modal-dialog {
+    max-width: 55%; /* Ajusta el ancho máximo del modal */
+    max-height: 55%; /* Ajusta la altura máxima del modal */
     margin: 1.75rem auto; /* Centra el modal verticalmente y le da un pequeño margen superior */
 }

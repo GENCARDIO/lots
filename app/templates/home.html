@@ -59,16 +59,6 @@
 
 
     /**
-     * Obrim el modal amb l'id que ens passen per paràmetre.
-     * @param {string} modal_id És l'identificador únic del modal
-     * @returns {void} No retorna cap valor.
-     */
-    function open_modal(modal_id){
-        $(`#${modal_id}`).modal('show');
-    }
-    
-
-    /**
      * La funció mira si el codi que hem entrat ja el tenim a la base de dades, si no el tenim s'ha d'afegir 
      * un lot nou i en cas que el tinguem afegirem stock a la BD. Cada acció obrirà un modal diferent.
      * 
