@@ -7,7 +7,8 @@ from werkzeug.utils import secure_filename
 import os
 import jwt
 import json
-from config import main_dir_docs
+from config import main_dir_docs, main_dir
+import pandas as pd
 
 
 # Pagina incial i visualització
@@ -639,3 +640,39 @@ def search_lot_db():
         return "False_ No s'ha pogut accedir a la informació dels consums."
 
     return f'True_//_{json_data}'
+
+
+@app.route('/charge_excel')
+def charge_excel():
+    try:
+        # Llegim el directori i el convertim en una llista
+        directori = f'{main_dir}/info.xlsx'
+        print(directori)
+        df = pd.read_excel(directori, header=None)
+        list_excel = df.values.tolist()
+    except Exception:
+        print("No s'ha pogut lleguir el document")
+        return False
+    print(f'linia maxima excel --> {len(list_excel)}')
+
+    for line in range(1, len(list_excel)):
+        print(list_excel[line])
+        try:
+            insert_lots = Lots(catalog_reference=str(list_excel[line][6]) if str(list_excel[line][6]) != 'nan' else '',
+                               manufacturer=str(list_excel[line][3]) if str(list_excel[line][3]) != 'nan' else '',
+                               description=str(list_excel[line][5]) if str(list_excel[line][5]) != 'nan' else '',
+                               analytical_technique=str(list_excel[line][0]) if str(list_excel[line][0]) != 'nan' else '',
+                               reference_units=1,
+                               id_reactive='',
+                               code_SAP=str(list_excel[line][8]) if str(list_excel[line][8]) != 'nan' else '',
+                               code_LOG=str(list_excel[line][7]) if str(list_excel[line][7]) != 'nan' else '',
+                               active=1,
+                               temp_conservation=str(list_excel[line][9]) if str(list_excel[line][9]) != 'nan' else '',
+                               description_subreference='',
+                               react_or_fungible=str(list_excel[line][2]) if str(list_excel[line][2]) != 'nan' else '',
+                               code_panel='')
+            session1.add(insert_lots)
+        except Exception:
+            print("error")
+    session1.commit()
+    return "fet"
