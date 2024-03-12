@@ -13,7 +13,7 @@ main_dir_docs = f"{main_dir}/docs"
 
 # Producció qumulo
 # ip_address = 'http://172.16.83.23'
-# main_dir = f'{main_dir}/DB/'
+# main_dir = f'{main_dir}/DB'
 # main_dir_docs = f"{main_dir}/docs"
 
 

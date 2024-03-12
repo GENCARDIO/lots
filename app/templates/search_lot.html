@@ -203,7 +203,7 @@
                         message = "La cerca del lot ha fallat."
                         alert_type = 'danger'} 
                     else{
-                        message = "Error inesperat."
+                        message = "Error inesperat QC."
                         alert_type = 'danger'}}
                 else {
                     message = "Error, No s'ha pogut realitzar l'operació."
@@ -314,7 +314,7 @@
                                     {% if lot.delivery_note == '' %}
                                         <button type="button" class="btn btn-outline-danger btn-sm" id='{{lot.id}}_delivery_note' onclick="open_upload_documents('delivery_note', `{{lot.group_insert}}`)"><i class="fa-solid fa-file-arrow-up"></i> Albarà</button>
                                     {% else %}
-                                        <button type="button" class="btn btn-outline-success btn-sm" id='{{lot.id}}_delivery_note' onclick="download_doc('albarans', `{{lot.delivery_note}}`, `{{type_doc_delivery}}`)"><i class="fa-solid fa-file-arrow-down"></i> Albarà</button>
+                                        <button type="button" class="btn btn-outline-success btn-sm" id='{{lot.id}}_delivery_note' onclick="download_doc('albarans', `{{lot.delivery_note}}`, `{{lot.type_doc_delivery}}`)"><i class="fa-solid fa-file-arrow-down"></i> Albarà</button>
                                     {% endif %}
 
                                     {% if lot.certificate == '' %}

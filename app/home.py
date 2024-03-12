@@ -821,28 +821,31 @@ def create_qc():
         doc.render(context)
 
         name = 'LDG_REG_INS_generic_draft'
-        extension = '.docx'
-        filepath = os.path.join(f'{main_dir_docs}/qc', f'{name}{extension}')
+        filepath = os.path.join(f'{main_dir_docs}/qc', f'{name}.docx')
         doc.save(filepath)
 
         # Ruta del archivo de Word de entrada
-        input_docx = f'{main_dir_docs}/qc/{name}{extension}'
+        input_docx = f'{main_dir_docs}/qc/{name}.docx'
 
-        extension = '.pdf'
         # Ruta del archivo PDF de salida
-        output_pdf = f'{main_dir_docs}/qc/{name}{extension}'
+        output_pdf = f'{main_dir_docs}/qc/'
 
-        # Comando para convertir de docx a pdf usando unoconv
-        command = ["unoconv", "-f", "pdf", input_docx]
+        try:
+            # Comando para convertir el archivo DOCX a PDF
+            command = ['libreoffice', '--convert-to', 'pdf', '--outdir', output_pdf, input_docx]
 
-        # Ejecutar el comando
-        subprocess.run(command)
+            # Ejecutar el comando
+            subprocess.run(command, check=True)
 
-        # Mover el archivo PDF generado a la ubicación deseada
-        subprocess.run(["mv", f"{input_docx}x", output_pdf])
+            # Mostrar mensaje si la conversión fue exitosa
+            print("La conversión a PDF se ha completado con éxito.")
+
+        except subprocess.CalledProcessError as e:
+            # Mostrar mensaje si la conversión falló
+            print(f"Error: La conversión a PDF ha fallado. Código de salida: {e.returncode}")
     except Exception:
         return "False_ No s'ha pogut accedir a la informació dels consums."
-    return f'True_//_{name}{extension}'
+    return f'True_//_{name}.pdf'
 
 
 '''@app.route('/charge_excel')
@@ -878,4 +881,4 @@ def charge_excel():
         except Exception:
             print("error")
     session1.commit()
-    return "fet"'''
+    return "fet" '''
