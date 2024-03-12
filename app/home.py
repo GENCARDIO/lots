@@ -10,6 +10,7 @@ import json
 from config import main_dir_docs, main_dir
 import pandas as pd
 from docxtpl import DocxTemplate, InlineImage, RichText, R
+import subprocess
 
 
 # Pagina incial i visualització
@@ -119,7 +120,8 @@ def search_add_lot():
                              'active': lot.active,
                              'temp_conservation': lot.temp_conservation,
                              'react_or_fungible': lot.react_or_fungible,
-                             'code_panel': lot.code_panel}
+                             'code_panel': lot.code_panel,
+                             'location': lot.location}
                 list_lots.append(dict_lots)
             json_data = json.dumps(list_lots)
             return f'True_//_{json_data}'
@@ -162,7 +164,8 @@ def register_new_lot():
                               temp_conservation=lots['temp_conservation'],
                               react_or_fungible=lots['react_or_fungible'],
                               description_subreference=lots['description_subreference'],
-                              code_panel=lots['code_panel'])
+                              code_panel=lots['code_panel'],
+                              location=lots['location'])
             session1.add(insert_lot)
 
             json_lots = json.dumps(lots)
@@ -497,74 +500,73 @@ def open_close_lots():
     '''
     id_lot = request.form.get("id_lot")
     action = request.form.get("action")
+    observations = request.form.get("observations")
     num_lots_open = 0
     pos_close = -1
     message = ''
     str_id_lots = ''
-    # try:
-    select_lots = session1.query(Stock_lots).filter_by(id=id_lot).first()
-    if select_lots is None:
-        return 'False_No hem trobat el lot seleccionat.'
+    try:
+        select_lots = session1.query(Stock_lots).filter_by(id=id_lot).first()
+        if select_lots is None:
+            return 'False_No hem trobat el lot seleccionat.'
 
-    select_consumptions = session1.query(Lot_consumptions).filter_by(id_lot=id_lot).all()
-    if select_consumptions:
-        lot_open = 0
-        lot_close = 0
-        for index, consumptions in enumerate(select_consumptions):
-            if consumptions.date_close != '':
-                lot_open += 1
-                lot_close += 1
+        select_consumptions = session1.query(Lot_consumptions).filter_by(id_lot=id_lot).all()
+        if select_consumptions:
+            lot_open = 0
+            lot_close = 0
+            for index, consumptions in enumerate(select_consumptions):
+                if consumptions.date_close != '':
+                    lot_open += 1
+                    lot_close += 1
+                else:
+                    lot_open += 1
+                    if pos_close == -1:
+                        pos_close = index
+
+            num_lots_open = lot_open - lot_close
+
+        date = instant_date()
+        if action == 'open':
+            if num_lots_open >= select_lots.units_lot:
+                return "False_Tots els lots d'aquesta referència estan oberts."
+            insert_consump = Lot_consumptions(id_lot=id_lot, date_open=date, user_open=session['acronim'], date_close='', observations_open=observations,  observations_close='')
+            session1.add(insert_consump)
+            if num_lots_open + 1 == 1:
+                message = f"El lot s'ha obert correctament, tens {num_lots_open + 1} unitat oberta d'aquesta referència."
             else:
-                lot_open += 1
-                if pos_close == -1:
-                    pos_close = index
-
-        num_lots_open = lot_open - lot_close
-
-    date = instant_date()
-    if action == 'open':
-        if num_lots_open >= select_lots.units_lot:
-            return "False_Tots els lots d'aquesta referència estan oberts."
-        insert_consump = Lot_consumptions(id_lot=id_lot, date_open=date, user_open=session['acronim'], date_close='')
-        session1.add(insert_consump)
-        if num_lots_open + 1 == 1:
-            message = f"El lot s'ha obert correctament, tens {num_lots_open + 1} unitat oberta d'aquesta referència."
-        else:
-            message = f"El lot s'ha obert correctament, tens {num_lots_open + 1} unitats obertes d'aquesta referència."
-    elif action == 'close':
-        if num_lots_open > 0:
-            select_consumptions[pos_close].date_close = date
-            select_consumptions[pos_close].user_close = session['acronim']
-            select_lots.units_lot = select_lots.units_lot - 1
-            message = "El lot s'ha tancat correctament"
-            if select_lots.units_lot == 0:
-                select_group_lots = session1.query(Stock_lots).filter_by(group_insert=select_lots.group_insert).all()
-                sublot = 0
-                for lot_group in select_group_lots:
-                    split_internal_lot = str(lot_group.internal_lot).split('_')
-                    split_internal_lot_2 = str(select_lots.internal_lot).split('_')
-                    if lot_group.id_reactive == select_lots.id_reactive and \
-                        split_internal_lot[0] == split_internal_lot_2[0] and \
-                        lot_group.units_lot > 0:
-                        sublot += 1
-                        print(sublot)
-                if sublot == 0:
+                message = f"El lot s'ha obert correctament, tens {num_lots_open + 1} unitats obertes d'aquesta referència."
+        elif action == 'close':
+            if num_lots_open > 0:
+                select_consumptions[pos_close].date_close = date
+                select_consumptions[pos_close].user_close = session['acronim']
+                select_consumptions[pos_close].observations_close = observations
+                select_lots.units_lot = select_lots.units_lot - 1
+                message = "El lot s'ha tancat correctament"
+                if select_lots.units_lot == 0:
+                    select_group_lots = session1.query(Stock_lots).filter_by(group_insert=select_lots.group_insert).all()
+                    sublot = 0
                     for lot_group in select_group_lots:
-                        lot_group.spent = 1
-                        str_id_lots += f'{lot_group.id};'
-                        if lot_group.units_lot != 0:
-                            select_lot_consumptions = session1.query(Lot_consumptions).filter_by(id_lot=lot_group.id, date_close='').all()
-                            for lot_consumptions in select_lot_consumptions:
-                                lot_consumptions.date_close = date
-                                lot_consumptions.user_close = session['acronim']
-                            lot_group.units_lot = lot_group.units_lot - len(select_lot_consumptions)
-                    str_id_lots = str_id_lots[:-1]
-                    message = f"El lot s'ha tancat correctament, Aquesta referència s'ha esgotat, ella i totes les subreferències han set posades com ha gastades._{str_id_lots}"
-        else:
-            return 'False_No es pot tancar cap lot amb aquesta referència, obre primer un lot.'
-    session1.commit()
-    # except Exception:
-    #     return "False_No s'ha pogut accedir a la BD, si l'error persisteix contacta amb un administrador."
+                        split_internal_lot = str(lot_group.internal_lot).split('_')
+                        split_internal_lot_2 = str(select_lots.internal_lot).split('_')
+                        if lot_group.id_reactive == select_lots.id_reactive and split_internal_lot[0] == split_internal_lot_2[0] and lot_group.units_lot > 0:
+                            sublot += 1
+                    if sublot == 0:
+                        for lot_group in select_group_lots:
+                            lot_group.spent = 1
+                            str_id_lots += f'{lot_group.id};'
+                            if lot_group.units_lot != 0:
+                                select_lot_consumptions = session1.query(Lot_consumptions).filter_by(id_lot=lot_group.id, date_close='').all()
+                                for lot_consumptions in select_lot_consumptions:
+                                    lot_consumptions.date_close = date
+                                    lot_consumptions.user_close = session['acronim']
+                                lot_group.units_lot = lot_group.units_lot - len(select_lot_consumptions)
+                        str_id_lots = str_id_lots[:-1]
+                        message = f"El lot s'ha tancat correctament, Aquesta referència s'ha esgotat, ella i totes les subreferències han set posades com ha gastades._{str_id_lots}"
+            else:
+                return 'False_No es pot tancar cap lot amb aquesta referència, obre primer un lot.'
+        session1.commit()
+    except Exception:
+        return "False_No s'ha pogut accedir a la BD, si l'error persisteix contacta amb un administrador."
     return f'True_{message}'
 
 
@@ -598,8 +600,10 @@ def history_lot():
             dict_consumption['id_lot'] = consumption.id_lot
             dict_consumption['date_open'] = consumption.date_open
             dict_consumption['user_open'] = consumption.user_open
+            dict_consumption['observations_open'] = consumption.observations_open
             dict_consumption['date_close'] = consumption.date_close
             dict_consumption['user_close'] = consumption.user_close
+            dict_consumption['observations_close'] = consumption.observations_close
             list_consumptions.append(dict_consumption)
 
         json_data = json.dumps(list_consumptions)
@@ -693,6 +697,8 @@ def history_lots():
             dict_consumption['user_open'] = consumption.user_open
             dict_consumption['date_close'] = consumption.date_close
             dict_consumption['user_close'] = consumption.user_close
+            dict_consumption['observations_open'] = consumption.observations_open
+            dict_consumption['observations_close'] = consumption.observations_close
             list_consumptions.append(dict_consumption)
 
         json_data = json.dumps(list_consumptions)
@@ -707,15 +713,18 @@ def history_lots():
 def create_qc():
     '''
         1 - Recollim la informació de l'ajax
-        2 - Comprovem si aquest lot té història.
-        2.1 - Si no en té retornem False més un missatge d'explicació per l'usuari.
-        2.2 - Si és que si agafem la informació que hem trobat la posem en una llista de diccionaris.
-        3 - Convertim la llista de diccionaris en un json
-        4 - Retornem un True més la llista de diccionaris convertida a json.
+        2 - Fem una cerca amb les dades que ens han facilitat i recollim les dades de la Stock_lots i Lot_consumption
+        3 - Creem una llista amb diccionaris dintre amb l'informació de les 2 taules anteriors.
+        4 - Creem el context, és el diccionari que farà servir el DocxTemplate per emplenar la nostra plantilla
+        5 - Guardem el document que acabem de crear i li posem el nom que volem.
+        6 - Transformem el document a pdf.
+        6 - Si tot ha anat bé retornem un True més el nom de l'arxiu.
 
-        :param str id_lot: Identificador unit del lot
+        :param str lot: nom del lot
+        :param str internal_lot: Codi intern del lot
+        :param str id_lot: Codi del proveïdor
 
-        :return: True i la llista de diccionaris amb la info o False i una explicació per l'usuari
+        :return: True i el nom del fitxer creat o False i una explicació per l'usuari.
         :rtype: json
     '''
     lot = request.form.get("lot")
@@ -725,11 +734,11 @@ def create_qc():
 
     try:
         info_history = session1.query(Stock_lots, Lot_consumptions).\
-                            outerjoin(Lot_consumptions, Stock_lots.id == Lot_consumptions.id_lot).\
-                            filter(Stock_lots.lot == lot).\
-                            filter(Stock_lots.catalog_reference == catalog_reference).\
-                            filter(or_(Stock_lots.internal_lot.like(f"%{split_internal_lot[0]}%"))).\
-                            all()
+                                outerjoin(Lot_consumptions, Stock_lots.id == Lot_consumptions.id_lot).\
+                                filter(Stock_lots.lot == lot).\
+                                filter(Stock_lots.catalog_reference == catalog_reference).\
+                                filter(or_(Stock_lots.internal_lot.like(f"%{split_internal_lot[0]}%"))).\
+                                all()
         if not info_history:
             return 'False_//_No hi ha informació sobre aquest lot.'
 
@@ -744,11 +753,15 @@ def create_qc():
                 dict_lots['user_open'] = consumption.user_open
                 dict_lots['date_close'] = consumption.date_close
                 dict_lots['user_close'] = consumption.user_close
+                dict_lots['observations_open'] = consumption.observations_open
+                dict_lots['observations_close'] = consumption.observations_close
             except Exception:
                 dict_lots['date_open'] = ''
                 dict_lots['user_open'] = ''
                 dict_lots['date_close'] = ''
                 dict_lots['user_close'] = ''
+                dict_lots['observations_open'] = ''
+                dict_lots['observations_close'] = ''
 
             # dict_lots['id'] = stock_lot.id
             # dict_lots['id_lot'] = stock_lot.id_lot
@@ -807,13 +820,29 @@ def create_qc():
         }
         doc.render(context)
 
-        report_name = 'LDG_REG_INS_generic_draft.docx'
-        filepath = os.path.join(f'{main_dir_docs}/qc', report_name)
+        name = 'LDG_REG_INS_generic_draft'
+        extension = '.docx'
+        filepath = os.path.join(f'{main_dir_docs}/qc', f'{name}{extension}')
         doc.save(filepath)
-        # path = f'{main_dir_docs}/qc/{report_name}'
+
+        # Ruta del archivo de Word de entrada
+        input_docx = f'{main_dir_docs}/qc/{name}{extension}'
+
+        extension = '.pdf'
+        # Ruta del archivo PDF de salida
+        output_pdf = f'{main_dir_docs}/qc/{name}{extension}'
+
+        # Comando para convertir de docx a pdf usando unoconv
+        command = ["unoconv", "-f", "pdf", input_docx]
+
+        # Ejecutar el comando
+        subprocess.run(command)
+
+        # Mover el archivo PDF generado a la ubicación deseada
+        subprocess.run(["mv", f"{input_docx}x", output_pdf])
     except Exception:
         return "False_ No s'ha pogut accedir a la informació dels consums."
-    return f'True_//_{report_name}'
+    return f'True_//_{name}{extension}'
 
 
 '''@app.route('/charge_excel')

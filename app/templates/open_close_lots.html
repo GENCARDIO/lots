@@ -7,12 +7,53 @@
     {% include 'Header/header.html' %}
     <script>
         /**
+         * Canvia totes les barras ("/") en el valor d'entrada per guions ("-").
+         * @param {object} input L'element d'entrada que conte el valor a modificarr.
+         * @returns {void} No retorna cap valor.
+         */
+        function replae_slash_with_hyphen(input) {
+            input.value = input.value.replace(/\//g, '-');
+        }
+
+
+        /**
+         * Si l'usuari ppsa algun caràcter no permes l'elimina.
+         * @param {object} input L'element d'entrada que conte el valor a modificarr.
+         * @returns {void} No retorna cap valor.
+         */
+        function filter_characters(input) {
+            // Filtrar caracteres permitidos usando una expresión regular
+            input.value = input.value.replace(/[^-0-9]/g, '');
+        }
+
+
+        /**
          * Tanquem el modal amb l'id que ens passen per paràmetre.
          * @param {string} modal_id És l'identificador únic del modal
          * @returns {void} No retorna cap valor.
          */
         function close_modal(modal_id){
             $(`#${modal_id}`).modal('hide');
+        }
+
+
+        /**
+         * Obrim el modal que ens donen per paràmetre, i al posem a 2 variables que estan en hidden el seu valor.
+         * @param {string} modal_id És l'identificador únic del modal
+         * @returns {void} No retorna cap valor.
+         */
+        function open_modal_accions(modal_id){
+            var current_date = new Date();
+            var day = current_date.getDate();
+            var month = current_date.getMonth() + 1;
+            var year = current_date.getFullYear();
+            day = day < 10 ? '0' + day : day;
+            month = month < 10 ? '0' + month : month;
+            var formated_date = day + '-' + month + '-' + year;
+
+            $(`#modal_accions`).modal('show');
+            document.getElementById("id_lot_accions").value = modal_id;
+            document.getElementById("date_open_close").value = formated_date;
         }
 
         
@@ -35,12 +76,15 @@
          * esgotat completament. Si s'esgota completament eliminarem la linia i totes les linies que
          * estigun associades a ella.
          */
-        function show_modal_open_close_lot(id_lot, action){
+        function show_modal_open_close_lot(action){
+            const id_lot = document.getElementById("id_lot_accions").value;
+            const observations = document.getElementById("observations_open_close").value;
             // Crear form data
             var form_data = new FormData();
 
             form_data.append('id_lot', id_lot)
             form_data.append('action', action)
+            form_data.append('observations', observations)
 
             // Creeem l'objecte per l'ajax
             var xhr = new XMLHttpRequest();
@@ -49,6 +93,7 @@
             // 3r argumemt true sempre
             xhr.open('POST', '/open_close_lots', true);
             xhr.onload = function(){
+                close_modal('modal_accions')
                 if (xhr.status === 200) {
                     var response = xhr.responseText;
                     split_response = response.split('_')
@@ -58,6 +103,7 @@
                     else if (response.includes('True')){
                         alert_type = 'success'
                         if (action == 'close'){
+                            document.getElementById(`button_${id_lot}`).remove();
                             var trElement = document.getElementById(id_lot);
                             var tdValue = trElement.cells[4].textContent;
                             var newValue = parseInt(tdValue, 10) - 1;
@@ -227,7 +273,7 @@
             </div>
         </div>
     </div> -->
-    
+
     <div class="d-flex justify-content-center pt-3 mt-3 rounded">
         <div class="container-fluid rounded table-responsive" style="width: 90%; text-align: center;">
             <div id="table1" name="table1">
@@ -256,9 +302,12 @@
                                 <td>{{lot.date_expiry}}</td>
                                 <td>
                                     <div style=" display: inline;">
-                                        <button type="button" class="btn btn-outline-success btn-sm" onclick="show_modal_open_close_lot(`{{lot.id}}`, 'open')"><i class="fa-solid fa-file-arrow-up"></i> Obrir</button>
-                                        <button type="button" class="btn btn-outline-danger btn-sm" onclick="show_modal_open_close_lot(`{{lot.id}}`, 'close')"><i class="fa-solid fa-file-arrow-down"></i> Tancar</button>
-                                        <button type="button" class="btn btn-outline-primary btn-sm" onclick="show_history_lot(`{{lot.id}}`)"><i class="fa-solid fa-file-arrow-down"></i> Registres</button>
+                                        <!-- <button type="button" class="btn btn-outline-success btn-sm" onclick="show_modal_open_close_lot(`{{lot.id}}`, 'open')"><i class="fa-solid fa-share-from-square"></i> Obrir</button>
+                                        <button type="button" class="btn btn-outline-danger btn-sm" onclick="show_modal_open_close_lot(`{{lot.id}}`, 'close')"><i class="fa-solid fa-lock"></i> Tancar</button> -->
+                                        {% if lot.units_lot != 0 %}
+                                            <button type="button" class="btn btn-outline-success btn-sm" id="button_{{lot.id}}" onclick="open_modal_accions(`{{lot.id}}`)"><i class="fa-solid fa-lock"></i> Accions</button>
+                                        {% endif %}
+                                        <button type="button" class="btn btn-outline-primary btn-sm" onclick="show_history_lot(`{{lot.id}}`)"><i class="fa-solid fa-book"></i> Registres</button>
                                     </div>
                                 </td>
                             </tr>
@@ -270,7 +319,42 @@
         </div>
     </div>
 
-    <div class="modal fade"  id="history_lot" tabindex="-1" role="dialog" aria-labelledby="editRegister" aria-hidden="true">
+
+    <div class="modal fade"  id="modal_accions" tabindex="-1" role="dialog" aria-labelledby="editRegister" aria-hidden="true">
+        <div class="modal-dialog" tabindex="-1" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="title"> Obrir / Tancar lots</h5>
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="close_modal('modal_accions')"><span aria-hidden="true">&times;</span></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">                                   
+                    <div class="col-lg-12 col-md-12 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 135px;"><b>Data :</b></span>
+                            <input type="text" class="form-control" id='date_open_close' name='date_open_close' aria-label="TTN" aria-describedby="basic-addon1" oninput="replae_slash_with_hyphen(this); filter_characters(this)">
+                        </div>
+                    </div>
+                    <div class="col-lg-12 col-md-12 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 135px;"><b>Observacions :</b></span>
+                            <input type="text" class="form-control" id='observations_open_close' name='observations_open_close' aria-label="TTN" aria-describedby="basic-addon1">
+                        </div>
+                    </div>    
+                    <!-- <center><input type="submit" value="Cercar lot" class="btn btn-success btn-sm"/></center> -->
+                    <div class="col-lg-12 col-md-12 col-sm-12 text-center">       
+                        <input type="hidden" id="id_lot_accions" value=""/>
+                        <button type="button" class="btn btn-outline-success btn-sm" onclick="show_modal_open_close_lot('open')"><i class="fa-solid fa-share-from-square"></i> Obrir</button>
+                        <button type="button" class="btn btn-outline-danger btn-sm" onclick="show_modal_open_close_lot('close')" style="margin-left: 5px;"><i class="fa-solid fa-lock"></i> Tancar</button>
+                    </div>    
+                </div>
+            </div>
+          </div>
+        </div>
+    </div>
+
+
+    <div class="modal fade modal-custom3"  id="history_lot" tabindex="-1" role="dialog" aria-labelledby="editRegister" aria-hidden="true">
         <div class="modal-dialog modal-lg" tabindex="-1" role="document">
           <div class="modal-content">
             <div class="modal-header">
@@ -280,24 +364,29 @@
             <div class="modal-body">
                 <div class="row">                                   
                     <div class="col-lg-12 col-md-12 col-sm-12">
-                        <table id="table_history_lots" class="table table-sm table-striped table-bordered display nowrap mt-1" style="width:100%;background-color:white;">
-                            <thead>
-                                <tr>
-                                    <th>data opertura</th>
-                                    <th>user</th>
-                                    <th>data tancament</th>
-                                    <th>user</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                            </tbody>
-                        </table>
+                        <div class="table-responsive">
+                            <table id="table_history_lots" class="table table-sm table-striped table-bordered display nowrap mt-1" style="width:100%;background-color:white;">
+                                <thead>
+                                    <tr>
+                                        <th>data opertura</th>
+                                        <th>user</th>
+                                        <th>Observacions</th>
+                                        <th>data tancament</th>
+                                        <th>user</th>
+                                        <th>Observacions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
           </div>
         </div>
     </div>
+
     <script>
         $(document).ready(function() {
             // Setup - add a text input to each footer cell
@@ -355,7 +444,7 @@
             } );
         } );
     </script>
-    
+
     <script src="/static/js/bootstrap.js"></script>
 </body>
 </html>

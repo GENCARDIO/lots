@@ -19,6 +19,17 @@
 
 
     /**
+     * Si l'usuari ppsa algun caràcter no permes l'elimina.
+     * @param {object} input L'element d'entrada que conte el valor a modificarr.
+     * @returns {void} No retorna cap valor.
+     */
+    function filter_characters(input) {
+        // Filtrar caracteres permitidos usando una expresión regular
+        input.value = input.value.replace(/[^-0-9]/g, '');
+    }
+
+  
+    /**
      * Neteja els camps d'entrada y mostra el modal de add_lote.
      * @param {string} acronim És l'acronim de l'usuari.
      * @returns {void} No retorna cap valor.
@@ -114,7 +125,7 @@
                         document.getElementById("description").value = '';
                         document.getElementById('num_lots').value = 0;            
                         document.getElementById('reference_catalog').value = code_search;      
-
+                        
                         // Eliminar tots els divs amb el name divs_new_lots
                         var elementosAEliminar = document.querySelectorAll('div[name="divs_new_lots"]');
                             elementosAEliminar.forEach(function(elemento) {
@@ -146,6 +157,22 @@
                                 <div class="input-group mb-3">
                                     <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Id panell(*) :</b></span>
                                     <input type="text" class="form-control" aria-label="TTN" id="code_panel0" value='${code_panel}'>
+                                </div>
+                            </div>
+                            <div class="col-lg-6 col-md-12 col-sm-12" name="divs_new_lots">       
+                                <div class="input-group mb-3">
+                                    <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Ubicació :</b></span>
+                                    <select class="form-select" id="location">
+                                        <option selected></option>
+                                        <option>Lab1-Extracció</option>
+                                        <option>Lab2-AP</option>
+                                        <option>Lab3-Màquines</option>
+                                        <option>Lab4-PCR</option>
+                                        <option>Lab5-PrePCR</option>
+                                        <option>Lab Cuina</option>
+                                        <option>Magatzem</option>
+                                        <option>Magatzem Fred</option>
+                                    </select>
                                 </div>
                             </div>
                             `;
@@ -224,7 +251,7 @@
                                 <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts">  
                                     <div class='input-group mb-3'>
                                         <span class='input-group-text' id='basic-addon1' style='width: 140px;'><b>Data caducitat :</b></span>
-                                        <input type="text" class="form-control" id="expiry_date0_${i}" aria-label="TTN" aria-describedby="basic-addon1" oninput="replae_slash_with_hyphen(this)">
+                                        <input type="text" class="form-control" id="expiry_date0_${i}" aria-label="TTN" aria-describedby="basic-addon1" oninput="replae_slash_with_hyphen(this); filter_characters(this)">
                                     </div>
                                 </div>
                                 <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts">
@@ -353,7 +380,7 @@
                     <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts">  
                         <div class='input-group mb-3'>
                             <span class='input-group-text' id='basic-addon1' style='width: 140px;'><b>Data caducitat :</b></span>
-                            <input type='text' class='form-control' id='expiry_date${x}_${i}' aria-label='TTN' aria-describedby='basic-addon1' oninput="replae_slash_with_hyphen(this)">
+                            <input type='text' class='form-control' id='expiry_date${x}_${i}' aria-label='TTN' aria-describedby='basic-addon1' oninput="replae_slash_with_hyphen(this); filter_characters(this)">
                         </div>
                     </div>
                     <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts">
@@ -408,6 +435,28 @@
 
         // obtenir i formatar la data
         var miDiv = document.getElementById('div_info_new_lot');
+        var nuevoHTML = `
+                <div class="col-lg-6 col-md-12 col-sm-12" name="divs_new_lots">       
+                    <div class="input-group mb-3">
+                        <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Ubicació :</b></span>
+                        <select class="form-select" id="location">
+                            <option selected></option>
+                            <option>Lab1-Extracció</option>
+                            <option>Lab2-AP</option>
+                            <option>Lab3-Màquines</option>
+                            <option>Lab4-PCR</option>
+                            <option>Lab5-PrePCR</option>
+                            <option>Lab Cuina</option>
+                            <option>Magatzem</option>
+                            <option>Magatzem Fred</option>
+                        </select>
+                    </div>
+                </div>
+                `;
+
+        // Agrega el nuevo conjunto debajo del div existente
+        miDiv.insertAdjacentHTML('beforebegin', nuevoHTML);
+
         for (var x = 0; x < number_references; x++){
             var nuevoHTML = `
                 <div class="col-lg-6 col-md-6 col-sm-12" name="divs_new_lots">       
@@ -469,7 +518,13 @@
             // Agrega el nuevo conjunto debajo del div existente
             miDiv.insertAdjacentHTML('afterend', HTML);
         }
+
         if (number_references === '0'){
+            // Eliminar tots els div amb el name divs_subproduct
+            var elementosAEliminar = document.querySelectorAll('div[name="divs_new_lots"]');
+            elementosAEliminar.forEach(function(elemento) {
+                elemento.remove(); });
+
             var nuevoHTML = `
                 <div class="col-lg-6 col-md-6 col-sm-12" name="divs_new_lots">       
                     <div class="input-group mb-3">
@@ -495,6 +550,22 @@
                     <div class="input-group mb-3">
                         <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Id panell(*) :</b></span>
                         <input type="text" class="form-control" aria-label="TTN" id="code_panel0">
+                    </div>
+                </div>
+                <div class="col-lg-6 col-md-12 col-sm-12" name="divs_new_lots">       
+                    <div class="input-group mb-3">
+                        <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Ubicació :</b></span>
+                        <select class="form-select" id="location">
+                            <option selected></option>
+                            <option>Lab1-Extracció</option>
+                            <option>Lab2-AP</option>
+                            <option>Lab3-Màquines</option>
+                            <option>Lab4-PCR</option>
+                            <option>Lab5-PrePCR</option>
+                            <option>Lab Cuina</option>
+                            <option>Magatzem</option>
+                            <option>Magatzem Fred</option>
+                        </select>
                     </div>
                 </div>
                 `;
@@ -529,6 +600,7 @@
         const analytical_technique = document.getElementById('analytical_technique').value
         const manufacturer = document.getElementById('manufacturer').value
         const description = document.getElementById(`description`).value
+        const location = document.getElementById(`location`).value
 
         if (reference_catalog === code_sap || reference_catalog === code_log || code_sap === code_log) {
             alert("Els camps ref. proveïdor, codi SAP i codi LOG no poden ser iguals")
@@ -541,7 +613,7 @@
             const temp_conservation = document.getElementById('temp_conservation0').value
             const react_or_fungible = document.getElementById('react_or_fungible0').value
             const code_panel = document.getElementById('code_panel0').value
-            if (code_sap !== '' && code_log !== '' && analytical_technique !== '' && description !== '' && reference_catalog !== '' && manufacturer !== '' ) {
+            if (code_sap !== '' && code_log !== '' && analytical_technique !== '' && description !== '' && reference_catalog !== '' && manufacturer !== '' && location !== '') {
                 var dict_lots = {
                     code_sap: code_sap,
                     code_log: code_log,
@@ -552,7 +624,8 @@
                     temp_conservation: temp_conservation,
                     react_or_fungible: react_or_fungible,
                     description_subreference: '',
-                    code_panel: code_panel }; }
+                    code_panel: code_panel,
+                    location: location }; }
             else {  
                 alert("No es poden deixar els camps sense omplir.")
                 return
@@ -577,7 +650,8 @@
                     temp_conservation: temp_conservation,
                     react_or_fungible: react_or_fungible,
                     description_subreference: description_subreference,
-                    code_panel: code_panel}; }
+                    code_panel: code_panel,
+                    location: location}; }
             else {
                 alert("No es poden deixar els camps sense omplir.")
                 return
@@ -1061,7 +1135,7 @@
                     <div class="col-lg-6 col-md-12 col-sm-12">       
                         <div class="input-group mb-3">
                             <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>Data recepció:</b></span>
-                            <input type="text" class="form-control" id='date_recepcion_lot' aria-label="TTN" aria-describedby="basic-addon1">
+                            <input type="text" class="form-control" id='date_recepcion_lot' aria-label="TTN" aria-describedby="basic-addon1" oninput="replae_slash_with_hyphen(this); filter_characters(this)">
                         </div>
                     </div>
                     <div class="col-lg-12 col-md-12 col-sm-12">
@@ -1109,7 +1183,7 @@
                     <div class="col-lg-6 col-md-12 col-sm-12">       
                         <div class="input-group mb-3">
                             <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>Data inspecció :</b></span>
-                            <input type="text" class="form-control" id='date_inspected' aria-label="TTN" aria-describedby="basic-addon1">
+                            <input type="text" class="form-control" id='date_inspected' aria-label="TTN" aria-describedby="basic-addon1" oninput="replae_slash_with_hyphen(this); filter_characters(this)">
                         </div>
                     </div>
 
@@ -1164,7 +1238,7 @@
                     <div class="col-lg-6 col-md-12 col-sm-12">       
                         <div class="input-group mb-3">
                             <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>Data revisat:</b></span>
-                            <input type="text" class="form-control" id='date_revised' aria-label="TTN" aria-describedby="basic-addon1">
+                            <input type="text" class="form-control" id='date_revised' aria-label="TTN" aria-describedby="basic-addon1" oninput="replae_slash_with_hyphen(this); filter_characters(this)">
                         </div>
                     </div>
 

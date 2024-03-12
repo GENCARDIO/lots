@@ -34,6 +34,7 @@ class Lots(Base):
     description_subreference = Column(String())
     react_or_fungible = Column(String())
     code_panel = Column(String())
+    location = Column(String())
 
 
 class Stock_lots(Base):
@@ -95,3 +96,5 @@ class Lot_consumptions(Base):
     user_open = Column(String())
     date_close = Column(String())
     user_close = Column(String())
+    observations_open = Column(String())
+    observations_close = Column(String())
