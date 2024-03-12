@@ -41,8 +41,16 @@
                 <div class="row">                                   
                     <div class="col-lg-12 col-md-12 col-sm-12">       
                         <div class="input-group mb-3">
-                            <span class="input-group-text" id="basic-addon1"><b>Ref. proveïdor o subreferencia :</b></span>
-                            <input type="text" class="form-control" id='reference' name="reference" aria-label="TTN" aria-describedby="basic-addon1" required>
+                            <span class="input-group-text" id="basic-addon1"><b>Ref. proveïdor, Subref. o Descripció :</b></span>
+                            <input type="text" class="form-control" id='reference' name="reference" list="datalist-codes3" aria-label="TTN" aria-describedby="basic-addon1" required>
+                            <datalist id="datalist-codes3">
+                                {% for description in list_desciption_lots %}
+                                    <option value="{{description.description}}">{{ description.description }}</option>
+                                    {% if description.description_subreference != '' %}
+                                        <option value="{{description.description_subreference}}">{{ description.description_subreference }}</option>
+                                    {% endif %}
+                                {% endfor %}
+                            </datalist>
                         </div>
                     </div> 
                     <center><input type="submit" value="Cercar lot" class="btn btn-success btn-sm"/></center>

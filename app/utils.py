@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from datetime import datetime
-from app.models import Logs, session1
+from app.models import Logs, session1, Lots
 from functools import wraps
 from flask import session, redirect
 from app.models import IP_HOME
@@ -56,3 +56,8 @@ def save_log(dict_info_lot):
     except Exception:
         return "False"
     return 'True'
+
+
+def list_desciption_lots():
+    select_lot = session1.query(Lots).filter(Lots.active == 1).all()
+    return select_lot

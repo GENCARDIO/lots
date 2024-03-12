@@ -8,3 +8,4 @@ SQLAlchemy==1.4.41
 pyJWT
 xlrd==2.0.1
 Werkzeug==2.2.2
+docxtpl==0.16.8

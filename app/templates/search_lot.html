@@ -138,6 +138,10 @@
                     alert_type = 'danger' }
 
                 var flashContainer = document.querySelector(".d-flex.justify-content-center .row");
+                // Eliminar la alerta anterior, si existe
+                if (flashContainer.children.length > 0) {
+                    flashContainer.removeChild(flashContainer.children[0]); }
+
                 var newFlash = document.createElement("div");
                 newFlash.className = "alert alert-" + alert_type + " alert-dismissible fade show ml-3";
                 newFlash.role = "alert";
@@ -151,6 +155,64 @@
 
             xhr.send(form_data)
         }
+
+
+        function download_QC(lot, internal_lot, catalog_reference){
+            // Crear form data
+            var form_data = new FormData();
+            
+            form_data.append('lot', lot)
+            form_data.append('internal_lot', internal_lot)
+            form_data.append('catalog_reference', catalog_reference)
+
+            // Creeem l'objecte per l'ajax
+            var xhr = new XMLHttpRequest();
+            // 1er argument si es pots o get
+            // 2n argument url o ruta
+            // 3r argumemt true sempre
+            xhr.open('POST', '/create_qc', true);
+            xhr.onload = function(){
+                if (xhr.status === 200) {
+                    var response = xhr.responseText;
+
+                    var split_response = response.split('_//_')
+
+                    if (split_response[0] === 'True'){
+                        message = "S'ha descarregat el document correctament" 
+                        document.getElementById("name_doc").value = split_response[1];
+                        document.getElementById("dir_name").value = 'qc';
+                        document.getElementById("down_doc").submit(); }
+                    else if (split_response[0] === 'False'){
+                        message = "La cerca del lot ha fallat."
+                        alert_type = 'danger'} 
+                    else{
+                        message = "Error inesperat."
+                        alert_type = 'danger'}}
+                else {
+                    message = "Error, No s'ha pogut realitzar l'operació."
+                    alert_type = 'danger' }
+                
+                if (message !== ''){
+                    var flashContainer = document.querySelector(".d-flex.justify-content-center .row");
+                    // Eliminar la alerta anterior, si existe
+                    if (flashContainer.children.length > 0) {
+                        flashContainer.removeChild(flashContainer.children[0]); }
+
+                    var newFlash = document.createElement("div");
+                    newFlash.className = "alert alert-" + alert_type + " alert-dismissible fade show ml-3";
+                    newFlash.role = "alert";
+                    newFlash.innerHTML = "<span>" + message + "</span>" + 
+                                        '<button type="button" class="close" data-dismiss="alert" aria-label="Close">' +
+                                        '<span aria-hidden="true">&times;</span>' +
+                                        '</button>';
+                    flashContainer.appendChild(newFlash);
+                    flashContainer.style.paddingTop = "20px";}
+            }
+
+            xhr.send(form_data)
+        }
+
+
 
     </script>
     <style>
@@ -199,11 +261,14 @@
                 <table id="example" class="display">
                     <thead>
                         <tr id="thcolor">
-                            <th style="min-width: 70px; max-width: 100px;">Subreferència</th>
-                            <th style="min-width: 70px; max-width: 300px;">Descripció</th>
+                            {% if select_lot[0].id_reactive != '' %}
+                                <th style="min-width: 70px; max-width: 140px;">Subreferència</th>
+                                <th style="min-width: 70px; max-width: 550px;">Descripció Subref.</th>
+                            {% endif %}
                             <th style="min-width: 70px; max-width: 120px;">Lot</th>
                             <th style="min-width: 70px; max-width: 110px;">Lot intern</th>
-                            <th style="min-width: 70px; max-width: 90px;">Unitats</th>
+                            <!-- <th style="min-width: 70px; max-width: 90px;">Unitats</th> -->
+                            <th style="min-width: 50px; max-width: 90px;">QC</th>
                             <th style="min-width: 70px; max-width: 110px;">Data arribada</th>
                             <th style="min-width: 70px; max-width: 110px;">Caducitat</th>
                             <th style="max-width: 160px;">Docs.</th>
@@ -213,16 +278,14 @@
                     <tbody>
                         {% for lot in select_lot %}
                             <tr id="{{lot.id}}">
-                                {% if lot.id_reactive == '' %}
-                                    <td>{{lot.catalog_reference}}</td>
-                                    <td>{{lot.description_subreference}}</td>
-                                {% else %}
+                                {% if lot.id_reactive != '' %}
                                     <td>{{lot.id_reactive}}</td>
-                                    <td>{{lot.description}}</td>
+                                    <td>{{lot.description_subreference}}</td>
                                 {% endif %}
                                 <td>{{lot.lot}}</td>
                                 <td>{{lot.internal_lot}}</td>
-                                <td>{{lot.units_lot}}</td>
+                                <!-- <td>{{lot.units_lot}}</td> -->
+                                <td><button type="button" class="btn btn-outline-primary btn-sm" onclick="download_QC(`{{lot.lot}}`,`{{lot.internal_lot}}`,`{{lot.catalog_reference}}`)"><i class="fa-solid fa-file-arrow-down"></i></button></td>
                                 <td>{{lot.reception_date}}</td>
                                 <td>{{lot.date_expiry}}</td>
                                 <td>

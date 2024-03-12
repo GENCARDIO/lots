@@ -1,14 +1,15 @@
 from flask import render_template, request, flash, redirect, send_file, session
 from app import app
-from app.utils import instant_date, requires_auth, save_log
+from app.utils import instant_date, requires_auth, save_log, list_desciption_lots
 from app.models import IP_HOME, session1, Lots, Stock_lots, Lot_consumptions
-from sqlalchemy import func
+from sqlalchemy import func, or_
 from werkzeug.utils import secure_filename
 import os
 import jwt
 import json
 from config import main_dir_docs, main_dir
 import pandas as pd
+from docxtpl import DocxTemplate, InlineImage, RichText, R
 
 
 # Pagina incial i visualització
@@ -18,7 +19,7 @@ def main():
     '''
         Redirigeix al home de lots
     '''
-    return render_template('home.html')
+    return render_template('home.html', list_desciption_lots=list_desciption_lots())
 
 
 @app.route('/logout')
@@ -92,8 +93,12 @@ def search_add_lot():
 
     if code_panel == '':
         select_lot = session1.query(Lots).filter(func.lower(Lots.catalog_reference) == code_search.lower()).filter(Lots.active == 1).all()
+        if not select_lot:
+            select_lot = session1.query(Lots).filter(func.lower(Lots.description) == code_search.lower()).filter(Lots.active == 1).all()
     else:
         select_lot = session1.query(Lots).filter(func.lower(Lots.catalog_reference) == code_search.lower()).filter(func.lower(Lots.code_panel) == code_panel.lower()).filter(Lots.active == 1).all()
+        if not select_lot:
+            select_lot = session1.query(Lots).filter(func.lower(Lots.description) == code_search.lower()).filter(func.lower(Lots.code_panel) == code_panel.lower()).filter(Lots.active == 1).all()
 
     try:
         if not select_lot:
@@ -328,13 +333,17 @@ def search_lots():
 
     if code_panel == '':
         select_lot = session1.query(Stock_lots).filter(func.lower(Stock_lots.catalog_reference) == search_code.lower(), Stock_lots.spent == 0).all()
+        if not select_lot:
+            select_lot = session1.query(Stock_lots).filter(func.lower(Stock_lots.description) == search_code.lower(), Stock_lots.spent == 0).all()
     else:
         select_lot = session1.query(Stock_lots).filter(func.lower(Stock_lots.catalog_reference) == search_code.lower(), func.lower(Stock_lots.code_panel) == code_panel.lower(), Stock_lots.spent == 0).all()
+        if not select_lot:
+            select_lot = session1.query(Stock_lots).filter(func.lower(Stock_lots.description) == search_code.lower(), func.lower(Stock_lots.code_panel) == code_panel.lower(), Stock_lots.spent == 0).all()
     if not select_lot:
         flash(f"No s'ha trobat cap coincidencia amb el text entrat --> {search_code}", "warning")
-        return render_template('home.html')
+        return render_template('home.html', list_desciption_lots=list_desciption_lots())
 
-    return render_template('search_lot.html', select_lot=select_lot, lot=select_lot[0])
+    return render_template('search_lot.html', select_lot=select_lot, lot=select_lot[0], list_desciption_lots=list_desciption_lots())
 
 
 @app.route("/download_docs", methods=["POST"])
@@ -439,16 +448,21 @@ def search_lots_open_close():
         :rtype: object, int
     '''
     reference = request.form['reference']
-    # select_lot = session1.query(Stock_lots).filter_by(catalog_reference=reference, react_or_fungible='Reactiu', spent=0).all()
-    select_lot = session1.query(Stock_lots).filter(func.lower(Stock_lots.catalog_reference) == reference.lower(), Stock_lots.spent == 0, Stock_lots.react_or_fungible == 'Reactiu').all()
+    select_lot = session1.query(Stock_lots).filter(
+        or_(
+            func.lower(Stock_lots.catalog_reference) == reference.lower(),
+            func.lower(Stock_lots.id_reactive) == reference.lower(),
+            func.lower(Stock_lots.description) == reference.lower(),
+            func.lower(Stock_lots.description_subreference) == reference.lower()
+        ),
+        Stock_lots.spent == 0,
+        Stock_lots.react_or_fungible == 'Reactiu'
+    ).all()
     if not select_lot:
-        # select_lot = session1.query(Stock_lots).filter_by(id_reactive=reference, react_or_fungible='Reactiu', spent=0).all()
-        select_lot = session1.query(Stock_lots).filter(func.lower(Stock_lots.id_reactive) == reference.lower(), Stock_lots.spent == 0, Stock_lots.react_or_fungible == 'Reactiu').all()
-        if not select_lot:
-            flash(f"No s'ha trobat cap coincidencia amb el codi entrat --> {reference}", "warning")
-            return render_template('home.html')
+        flash(f"No s'ha trobat cap coincidencia amb el codi entrat --> {reference}", "warning")
+        return render_template('home.html', list_desciption_lots=list_desciption_lots())
 
-    return render_template('open_close_lots.html', select_lot=select_lot, lot=select_lot[0])
+    return render_template('open_close_lots.html', select_lot=select_lot, lot=select_lot[0], list_desciption_lots=list_desciption_lots())
 
 
 @app.route('/open_close_lots', methods=['POST'])
@@ -686,6 +700,120 @@ def history_lots():
         return "False_ No s'ha pogut accedir a la informació dels consums."
 
     return f'True_//_{json_data}'
+
+
+@app.route('/create_qc', methods=['POST'])
+@requires_auth
+def create_qc():
+    '''
+        1 - Recollim la informació de l'ajax
+        2 - Comprovem si aquest lot té història.
+        2.1 - Si no en té retornem False més un missatge d'explicació per l'usuari.
+        2.2 - Si és que si agafem la informació que hem trobat la posem en una llista de diccionaris.
+        3 - Convertim la llista de diccionaris en un json
+        4 - Retornem un True més la llista de diccionaris convertida a json.
+
+        :param str id_lot: Identificador unit del lot
+
+        :return: True i la llista de diccionaris amb la info o False i una explicació per l'usuari
+        :rtype: json
+    '''
+    lot = request.form.get("lot")
+    internal_lot = request.form.get("internal_lot")
+    catalog_reference = request.form.get("catalog_reference")
+    split_internal_lot = internal_lot.split('_')
+
+    try:
+        info_history = session1.query(Stock_lots, Lot_consumptions).\
+                            outerjoin(Lot_consumptions, Stock_lots.id == Lot_consumptions.id_lot).\
+                            filter(Stock_lots.lot == lot).\
+                            filter(Stock_lots.catalog_reference == catalog_reference).\
+                            filter(or_(Stock_lots.internal_lot.like(f"%{split_internal_lot[0]}%"))).\
+                            all()
+        if not info_history:
+            return 'False_//_No hi ha informació sobre aquest lot.'
+
+        total_units = 0
+        info_lots = []
+        for stock_lot, consumption in info_history:
+            dict_lots = {}
+            # dict_lots['id'] = consumption.id
+            # dict_lots['id_lot'] = consumption.id_lot
+            try:
+                dict_lots['date_open'] = consumption.date_open
+                dict_lots['user_open'] = consumption.user_open
+                dict_lots['date_close'] = consumption.date_close
+                dict_lots['user_close'] = consumption.user_close
+            except Exception:
+                dict_lots['date_open'] = ''
+                dict_lots['user_open'] = ''
+                dict_lots['date_close'] = ''
+                dict_lots['user_close'] = ''
+
+            # dict_lots['id'] = stock_lot.id
+            # dict_lots['id_lot'] = stock_lot.id_lot
+            dict_lots['catalog_reference'] = stock_lot.catalog_reference
+            dict_lots['manufacturer'] = stock_lot.manufacturer
+            dict_lots['description'] = stock_lot.description
+            dict_lots['analytical_technique'] = stock_lot.analytical_technique
+            dict_lots['id_reactive'] = stock_lot.id_reactive
+            dict_lots['code_SAP'] = stock_lot.code_SAP
+            dict_lots['code_LOG'] = stock_lot.code_LOG
+            dict_lots['temp_conservation'] = stock_lot.temp_conservation
+            dict_lots['description_subreference'] = stock_lot.description_subreference
+            dict_lots['react_or_fungible'] = stock_lot.react_or_fungible
+            dict_lots['date_expiry'] = stock_lot.date_expiry
+            dict_lots['lot'] = stock_lot.lot
+            dict_lots['spent'] = stock_lot.spent
+            dict_lots['reception_date'] = stock_lot.reception_date
+            dict_lots['units_lot'] = stock_lot.units_lot
+            dict_lots['internal_lot'] = stock_lot.internal_lot
+            dict_lots['transport_conditions'] = stock_lot.transport_conditions
+            if stock_lot.packaging == 'Adequat':
+                dict_lots['packaging'] = 'C'
+            else:
+                dict_lots['packaging'] = 'NC'
+            dict_lots['inspected_by'] = stock_lot.inspected_by
+            dict_lots['date_inspected'] = stock_lot.date_inspected
+            dict_lots['observations_inspection'] = stock_lot.observations_inspection
+            dict_lots['state'] = stock_lot.state
+            dict_lots['comand_number'] = stock_lot.comand_number
+            dict_lots['revised_by'] = stock_lot.revised_by
+            dict_lots['date_revised'] = stock_lot.date_revised
+            if stock_lot.delivery_note == '':
+                dict_lots['delivery_note'] = 'No'
+            else:
+                dict_lots['delivery_note'] = 'SI'
+            if stock_lot.certificate == '':
+                dict_lots['certificate'] = 'No'
+            else:
+                dict_lots['certificate'] = 'SI'
+            dict_lots['type_doc_certificate'] = stock_lot.type_doc_certificate
+            dict_lots['type_doc_delivery'] = stock_lot.type_doc_delivery
+            dict_lots['group_insert'] = stock_lot.group_insert
+            dict_lots['code_panel'] = stock_lot.code_panel
+
+            total_units += int(stock_lot.units_lot)
+            info_lots.append(dict_lots)
+
+        doc = DocxTemplate(f'{main_dir_docs}/plantillas/LDG_REG_INS_generic_draft.docx')
+        break_page = R("\f")
+        break_line = R("\n")
+        context = {
+            "break_page": break_page,
+            "break_line": break_line,
+            "info_lots": info_lots,
+            "total_units": total_units,
+        }
+        doc.render(context)
+
+        report_name = 'LDG_REG_INS_generic_draft.docx'
+        filepath = os.path.join(f'{main_dir_docs}/qc', report_name)
+        doc.save(filepath)
+        # path = f'{main_dir_docs}/qc/{report_name}'
+    except Exception:
+        return "False_ No s'ha pogut accedir a la informació dels consums."
+    return f'True_//_{report_name}'
 
 
 '''@app.route('/charge_excel')
