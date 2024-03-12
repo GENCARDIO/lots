@@ -59,5 +59,11 @@ def save_log(dict_info_lot):
 
 
 def list_desciption_lots():
+    '''
+        1 - Agafem tots el lots actius i els retornem.
+
+        :return: llista amb els objectes de tipo Lots que hem trobat a la BD
+        :rtype: llista d'objectes
+    '''
     select_lot = session1.query(Lots).filter(Lots.active == 1).all()
     return select_lot

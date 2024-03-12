@@ -157,6 +157,23 @@
         }
 
 
+        /**
+         * Descarrega un document de Control de Qualitat (QC).
+         * 
+         * Aquesta funció inicia la descàrrega d'un document de QC basat en el lot, lot intern i referència del catàleg proporcionats.
+         * Envia una sol·licitud POST al servidor per crear el document de QC i gestiona la resposta segons convingui.
+         * Si té èxit, actualitza els camps del formulari de descàrrega de documents i activa la presentació del formulari per a la seva descàrrega.
+         * Si no té èxit, mostra un missatge d'error apropiat.
+         * 
+         * @param {string} lot El número de lot.
+         * @param {string} internal_lot El número de lot intern.
+         * @param {string} catalog_reference La referència del catàleg.
+         * @returns {void} No retorna cap valor.
+         * 
+         * @descriptor Aquesta funció facilita la descàrrega de documents de QC en interactuar amb el servidor a través d'AJAX.
+         * Gestiona la creació de dades de formulari, envia sol·licituds al servidor i processa les respostes del servidor.
+         * Es proporciona gestió d'errors i comentaris d'usuari per garantir una experiència de descàrrega fluida.
+         */
         function download_QC(lot, internal_lot, catalog_reference){
             // Crear form data
             var form_data = new FormData();
@@ -212,8 +229,6 @@
             xhr.send(form_data)
         }
 
-
-
     </script>
     <style>
         #example thead input[type="text"] {
@@ -264,6 +279,9 @@
                             {% if select_lot[0].id_reactive != '' %}
                                 <th style="min-width: 70px; max-width: 140px;">Subreferència</th>
                                 <th style="min-width: 70px; max-width: 550px;">Descripció Subref.</th>
+                            {% else %}
+                                <th style="min-width: 70px; max-width: 140px;" class="d-none">Subreferència</th>
+                                <th style="min-width: 70px; max-width: 550px;" class="d-none">Descripció Subref.</th>
                             {% endif %}
                             <th style="min-width: 70px; max-width: 120px;">Lot</th>
                             <th style="min-width: 70px; max-width: 110px;">Lot intern</th>
@@ -281,6 +299,9 @@
                                 {% if lot.id_reactive != '' %}
                                     <td>{{lot.id_reactive}}</td>
                                     <td>{{lot.description_subreference}}</td>
+                                {% else %}
+                                    <td class="d-none">{{lot.id_reactive}}</td>
+                                    <td class="d-none">{{lot.description_subreference}}</td>
                                 {% endif %}
                                 <td>{{lot.lot}}</td>
                                 <td>{{lot.internal_lot}}</td>
@@ -344,6 +365,7 @@
           </div>
         </div>
     </div>
+
     <script>
         $(document).ready(function() {
             // Setup - add a text input to each footer cell
