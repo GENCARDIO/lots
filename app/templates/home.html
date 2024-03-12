@@ -438,7 +438,7 @@
                     </div>
                 <div class="col-lg-6 col-md-6 col-sm-12" name="divs_new_lots">       
                     <div class="input-group mb-3">
-                        <span class="input-group-text" id="basic-addon1" style="width: 135px;"><b>Id panell(*) :</b></span>
+                        <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Id panell(*) :</b></span>
                         <input type="text" class="form-control" aria-label="TTN" id="code_panel${x}">
                     </div>
                 </div>
@@ -489,6 +489,12 @@
                             <option>Reactiu</option>
                             <option>Fungible</option>
                         </select>
+                    </div>
+                </div>
+                <div class="col-lg-6 col-md-6 col-sm-12" name="divs_new_lots">       
+                    <div class="input-group mb-3">
+                        <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Id panell(*) :</b></span>
+                        <input type="text" class="form-control" aria-label="TTN" id="code_panel0">
                     </div>
                 </div>
                 `;
@@ -664,7 +670,7 @@
         const revised_by = document.getElementById('revised_by').value
         const date_revised = document.getElementById('date_revised').value
         
-        if (transport_conditions === '' || packaging === '' || inspected_by === '' || date_inspected === '' || observations_inspection === '' || state === '' || comand_number === '' || revised_by === '' || date_revised === ''){
+        if (transport_conditions === '' || packaging === '' || inspected_by === '' || date_inspected === '' || state === '' || comand_number === '' || revised_by === '' || date_revised === ''){
             alert("No pots deixar camps buits, revisa els camps de recepció de procute i QC recepció.")
             return }
         
@@ -847,6 +853,17 @@
     #add_new_lot {
         overflow-y: auto;  /* Esto permitirá el scroll vertical si es necesario */
     }
+
+    /* Estilo para el botón icono */
+    .icon-button {
+        background-color: transparent;
+        border: none;
+        cursor: pointer;
+        font-size: 16px; /* Tamaño del icono */
+        color: #333; /* Color del icono */
+        padding: 0; /* Elimina el relleno */
+        color: blue;
+    }
 </style>
 </head>
 
@@ -902,7 +919,7 @@
 
 
     <div class="modal fade"  id="add_lot" tabindex="-1" role="dialog" aria-labelledby="editRegister" aria-hidden="true">
-        <div class="modal-dialog" tabindex="-1" role="document">
+        <div class="modal-dialog modal-lg" tabindex="-1" role="document">
           <div class="modal-content">
             <div class="modal-header">
               <h5 class="modal-title" id="title">Recepcionar Article</h5>
@@ -913,8 +930,13 @@
                     <div class="col-lg-12 col-md-12 col-sm-12">       
                         <div class="input-group mb-3">
                             <!-- <span class="input-group-text" id="basic-addon1"><b>Ref. proveïdor, SAP o LOG:</b></span> -->
-                            <span class="input-group-text" id="basic-addon1"><b>Ref. proveïdor:</b></span>
-                            <input type="text" class="form-control" id='code_search' aria-label="TTN" aria-describedby="basic-addon1" value="lot1">
+                            <span class="input-group-text" id="basic-addon1"><b>Ref. proveïdor o descripció:</b></span>
+                            <input type="text" class="form-control" id='code_search' list="datalist-codes2" aria-label="TTN" aria-describedby="basic-addon1" value="lot1">
+                            <datalist id="datalist-codes2">
+                                {% for description in list_desciption_lots %}
+                                    <option value="{{description.description}}">{{ description.description }}</option>
+                                {% endfor %}
+                            </datalist>
                             <button type="button" class="btn btn-secondary btn-sm" onclick="show_panel_input('div_panel')"><i class="fa-solid fa-plus"></i> panell</button>
                         </div>
                     </div>
@@ -964,7 +986,7 @@
                     </div>
                     <div class="col-lg-6 col-md-12 col-sm-12">       
                         <div class="input-group mb-3">
-                            <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Codi SAP :</b></span>
+                            <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Codi SAP :&nbsp; </b><button class="icon-button" title="Segons albarà"><i class="fas fa-info-circle"></i></button></span>
                             <input type="text" class="form-control" id='code_sap' aria-label="TTN" aria-describedby="basic-addon1">
                         </div>
                     </div>
@@ -988,7 +1010,7 @@
                     </div>
                     <div class="col-lg-12 col-md-12 col-sm-12">       
                         <div class="input-group mb-3">
-                            <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Descripció :</b></span>
+                            <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Descripció :&nbsp; </b><button class="icon-button" title="Segons albarà"><i class="fas fa-info-circle"></i></button></span>
                             <input type="text" class="form-control" id='description' aria-label="TTN" aria-describedby="basic-addon1">
                         </div>
                     </div>
@@ -1057,13 +1079,24 @@
                     <div class="col-lg-6 col-md-12 col-sm-12">       
                         <div class="input-group mb-3">
                             <span class="input-group-text" id="basic-addon1" style="width: 185px;"><b>Condicions transport :</b></span>
-                            <input type="text" class="form-control" id='transport_conditions' aria-label="TTN" aria-describedby="basic-addon1">
+                            <select class="form-select" id="transport_conditions" >
+                                <option selected></option>
+                                <option>Fred</option>
+                                <option>Temperatura ambient</option>
+                                <option>Gel sec</option>
+                            </select>
+                            <!-- <input type="text" class="form-control" id='transport_conditions' aria-label="TTN" aria-describedby="basic-addon1"> -->
                         </div>
                     </div>
                     <div class="col-lg-6 col-md-12 col-sm-12">       
                         <div class="input-group mb-3">
                             <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>Embalatge :</b></span>
-                            <input type="text" class="form-control" id='packaging' aria-label="TTN" aria-describedby="basic-addon1">
+                            <select class="form-select" id="packaging" >
+                                <option selected></option>
+                                <option>Adequat</option>
+                                <option>Inadequat</option>
+                            </select>
+                            <!-- <input type="text" class="form-control" id='packaging' aria-label="TTN" aria-describedby="basic-addon1"> -->
                         </div>
                     </div>
 
@@ -1144,7 +1177,7 @@
 
     
     <div class="modal fade"  id="search_lot" tabindex="-1" role="dialog" aria-labelledby="editRegister" aria-hidden="true">
-        <div class="modal-dialog modal-xs" tabindex="-1" role="document">
+        <div class="modal-dialog modal-lg" tabindex="-1" role="document">
           <div class="modal-content">
             <div class="modal-header">
               <h5 class="modal-title" id="title"> Cercar lots</h5>
@@ -1156,8 +1189,13 @@
                         <div class="col-lg-12 col-md-12 col-sm-12">       
                             <div class="input-group mb-3">
                                 <!-- <span class="input-group-text" id="basic-addon1"><b>Codi Cataleg, SAP o LOG :</b></span> -->
-                                <span class="input-group-text" id="basic-addon1"><b>Codi Cataleg :</b></span>
-                                <input type="text" class="form-control" id='search_code' name="search_code" aria-label="TTN" aria-describedby="basic-addon1" required>
+                                <span class="input-group-text" id="basic-addon1"><b>Codi Cataleg o Descripció:</b></span>
+                                <input type="text" class="form-control" id='search_code' name="search_code" list="datalist-codes" aria-label="TTN" aria-describedby="basic-addon1" required>
+                                <datalist id="datalist-codes">
+                                    {% for description in list_desciption_lots %}
+                                        <option value="{{description.description}}">{{ description.description }}</option>
+                                    {% endfor %}
+                                </datalist>
                                 <button type="button" class="btn btn-secondary btn-sm" onclick="show_panel_input('div_panel_search')"><i class="fa-solid fa-plus"></i> panell</button>
                             </div>
                         </div>
@@ -1174,6 +1212,7 @@
           </div>
         </div>
     </div>
+    
 
     <script src="/static/js/bootstrap.js"></script></body>
 </body>                    
