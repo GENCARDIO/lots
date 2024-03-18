@@ -25,7 +25,7 @@
      */
     function filter_characters(input) {
         // Filtrar caracteres permitidos usando una expresión regular
-        input.value = input.value.replace(/[^-0-9]/g, '');
+        input.value = input.value.replace(/[^-0-9NA-na-]/g, '');
     }
 
   
@@ -162,7 +162,7 @@
                             <div class="col-lg-6 col-md-12 col-sm-12" name="divs_new_lots">       
                                 <div class="input-group mb-3">
                                     <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Ubicació :</b></span>
-                                    <select class="form-select" id="location">
+                                    <select class="form-select" id="location0">
                                         <option selected></option>
                                         <option>Lab1-Extracció</option>
                                         <option>Lab2-AP</option>
@@ -271,6 +271,11 @@
                                         </select>
                                     </div>
                                 </div>
+                                <div class="col-lg-12 col-md-12 col-sm-12" name="divs_subproducts">
+                                    <div class="input-group mb-3">
+                                        <span class="input-group-text" id="basic-addon1" style="width: 100%;"><b>La conservaició d'aquest article s'ha de fer a ${list_info_lots[i]['temp_conservation']}</b></span>
+                                    </div>
+                                </div>
                                 <input type='hidden' id='json_info_lot0_${i}' value='${dict_lots}' name="divs_subproducts">
                             `;
                             if (list_info_lots[i]['description_subreference'] === '' || list_info_lots[i]['description_subreference'] === null || list_info_lots[i]['description_subreference'] === undefined){ 
@@ -333,17 +338,29 @@
             elemento.remove(); });
 
         // obtenir i formatar la data
-        var current_date = new Date();
-        var day = current_date.getDate();
-        var month = current_date.getMonth() + 1;
-        var year = current_date.getFullYear();
-        day = day < 10 ? '0' + day : day;
-        month = month < 10 ? '0' + month : month;
-        var formated_date = day + '-' + month + '-' + year;
-        var internal_lot = year + month + day
+        // var current_date = new Date();
+        // var day = current_date.getDate();
+        // var month = current_date.getMonth() + 1;
+        // var year = current_date.getFullYear();
+        // day = day < 10 ? '0' + day : day;
+        // month = month < 10 ? '0' + month : month;
+        // var formated_date = day + '-' + month + '-' + year;
+        // var internal_lot = year + month + day
 
-        document.getElementById('date_recepcion_lot').value = formated_date;
-        
+        // document.getElementById('date_recepcion_lot').value = formated_date;
+
+        date_receptin_value = document.getElementById('date_recepcion_lot').value;
+
+        var regex = /^\d{2}-\d{2}-\d{4}$/;
+        // Verificar si el string cumple con el formato
+        if (regex.test(date_receptin_value)) {
+            split_date = date_receptin_value.split('-')
+            var internal_lot = `${split_date[2]}${split_date[1]}${split_date[0]}`
+        } else {
+            alert("La data no te el format correcta, ha de ser dd-mm-yyyy")
+            return
+        }
+
         var miDiv = document.getElementById('div_info_lot');
         for (var x = 0; x < number_references; x++){
             var number_lot =  x + 1
@@ -400,6 +417,11 @@
                             </select>
                         </div>
                     </div>
+                    <div class="col-lg-12 col-md-12 col-sm-12" name="divs_subproducts">
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 100%;"><b>La conservaició d'aquest article s'ha de fer a ${list_info_lots[i]['temp_conservation']}</b></span>
+                        </div>
+                    </div>
                     <input type='hidden' id='json_info_lot${x}_${i}' value='${dict_lots}' name="divs_subproducts">
                 `;
                 if (list_info_lots[i]['description_subreference'] === '' || list_info_lots[i]['description_subreference'] === null || list_info_lots[i]['description_subreference'] === undefined){ 
@@ -435,27 +457,6 @@
 
         // obtenir i formatar la data
         var miDiv = document.getElementById('div_info_new_lot');
-        var nuevoHTML = `
-                <div class="col-lg-6 col-md-12 col-sm-12" name="divs_new_lots">       
-                    <div class="input-group mb-3">
-                        <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Ubicació :</b></span>
-                        <select class="form-select" id="location">
-                            <option selected></option>
-                            <option>Lab1-Extracció</option>
-                            <option>Lab2-AP</option>
-                            <option>Lab3-Màquines</option>
-                            <option>Lab4-PCR</option>
-                            <option>Lab5-PrePCR</option>
-                            <option>Lab Cuina</option>
-                            <option>Magatzem</option>
-                            <option>Magatzem Fred</option>
-                        </select>
-                    </div>
-                </div>
-                `;
-
-        // Agrega el nuevo conjunto debajo del div existente
-        miDiv.insertAdjacentHTML('beforebegin', nuevoHTML);
 
         for (var x = 0; x < number_references; x++){
             var nuevoHTML = `
@@ -489,6 +490,22 @@
                     <div class="input-group mb-3">
                         <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Id panell(*) :</b></span>
                         <input type="text" class="form-control" aria-label="TTN" id="code_panel${x}">
+                    </div>
+                </div>
+                <div class="col-lg-6 col-md-12 col-sm-12" name="divs_new_lots">       
+                    <div class="input-group mb-3">
+                        <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Ubicació :</b></span>
+                        <select class="form-select" id="location${x}">
+                            <option selected></option>
+                            <option>Lab1-Extracció</option>
+                            <option>Lab2-AP</option>
+                            <option>Lab3-Màquines</option>
+                            <option>Lab4-PCR</option>
+                            <option>Lab5-PrePCR</option>
+                            <option>Lab Cuina</option>
+                            <option>Magatzem</option>
+                            <option>Magatzem Fred</option>
+                        </select>
                     </div>
                 </div>
                 <div class="col-lg-12 col-md-12 col-sm-12" name="divs_new_lots">       
@@ -555,7 +572,7 @@
                 <div class="col-lg-6 col-md-12 col-sm-12" name="divs_new_lots">       
                     <div class="input-group mb-3">
                         <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Ubicació :</b></span>
-                        <select class="form-select" id="location">
+                        <select class="form-select" id="location0">
                             <option selected></option>
                             <option>Lab1-Extracció</option>
                             <option>Lab2-AP</option>
@@ -600,7 +617,6 @@
         const analytical_technique = document.getElementById('analytical_technique').value
         const manufacturer = document.getElementById('manufacturer').value
         const description = document.getElementById(`description`).value
-        const location = document.getElementById(`location`).value
 
         if (reference_catalog === code_sap || reference_catalog === code_log || code_sap === code_log) {
             alert("Els camps ref. proveïdor, codi SAP i codi LOG no poden ser iguals")
@@ -613,6 +629,7 @@
             const temp_conservation = document.getElementById('temp_conservation0').value
             const react_or_fungible = document.getElementById('react_or_fungible0').value
             const code_panel = document.getElementById('code_panel0').value
+            const location = document.getElementById(`location0`).value
             if (code_sap !== '' && code_log !== '' && analytical_technique !== '' && description !== '' && reference_catalog !== '' && manufacturer !== '' && location !== '') {
                 var dict_lots = {
                     code_sap: code_sap,
@@ -639,7 +656,8 @@
             const temp_conservation = document.getElementById(`temp_conservation${x}`).value
             const react_or_fungible = document.getElementById(`react_or_fungible${x}`).value
             const code_panel = document.getElementById(`code_panel${x}`).value
-            if (code_sap !== '' && code_log !== '' && id_reactiu !== '' && analytical_technique !== '' && description !== '' && reference_catalog !== '' && manufacturer !== '' ) {
+            const location = document.getElementById(`location${x}`).value
+            if (code_sap !== '' && code_log !== '' && id_reactiu !== '' && analytical_technique !== '' && description !== '' && reference_catalog !== '' && manufacturer !== '' && location !== '') {
                 var dict_lots = {
                     code_sap: code_sap,
                     code_log: code_log,
@@ -918,6 +936,30 @@
         document.getElementById('div_panel_search').style.display = 'none';
     }
 
+
+    function actualizarOtrosInputs(value){
+        // Expresión regular para el formato "dd-mm-yyyy"
+        var regex = /^\d{2}-\d{2}-\d{4}$/;
+
+        var unit_lots = document.getElementById("unit_lots").value;
+
+        // Verificar si el string cumple con el formato
+        if (regex.test(value)) {
+            split_date = value.split('-')
+            var internal_lot = `${split_date[2]}${split_date[1]}${split_date[0]}`
+
+            for (var i = 0; i < unit_lots; i++) {
+                for (var x = 0; x < 10; x++){
+                    if (document.getElementById(`internal_lot${i}_${x}`)) {
+                        document.getElementById(`internal_lot${i}_${x}`).value = internal_lot;
+                    } 
+                }
+            }
+        } else {
+            alert("La data no te el format correcta, ha de ser dd-mm-yyyy")
+            return
+        }
+    }
 </script>
 <style>
     #add_lot_info {
@@ -966,7 +1008,7 @@
                         <div class="col-6" style="padding-top: 10px;">
                             <div class="card" style="width: 19rem;height:100%">
                                 <div class="card-body">
-                                    <h5 class="card-title"><b>2 - Cerca reactius</b></h5>
+                                    <h5 class="card-title"><b>2 - Documents reactius</b></h5>
                                     <p class="card-text">Buscador de reactius.</p>
                                     <button type="button" onclick="open_search_lot()" class="btn btn-outline-primary btn-sm">Accedir</button>
                                 </div>
@@ -1135,7 +1177,7 @@
                     <div class="col-lg-6 col-md-12 col-sm-12">       
                         <div class="input-group mb-3">
                             <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>Data recepció:</b></span>
-                            <input type="text" class="form-control" id='date_recepcion_lot' aria-label="TTN" aria-describedby="basic-addon1" oninput="replae_slash_with_hyphen(this); filter_characters(this)">
+                            <input type="text" class="form-control" id='date_recepcion_lot' aria-label="TTN" aria-describedby="basic-addon1" oninput="replae_slash_with_hyphen(this); filter_characters(this)" onchange="actualizarOtrosInputs(this.value)">
                         </div>
                     </div>
                     <div class="col-lg-12 col-md-12 col-sm-12">
@@ -1155,9 +1197,8 @@
                             <span class="input-group-text" id="basic-addon1" style="width: 185px;"><b>Condicions transport :</b></span>
                             <select class="form-select" id="transport_conditions" >
                                 <option selected></option>
-                                <option>Fred</option>
-                                <option>Temperatura ambient</option>
-                                <option>Gel sec</option>
+                                <option>Correcta</option>
+                                <option>Incorrecta</option>
                             </select>
                             <!-- <input type="text" class="form-control" id='transport_conditions' aria-label="TTN" aria-describedby="basic-addon1"> -->
                         </div>

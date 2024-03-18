@@ -73,6 +73,7 @@ class Stock_lots(Base):
     type_doc_delivery = Column(String())
     group_insert = Column(Integer())
     code_panel = Column(String())
+    location = Column(String())
 
 
 class Logs(Base):

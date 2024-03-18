@@ -6,4 +6,4 @@ app = Flask(__name__)
 app.test_client()
 app.config.from_object("config.TestingConfig")
 
-from app import models, utils, home
+from app import models, utils, home, documents_lots, reception_lots, open_close_lots
