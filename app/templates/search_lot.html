@@ -174,12 +174,11 @@
          * Gestiona la creació de dades de formulari, envia sol·licituds al servidor i processa les respostes del servidor.
          * Es proporciona gestió d'errors i comentaris d'usuari per garantir una experiència de descàrrega fluida.
          */
-        function download_QC(lot, internal_lot, catalog_reference){
+        function download_QC(group_insert, catalog_reference){
             // Crear form data
             var form_data = new FormData();
             
-            form_data.append('lot', lot)
-            form_data.append('internal_lot', internal_lot)
+            form_data.append('group_insert', group_insert)
             form_data.append('catalog_reference', catalog_reference)
 
             // Creeem l'objecte per l'ajax
@@ -278,17 +277,17 @@
                         <tr id="thcolor">
                             {% if select_lot[0].id_reactive != '' %}
                                 <th style="min-width: 70px; max-width: 140px;">Subreferència</th>
-                                <th style="min-width: 70px; max-width: 550px;">Descripció Subref.</th>
+                                <th>Descripció Subref.</th>
                             {% else %}
                                 <th style="min-width: 70px; max-width: 140px;" class="d-none">Subreferència</th>
-                                <th style="min-width: 70px; max-width: 550px;" class="d-none">Descripció Subref.</th>
+                                <th class="d-none">Descripció Subref.</th>
                             {% endif %}
-                            <th style="min-width: 70px; max-width: 120px;">Lot</th>
-                            <th style="min-width: 70px; max-width: 110px;">Lot intern</th>
+                            <th style="min-width: 70px; max-width: 130px;">Lot</th>
+                            <th style="min-width: 70px; max-width: 130px;">Lot intern</th>
                             <!-- <th style="min-width: 70px; max-width: 90px;">Unitats</th> -->
-                            <th style="min-width: 50px; max-width: 90px;">QC</th>
-                            <th style="min-width: 70px; max-width: 110px;">Data arribada</th>
-                            <th style="min-width: 70px; max-width: 110px;">Caducitat</th>
+                            <th style="min-width: 70px; max-width: 130px;">Data arribada</th>
+                            <th style="min-width: 70px; max-width: 130px;">Caducitat</th>
+                            <th style="min-width: 50px; max-width: 130px;">QC</th>
                             <th style="max-width: 160px;">Docs.</th>
                             <th>Observacions</th>
                         </tr>
@@ -306,9 +305,9 @@
                                 <td>{{lot.lot}}</td>
                                 <td>{{lot.internal_lot}}</td>
                                 <!-- <td>{{lot.units_lot}}</td> -->
-                                <td><button type="button" class="btn btn-outline-primary btn-sm" onclick="download_QC(`{{lot.lot}}`,`{{lot.internal_lot}}`,`{{lot.catalog_reference}}`)"><i class="fa-solid fa-file-arrow-down"></i></button></td>
                                 <td>{{lot.reception_date}}</td>
                                 <td>{{lot.date_expiry}}</td>
+                                <td><button type="button" class="btn btn-outline-primary btn-sm" onclick="download_QC(`{{lot.group_insert}}`,`{{lot.catalog_reference}}`)"><i class="fa-solid fa-file-arrow-down"></i></button></td>
                                 <td>
                                     <div style=" display: inline;">
                                     {% if lot.delivery_note == '' %}

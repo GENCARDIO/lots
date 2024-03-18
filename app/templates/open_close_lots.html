@@ -42,7 +42,7 @@
          * @param {string} modal_id És l'identificador únic del modal
          * @returns {void} No retorna cap valor.
          */
-        function open_modal_accions(modal_id){
+        function open_modal_accions(modal_id, action){
             var current_date = new Date();
             var day = current_date.getDate();
             var month = current_date.getMonth() + 1;
@@ -50,8 +50,16 @@
             day = day < 10 ? '0' + day : day;
             month = month < 10 ? '0' + month : month;
             var formated_date = day + '-' + month + '-' + year;
+            document.getElementById("observations_open_close").value = '';
 
             $(`#modal_accions`).modal('show');
+            if (action == 'close'){
+                document.getElementById("btn_open").style.display = 'none';
+                document.getElementById("btn_close").style.display = 'block';
+            } else {
+                document.getElementById("btn_close").style.display = 'none';
+                document.getElementById("btn_open").style.display = 'block';}
+
             document.getElementById("id_lot_accions").value = modal_id;
             document.getElementById("date_open_close").value = formated_date;
         }
@@ -79,12 +87,15 @@
         function show_modal_open_close_lot(action){
             const id_lot = document.getElementById("id_lot_accions").value;
             const observations = document.getElementById("observations_open_close").value;
+            const date_open_close = document.getElementById("date_open_close").value;
+
             // Crear form data
             var form_data = new FormData();
 
             form_data.append('id_lot', id_lot)
             form_data.append('action', action)
             form_data.append('observations', observations)
+            form_data.append('date_open_close', date_open_close)
 
             // Creeem l'objecte per l'ajax
             var xhr = new XMLHttpRequest();
@@ -102,12 +113,12 @@
                         alert_type = 'danger'}
                     else if (response.includes('True')){
                         alert_type = 'success'
-                        if (action == 'close'){
+                        if (action === 'close'){
                             document.getElementById(`button_${id_lot}`).remove();
                             var trElement = document.getElementById(id_lot);
-                            var tdValue = trElement.cells[4].textContent;
-                            var newValue = parseInt(tdValue, 10) - 1;
-                            trElement.cells[4].textContent = newValue.toString();
+                            // var tdValue = trElement.cells[4].textContent;
+                            // var newValue = parseInt(tdValue, 10) - 1;
+                            // trElement.cells[4].textContent = newValue.toString();
                             if (split_response[1].includes("Aquesta referència s'ha esgotat,")){
                                 lis_ids_lots = split_response[2].split(';')
                                 lis_ids_lots.forEach(function(id){
@@ -118,6 +129,20 @@
                                     }
                                 });
                             }
+                        } if (action === 'open'){                   
+                            var button = document.getElementById("button_" + id_lot);
+
+                            // Cambia la clase del botón a "btn-outline-danger"
+                            button.classList.remove("btn-outline-success");
+                            button.classList.add("btn-outline-danger");
+
+                            // Cambia el texto del botón a "Tancar"
+                            button.innerText = '';
+                            button.insertAdjacentHTML('beforeend', '<i class="fa-solid fa-lock"></i> Tancar');
+
+                            var onclick_value = button.getAttribute("onclick");
+                            onclick_value = onclick_value.replace("'open'", "'close'");
+                            button.setAttribute("onclick", onclick_value);
                         }
                     } else {
                         message = `Error inesperat. Si persisteix l'error contacta amb un administrador`
@@ -281,31 +306,46 @@
                     <thead>
                         <tr id="thcolor">
                             <th style="min-width: 70px;  max-width: 120px;">Ref. Proveïdor</th>
-                            <th style="min-width: 70px;  max-width: 120px;">Subreferència</th>
+                            {% if select_lot[0][0].id_reactive != '' %}
+                                <th style="min-width: 70px;  max-width: 120px;">Subreferència</th>
+                            {% endif %}
+                            <th style="max-width: 300px;">Descripció</th>
                             <th style="min-width: 70px;  max-width: 120px;">Lot</th>
                             <th style="min-width: 70px;  max-width: 120px;">Lot intern</th>
-                            <th style="min-width: 70px;  max-width: 120px;">Unitats</th>
-                            <th style="min-width: 70px;  max-width: 120px;">Data arribada</th>
+                            <!-- <th style="min-width: 70px;  max-width: 120px;">Unitats</th> -->
+                            <!-- <th style="min-width: 70px;  max-width: 120px;">Data arribada</th> -->
                             <th style="min-width: 70px;  max-width: 120px;">Caducitat</th>
                             <th style="min-width: 120px;  max-width: 180px;">Accions</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {% for lot in select_lot %}
+                        {% for lot, consumption_lot in select_lot %}
                             <tr id="{{lot.id}}">
                                 <td>{{lot.catalog_reference}}</td>
-                                <td>{{lot.id_reactive}}</td>
+                                {% if lot.id_reactive != '' %}
+                                    <td>{{lot.id_reactive}}</td>
+                                {% endif %}
+                                {% if lot.description_subreference == '' %}
+                                    <td>{{lot.description}}</td>
+                                {% else %}
+                                    <td>{{lot.description_subreference}}</td>
+                                {% endif %}
                                 <td>{{lot.lot}}</td>
                                 <td>{{lot.internal_lot}}</td>
-                                <td>{{lot.units_lot}}</td>
-                                <td>{{lot.reception_date}}</td>
+                                <!-- <td>{{lot.units_lot}}</td> -->
+                                <!-- <td>{{lot.reception_date}}</td> -->
                                 <td>{{lot.date_expiry}}</td>
                                 <td>
                                     <div style=" display: inline;">
                                         <!-- <button type="button" class="btn btn-outline-success btn-sm" onclick="show_modal_open_close_lot(`{{lot.id}}`, 'open')"><i class="fa-solid fa-share-from-square"></i> Obrir</button>
                                         <button type="button" class="btn btn-outline-danger btn-sm" onclick="show_modal_open_close_lot(`{{lot.id}}`, 'close')"><i class="fa-solid fa-lock"></i> Tancar</button> -->
                                         {% if lot.units_lot != 0 %}
-                                            <button type="button" class="btn btn-outline-success btn-sm" id="button_{{lot.id}}" onclick="open_modal_accions(`{{lot.id}}`)"><i class="fa-solid fa-lock"></i> Accions</button>
+                                            <!-- <button type="button" class="btn btn-outline-success btn-sm" id="button_{{lot.id}}" onclick="open_modal_accions(`{{lot.id}}`)"><i class="fa-solid fa-lock"></i> Accions</button> -->
+                                            {% if consumption_lot.date_open|length > 3 %}
+                                                <button type="button" class="btn btn-outline-danger btn-sm" id="button_{{lot.id}}" onclick="open_modal_accions(`{{lot.id}}`, 'close')"><i class="fa-solid fa-lock"></i> Tancar</button>
+                                            {% else %}
+                                                <button type="button" class="btn btn-outline-success btn-sm" id="button_{{lot.id}}" onclick="open_modal_accions(`{{lot.id}}`, 'open')"><i class="fa-solid fa-share-from-square"></i> Obrir&nbsp;&nbsp;</button>
+                                            {% endif %}
                                         {% endif %}
                                         <button type="button" class="btn btn-outline-primary btn-sm" onclick="show_history_lot(`{{lot.id}}`)"><i class="fa-solid fa-book"></i> Registres</button>
                                     </div>
@@ -344,8 +384,8 @@
                     <!-- <center><input type="submit" value="Cercar lot" class="btn btn-success btn-sm"/></center> -->
                     <div class="col-lg-12 col-md-12 col-sm-12 text-center">       
                         <input type="hidden" id="id_lot_accions" value=""/>
-                        <button type="button" class="btn btn-outline-success btn-sm" onclick="show_modal_open_close_lot('open')"><i class="fa-solid fa-share-from-square"></i> Obrir</button>
-                        <button type="button" class="btn btn-outline-danger btn-sm" onclick="show_modal_open_close_lot('close')" style="margin-left: 5px;"><i class="fa-solid fa-lock"></i> Tancar</button>
+                        <center><button type="button" class="btn btn-outline-success btn-sm" onclick="show_modal_open_close_lot('open')" id="btn_open" style="display: none;"><i class="fa-solid fa-share-from-square"></i> Obrir</button></center>
+                        <center><button type="button" class="btn btn-outline-danger btn-sm" onclick="show_modal_open_close_lot('close')" id="btn_close" style="margin-left: 5px; display: none;"><i class="fa-solid fa-lock"></i> Tancar</button></center>
                     </div>    
                 </div>
             </div>
