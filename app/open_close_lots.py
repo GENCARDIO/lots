@@ -1,6 +1,6 @@
 from flask import render_template, request, flash, session
 from app import app
-from app.utils import requires_auth, list_desciption_lots
+from app.utils import requires_auth, list_desciption_lots, list_cost_center
 from app.models import session1, Stock_lots, Lot_consumptions
 from sqlalchemy import func, or_
 import json
@@ -37,7 +37,8 @@ def search_lots_open_close():
 
     if not select_lot:
         flash(f"No s'ha trobat cap coincidencia amb el codi entrat --> {reference}", "warning")
-        return render_template('home.html', list_desciption_lots=list_desciption_lots())
+        return render_template('home.html', list_desciption_lots=list_desciption_lots(),
+                               list_cost_center=list_cost_center())
 
     return render_template('open_close_lots.html', select_lot=select_lot, lot=select_lot[0],
                            list_desciption_lots=list_desciption_lots())

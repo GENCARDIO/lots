@@ -59,17 +59,6 @@
 
 
     /**
-     * Tanquem el modal amb l'id que ens passen per paràmetre.
-     * @param {string} modal_id És l'identificador únic del modal
-     * @returns {void} No retorna cap valor.
-     */
-    function close_modal(modal_id){
-        $(`#${modal_id}`).modal('hide');
-        // document.getElementById("type_selected").value = '0';
-    }
-
-
-    /**
      * La funció mira si el codi que hem entrat ja el tenim a la base de dades, si no el tenim s'ha d'afegir 
      * un lot nou i en cas que el tinguem afegirem stock a la BD. Cada acció obrirà un modal diferent.
      * 
@@ -125,7 +114,7 @@
                         document.getElementById("description").value = '';
                         document.getElementById('num_lots').value = 0;            
                         document.getElementById('reference_catalog').value = code_search;      
-                        
+
                         // Eliminar tots els divs amb el name divs_new_lots
                         var elementosAEliminar = document.querySelectorAll('div[name="divs_new_lots"]');
                             elementosAEliminar.forEach(function(elemento) {
@@ -133,7 +122,7 @@
 
                         var miDiv = document.getElementById('div_info_new_lot');
                         var nuevoHTML = `
-                            <div class="col-lg-6 col-md-6 col-sm-12" name="divs_new_lots">       
+                            <div class="col-lg-6 col-md-6 col-sm-12 divs_reatives" name="divs_new_lots">       
                                 <div class="input-group mb-3">
                                     <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Temp. conservació :</b></span>
                                     <select class="form-select" id="temp_conservation0">
@@ -147,13 +136,13 @@
                             <div class="col-lg-6 col-md-6 col-sm-12" name="divs_new_lots">       
                                 <div class="input-group mb-3">
                                     <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Reactiu o fungible :</b></span>
-                                    <select class="form-select" id="react_or_fungible0">
+                                    <select class="form-select" id="react_or_fungible0" onchange="show_reactive(this.value)">
                                         <option>Reactiu</option>
                                         <option>Fungible</option>
                                     </select>
                                 </div>
                             </div>
-                            <div class="col-lg-6 col-md-6 col-sm-12" name="divs_new_lots">       
+                            <div class="col-lg-6 col-md-6 col-sm-12 divs_reatives" name="divs_new_lots">       
                                 <div class="input-group mb-3">
                                     <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Id panell(*) :</b></span>
                                     <input type="text" class="form-control" aria-label="TTN" id="code_panel0" value='${code_panel}'>
@@ -176,7 +165,6 @@
                                 </div>
                             </div>
                             `;
-
                         // Agrega el nuevo conjunto debajo del div existente
                         miDiv.insertAdjacentHTML('afterend', nuevoHTML);
                         $('#add_new_lot').modal('show'); }
@@ -234,6 +222,14 @@
 
                         for (var i = 0; i < list_info_lots.length; i++) {
                             var dict_lots = JSON.stringify(list_info_lots[i]);
+                            if (list_info_lots[i]['temp_conservation'] == '4'){
+                                temperature = `+${list_info_lots[i]['temp_conservation']} °C`}
+                            else if (list_info_lots[i]['temp_conservation'] == '-20'){
+                                temperature = `${list_info_lots[i]['temp_conservation']} °C`}
+                            else if (list_info_lots[i]['temp_conservation'] == '-80'){
+                                temperature = `${list_info_lots[i]['temp_conservation']} °C`}
+                            else{
+                                temperature = `${list_info_lots[i]['temp_conservation']}`}
                             var nuevoHTML_variable = `<div class="col-lg-12 col-md-12 col-sm-12" name="divs_subproducts" style="display: none;">`
                             var nuevoHTML_variable2 = `<div class="col-lg-12 col-md-12 col-sm-12" name="divs_subproducts">`
                             var nuevoHTML_context = `
@@ -254,6 +250,35 @@
                                         <input type="text" class="form-control" id="expiry_date0_${i}" aria-label="TTN" aria-describedby="basic-addon1" oninput="replae_slash_with_hyphen(this); filter_characters(this)">
                                     </div>
                                 </div>
+                                `;
+                            if (list_info_lots[i]['react_or_fungible'] == 'Fungible'){
+                                var nuevoHTML_context = `${nuevoHTML_context}
+                                <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts" style="display: none">
+                                    <div class="input-group mb-3">
+                                        <span class="input-group-text" id="basic-addon1" style="width: 135px;"><b>Lot intern :</b></span>
+                                        <input type="text" class="form-control" id="internal_lot0_${i}" aria-label="TTN" value="${internal_lot}">
+                                    </div>
+                                </div>
+                                <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts">
+                                    <div class="input-group mb-3">
+                                        <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>Unitats lot :</b></span>
+                                        <select class="form-select" id="units_lot0_${i}">
+                                            <option selected>1</option>
+                                            {% for i in range(2, 1001) %}
+                                                <option>{{ i }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-lg-12 col-md-12 col-sm-12" name="divs_subproducts" style="display: none">
+                                    <div class="input-group mb-3">
+                                        <span class="input-group-text" id="basic-addon1" style="width: 100%;"><b>La conservació d'aquest article s'ha de fer a ${temperature}</b></span>
+                                    </div>
+                                </div>
+                                <input type='hidden' id='json_info_lot0_${i}' value='${dict_lots}' name="divs_subproducts">
+                                `;}
+                            else {
+                                var nuevoHTML_context = `${nuevoHTML_context}
                                 <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts">
                                     <div class="input-group mb-3">
                                         <span class="input-group-text" id="basic-addon1" style="width: 135px;"><b>Lot intern :</b></span>
@@ -273,11 +298,12 @@
                                 </div>
                                 <div class="col-lg-12 col-md-12 col-sm-12" name="divs_subproducts">
                                     <div class="input-group mb-3">
-                                        <span class="input-group-text" id="basic-addon1" style="width: 100%;"><b>La conservaició d'aquest article s'ha de fer a ${list_info_lots[i]['temp_conservation']}</b></span>
+                                        <span class="input-group-text" id="basic-addon1" style="width: 100%;"><b>La conservació d'aquest article s'ha de fer a ${temperature}</b></span>
                                     </div>
                                 </div>
                                 <input type='hidden' id='json_info_lot0_${i}' value='${dict_lots}' name="divs_subproducts">
-                            `;
+                                `;
+                            }
                             if (list_info_lots[i]['description_subreference'] === '' || list_info_lots[i]['description_subreference'] === null || list_info_lots[i]['description_subreference'] === undefined){ 
                                 var nuevoHTML = nuevoHTML_variable + nuevoHTML_context}
                             else { var nuevoHTML = nuevoHTML_variable2 + nuevoHTML_context }
@@ -316,125 +342,7 @@
         xhr.send(form_data)
     }
 
-
-    /**
-     * Afegeix un nombre específic de línies al modal per introduir referències.
-     * 
-     * Aquesta funció elimina les referències anteriors i afegeix un nombre específic
-     * de línies al modal per introduir referències. Cada línia conté camps per a la 
-     * descripció, el lot, la data de caducitat, el lot intern i les unitats del lot.
-     * 
-     * @param {number} number_references El nombre de línies que es vol afegir al modal.
-     * @returns {void} No retorna cap valor.
-     * 
-     * @descriptor Aquesta funció executa diverses accions, com ara eliminar les referències
-     * anteriors, obtenir la data actual i formatar-la, i generar l'estructura HTML per a les
-     * noves línies del modal.
-     */
-    function add_more_lines_in_modal(number_references){
-        // Eliminar tots els div amb el name divs_subproduct
-        var elementosAEliminar = document.querySelectorAll('div[name="divs_subproducts"], input[name="divs_subproducts"]');
-        elementosAEliminar.forEach(function(elemento) {
-            elemento.remove(); });
-
-        // obtenir i formatar la data
-        // var current_date = new Date();
-        // var day = current_date.getDate();
-        // var month = current_date.getMonth() + 1;
-        // var year = current_date.getFullYear();
-        // day = day < 10 ? '0' + day : day;
-        // month = month < 10 ? '0' + month : month;
-        // var formated_date = day + '-' + month + '-' + year;
-        // var internal_lot = year + month + day
-
-        // document.getElementById('date_recepcion_lot').value = formated_date;
-
-        date_receptin_value = document.getElementById('date_recepcion_lot').value;
-
-        var regex = /^\d{2}-\d{2}-\d{4}$/;
-        // Verificar si el string cumple con el formato
-        if (regex.test(date_receptin_value)) {
-            split_date = date_receptin_value.split('-')
-            var internal_lot = `${split_date[2]}${split_date[1]}${split_date[0]}`
-        } else {
-            alert("La data no te el format correcta, ha de ser dd-mm-yyyy")
-            return
-        }
-
-        var miDiv = document.getElementById('div_info_lot');
-        for (var x = 0; x < number_references; x++){
-            var number_lot =  x + 1
-            var HTML = `
-                <div class="col-lg-5 col-md-12 col-sm-12" name="divs_subproducts">
-                    <hr>
-                </div>
-                <div class="col-lg-2 col-md-12 col-sm-12" name="divs_subproducts">
-                    <center>Article ${number_lot}</center>
-                </div>
-                <div class="col-lg-5 col-md-12 col-sm-12" name="divs_subproducts">
-                    <hr>
-                </div>
-            `;
-
-            // Agrega el nuevo conjunto debajo del div existente
-            miDiv.insertAdjacentHTML('beforebegin', HTML);
-            for (var i = 0; i < list_info_lots.length; i++) {
-                var dict_lots = JSON.stringify(list_info_lots[i]);
-                var nuevoHTML_variable = `<div class="col-lg-12 col-md-12 col-sm-12" name="divs_subproducts" style="display: none;">`
-                var nuevoHTML_variable2 = `<div class="col-lg-12 col-md-12 col-sm-12" name="divs_subproducts">`
-                var nuevoHTML_context = `
-                        <div class="input-group mb-3">
-                            <span class="input-group-text" id="basic-addon1" style="width: 135px;"><b>Descripció:</b></span>
-                            <input type="text" class="form-control" aria-label="TTN" id="description${x}_${i}" value="${list_info_lots[i]['id_reactive']} || ${list_info_lots[i]['description_subreference']}" readonly>
-                        </div>
-                    </div>
-                    <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts">
-                        <div class="input-group mb-3">
-                            <span class="input-group-text" id="basic-addon1" style="width: 135px;"><b>Lot :</b></span>
-                            <input type="text" class="form-control" id="lot${x}_${i}" aria-label="TTN">
-                        </div>
-                    </div>
-                    <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts">  
-                        <div class='input-group mb-3'>
-                            <span class='input-group-text' id='basic-addon1' style='width: 140px;'><b>Data caducitat :</b></span>
-                            <input type='text' class='form-control' id='expiry_date${x}_${i}' aria-label='TTN' aria-describedby='basic-addon1' oninput="replae_slash_with_hyphen(this); filter_characters(this)">
-                        </div>
-                    </div>
-                    <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts">
-                        <div class="input-group mb-3">
-                            <span class="input-group-text" id="basic-addon1" style="width: 135px;"><b>Lot intern :</b></span>
-                            <input type="text" class="form-control" id="internal_lot${x}_${i}" aria-label="TTN" value="${internal_lot}">
-                        </div>
-                    </div>
-                    <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts">
-                        <div class="input-group mb-3">
-                            <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>Unitats lot :</b></span>
-                            <select class="form-select" id="units_lot${x}_${i}">
-                                <option selected>1</option>
-                                {% for i in range(2, 1001) %}
-                                    <option>{{ i }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                    </div>
-                    <div class="col-lg-12 col-md-12 col-sm-12" name="divs_subproducts">
-                        <div class="input-group mb-3">
-                            <span class="input-group-text" id="basic-addon1" style="width: 100%;"><b>La conservaició d'aquest article s'ha de fer a ${list_info_lots[i]['temp_conservation']}</b></span>
-                        </div>
-                    </div>
-                    <input type='hidden' id='json_info_lot${x}_${i}' value='${dict_lots}' name="divs_subproducts">
-                `;
-                if (list_info_lots[i]['description_subreference'] === '' || list_info_lots[i]['description_subreference'] === null || list_info_lots[i]['description_subreference'] === undefined){ 
-                    var nuevoHTML = nuevoHTML_variable + nuevoHTML_context}
-                else { var nuevoHTML = nuevoHTML_variable2 + nuevoHTML_context }
-
-                // Agrega el nuevo conjunto debajo del div existente
-                miDiv.insertAdjacentHTML('beforebegin', nuevoHTML);
-            }
-        }
-    }
-
-   
+    
     /**
      * Afegeix un nombre específic de nous lots al modal.
      * 
@@ -449,7 +357,7 @@
      * @descriptor Aquesta funció executa diverses accions, com ara eliminar els lots
      * anteriors, generar camps HTML per als nous lots i afegir-los al modal.
      */
-    function add_more_lots_in_modal(number_references){
+     function add_more_lots_in_modal(number_references){
         // Eliminar tots els div amb el name divs_subproduct
         var elementosAEliminar = document.querySelectorAll('div[name="divs_new_lots"]');
         elementosAEliminar.forEach(function(elemento) {
@@ -543,7 +451,7 @@
                 elemento.remove(); });
 
             var nuevoHTML = `
-                <div class="col-lg-6 col-md-6 col-sm-12" name="divs_new_lots">       
+                <div class="col-lg-6 col-md-6 col-sm-12 divs_reatives" name="divs_new_lots">       
                     <div class="input-group mb-3">
                         <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Temp. conservació :</b></span>
                         <select class="form-select" id="temp_conservation0">
@@ -557,13 +465,13 @@
                 <div class="col-lg-6 col-md-6 col-sm-12" name="divs_new_lots">       
                     <div class="input-group mb-3">
                         <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Reactiu o fungible :</b></span>
-                        <select class="form-select" id="react_or_fungible0">
+                        <select class="form-select" id="react_or_fungible0" onchange="show_reactive(this.value)">
                             <option>Reactiu</option>
                             <option>Fungible</option>
                         </select>
                     </div>
                 </div>
-                <div class="col-lg-6 col-md-6 col-sm-12" name="divs_new_lots">       
+                <div class="col-lg-6 col-md-6 col-sm-12 divs_reatives" name="divs_new_lots">       
                     <div class="input-group mb-3">
                         <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Id panell(*) :</b></span>
                         <input type="text" class="form-control" aria-label="TTN" id="code_panel0">
@@ -592,7 +500,162 @@
         }
     }
 
-    
+
+    /**
+     * Afegeix un nombre específic de línies al modal per introduir referències.
+     * 
+     * Aquesta funció elimina les referències anteriors i afegeix un nombre específic
+     * de línies al modal per introduir referències. Cada línia conté camps per a la 
+     * descripció, el lot, la data de caducitat, el lot intern i les unitats del lot.
+     * 
+     * @param {number} number_references El nombre de línies que es vol afegir al modal.
+     * @returns {void} No retorna cap valor.
+     * 
+     * @descriptor Aquesta funció executa diverses accions, com ara eliminar les referències
+     * anteriors, obtenir la data actual i formatar-la, i generar l'estructura HTML per a les
+     * noves línies del modal.
+     */
+    function add_more_lines_in_modal(number_references){
+        // Eliminar tots els div amb el name divs_subproduct
+        var elementosAEliminar = document.querySelectorAll('div[name="divs_subproducts"], input[name="divs_subproducts"]');
+        elementosAEliminar.forEach(function(elemento) {
+            elemento.remove(); });
+
+        // obtenir i formatar la data
+        // var current_date = new Date();
+        // var day = current_date.getDate();
+        // var month = current_date.getMonth() + 1;
+        // var year = current_date.getFullYear();
+        // day = day < 10 ? '0' + day : day;
+        // month = month < 10 ? '0' + month : month;
+        // var formated_date = day + '-' + month + '-' + year;
+        // var internal_lot = year + month + day
+
+        // document.getElementById('date_recepcion_lot').value = formated_date;
+
+        date_receptin_value = document.getElementById('date_recepcion_lot').value;
+
+        var regex = /^\d{2}-\d{2}-\d{4}$/;
+        // Verificar si el string cumple con el formato
+        if (regex.test(date_receptin_value)) {
+            split_date = date_receptin_value.split('-')
+            var internal_lot = `${split_date[2]}${split_date[1]}${split_date[0]}`
+        } else {
+            alert("La data no te el format correcta, ha de ser dd-mm-yyyy")
+            return
+        }
+
+        var miDiv = document.getElementById('div_info_lot');
+        for (var x = 0; x < number_references; x++){
+            var number_lot =  x + 1
+            var HTML = `
+                <div class="col-lg-5 col-md-12 col-sm-12" name="divs_subproducts">
+                    <hr>
+                </div>
+                <div class="col-lg-2 col-md-12 col-sm-12" name="divs_subproducts">
+                    <center>Article ${number_lot}</center>
+                </div>
+                <div class="col-lg-5 col-md-12 col-sm-12" name="divs_subproducts">
+                    <hr>
+                </div>
+            `;
+
+            // Agrega el nuevo conjunto debajo del div existente
+            miDiv.insertAdjacentHTML('beforebegin', HTML);
+            for (var i = 0; i < list_info_lots.length; i++) {
+                var temperature = ''
+                var dict_lots = JSON.stringify(list_info_lots[i]);
+                if (list_info_lots[i]['temp_conservation'] == '4'){
+                    temperature = `+${list_info_lots[i]['temp_conservation']} °C`}
+                else if (list_info_lots[i]['temp_conservation'] == '-20'){
+                    temperature = `${list_info_lots[i]['temp_conservation']} °C`}
+                else if (list_info_lots[i]['temp_conservation'] == '-80'){
+                    temperature = `${list_info_lots[i]['temp_conservation']} °C`}
+                else{
+                    temperature = `${list_info_lots[i]['temp_conservation']}`}
+                var nuevoHTML_variable = `<div class="col-lg-12 col-md-12 col-sm-12" name="divs_subproducts" style="display: none;">`
+                var nuevoHTML_variable2 = `<div class="col-lg-12 col-md-12 col-sm-12" name="divs_subproducts">`
+                var nuevoHTML_context = `
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 135px;"><b>Descripció:</b></span>
+                            <input type="text" class="form-control" aria-label="TTN" id="description${x}_${i}" value="${list_info_lots[i]['id_reactive']} || ${list_info_lots[i]['description_subreference']}" readonly>
+                        </div>
+                    </div>
+                    <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts">
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 135px;"><b>Lot :</b></span>
+                            <input type="text" class="form-control" id="lot${x}_${i}" aria-label="TTN">
+                        </div>
+                    </div>
+                    <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts">  
+                        <div class='input-group mb-3'>
+                            <span class='input-group-text' id='basic-addon1' style='width: 140px;'><b>Data caducitat :</b></span>
+                            <input type='text' class='form-control' id='expiry_date${x}_${i}' aria-label='TTN' aria-describedby='basic-addon1' oninput="replae_slash_with_hyphen(this); filter_characters(this)">
+                        </div>
+                    </div>
+                    `
+                    if (list_info_lots[i]['react_or_fungible'] == 'Fungible'){
+                        var nuevoHTML_context = `${nuevoHTML_context}
+                            <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts" style="display: none;">
+                                <div class="input-group mb-3">
+                                    <span class="input-group-text" id="basic-addon1" style="width: 135px;"><b>Lot intern :</b></span>
+                                    <input type="text" class="form-control" id="internal_lot${x}_${i}" aria-label="TTN" value="${internal_lot}">
+                                </div>
+                            </div>
+                            <div class="col-lg-12 col-md-12 col-sm-12" name="divs_subproducts">
+                                <div class="input-group mb-3">
+                                    <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>Unitats lot :</b></span>
+                                    <select class="form-select" id="units_lot${x}_${i}">
+                                        <option selected>1</option>
+                                        {% for i in range(2, 1001) %}
+                                            <option>{{ i }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-lg-12 col-md-12 col-sm-12" name="divs_subproducts" style="display: none;">
+                                <div class="input-group mb-3">
+                                    <span class="input-group-text" id="basic-addon1" style="width: 100%;"><b>La conservació d'aquest article s'ha de fer a ${temperature}</b></span>
+                                </div>
+                            </div>
+                            <input type='hidden' id='json_info_lot${x}_${i}' value='${dict_lots}' name="divs_subproducts">`;}
+                    else {
+                        var nuevoHTML_context = `${nuevoHTML_context}
+                            <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts">
+                                <div class="input-group mb-3">
+                                    <span class="input-group-text" id="basic-addon1" style="width: 135px;"><b>Lot intern :</b></span>
+                                    <input type="text" class="form-control" id="internal_lot${x}_${i}" aria-label="TTN" value="${internal_lot}">
+                                </div>
+                            </div>
+                            <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts">
+                                <div class="input-group mb-3">
+                                    <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>Unitats lot :</b></span>
+                                    <select class="form-select" id="units_lot${x}_${i}">
+                                        <option selected>1</option>
+                                        {% for i in range(2, 1001) %}
+                                            <option>{{ i }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-lg-12 col-md-12 col-sm-12" name="divs_subproducts">
+                                <div class="input-group mb-3">
+                                    <span class="input-group-text" id="basic-addon1" style="width: 100%;"><b>La conservació d'aquest article s'ha de fer a ${temperature}</b></span>
+                                </div>
+                            </div>
+                            <input type='hidden' id='json_info_lot${x}_${i}' value='${dict_lots}' name="divs_subproducts">
+                        `;}
+                if (list_info_lots[i]['description_subreference'] === '' || list_info_lots[i]['description_subreference'] === null || list_info_lots[i]['description_subreference'] === undefined){ 
+                    var nuevoHTML = nuevoHTML_variable + nuevoHTML_context}
+                else { var nuevoHTML = nuevoHTML_variable2 + nuevoHTML_context }
+
+                // Agrega el nuevo conjunto debajo del div existente
+                miDiv.insertAdjacentHTML('beforebegin', nuevoHTML);
+            }
+        }
+    }
+
+   
     /**
      * Afegeix un nou lot al sistema a partir de les dades introduïdes en un formulari modal.
      * 
@@ -614,23 +677,38 @@
         const reference_catalog = document.getElementById('reference_catalog').value
         const code_sap = document.getElementById('code_sap').value
         const code_log = document.getElementById('code_log').value
-        const analytical_technique = document.getElementById('analytical_technique').value
-        const manufacturer = document.getElementById('manufacturer').value
+        let analytical_technique = document.getElementById('analytical_technique').value
+        let manufacturer = document.getElementById('manufacturer').value
         const description = document.getElementById(`description`).value
-
-        if (reference_catalog === code_sap || reference_catalog === code_log || code_sap === code_log) {
+        const supplier = document.getElementById(`supplier`).value
+        
+        if (reference_catalog === code_sap || reference_catalog === code_log || code_sap === code_log && code_log !== '' && codi_sap != '') {
             alert("Els camps ref. proveïdor, codi SAP i codi LOG no poden ser iguals")
-            return
-        } 
+            return } 
 
         var list_lots = []
 
         if (num_lots === '0'){
-            const temp_conservation = document.getElementById('temp_conservation0').value
+            let temp_conservation = document.getElementById('temp_conservation0').value
             const react_or_fungible = document.getElementById('react_or_fungible0').value
             const code_panel = document.getElementById('code_panel0').value
             const location = document.getElementById(`location0`).value
-            if (code_sap !== '' && code_log !== '' && analytical_technique !== '' && description !== '' && reference_catalog !== '' && manufacturer !== '' && location !== '') {
+            
+            // Si es un fungible aquest camps estaran en blanc i donarà error, per això hi posem --.
+            if (react_or_fungible === 'Fungible'){
+                temp_conservation = '--'
+                analytical_technique = '--'
+                manufacturer = '--'}
+            
+            // Aquí m'han fet treure la restricció de que el codi SAP i LOG siguin obligatoris
+            // if (code_sap !== '' && code_log !== '' && analytical_technique !== '' && description !== '' && reference_catalog !== '' && manufacturer !== '' && location !== '') {
+            if (analytical_technique !== '' && description !== '' && reference_catalog !== '' && manufacturer !== '' && location !== '') {
+                // Si es un funbile hem de possar aquest camps en blanc.
+                if (react_or_fungible === 'Fungible'){
+                    temp_conservation = ''
+                    analytical_technique = ''
+                    manufacturer = ''}
+
                 var dict_lots = {
                     code_sap: code_sap,
                     code_log: code_log,
@@ -642,7 +720,8 @@
                     react_or_fungible: react_or_fungible,
                     description_subreference: '',
                     code_panel: code_panel,
-                    location: location }; }
+                    location: location,
+                    supplier: supplier }; }
             else {  
                 alert("No es poden deixar els camps sense omplir.")
                 return
@@ -669,7 +748,8 @@
                     react_or_fungible: react_or_fungible,
                     description_subreference: description_subreference,
                     code_panel: code_panel,
-                    location: location}; }
+                    location: location,
+                    supplier: supplier}; }
             else {
                 alert("No es poden deixar els camps sense omplir.")
                 return
@@ -748,7 +828,7 @@
         // Carregar dades al form de l'html
         const unit_lots = document.getElementById('unit_lots').value
         const date_recepcion_lot = document.getElementById('date_recepcion_lot').value
-        if (!check_format_date.test(date_recepcion_lot)) {
+        if (!check_format_date.test(date_recepcion_lot) && date_recepcion_lot !== 'NA') {
             alert("El format de la data no és correcta, ha de ser dd-mm-yyyy");
             return }
 
@@ -761,8 +841,9 @@
         const comand_number = document.getElementById('comand_number').value
         const revised_by = document.getElementById('revised_by').value
         const date_revised = document.getElementById('date_revised').value
-        
-        if (transport_conditions === '' || packaging === '' || inspected_by === '' || date_inspected === '' || state === '' || comand_number === '' || revised_by === '' || date_revised === ''){
+        const billing = document.getElementById('billing').value
+
+        if (transport_conditions === '' || packaging === '' || inspected_by === '' || date_inspected === '' || state === '' || comand_number === '' || revised_by === '' || date_revised === '' || billing === ''){
             alert("No pots deixar camps buits, revisa els camps de recepció de procute i QC recepció.")
             return }
         
@@ -807,7 +888,8 @@
                     dict_info_lot.state = state
                     dict_info_lot.comand_number = comand_number
                     dict_info_lot.revised_by = revised_by
-                    dict_info_lot.date_revised = date_revised }
+                    dict_info_lot.date_revised = date_revised
+                    dict_info_lot.billing = billing }
                 else{
                     alert("No es poden deixar els camps sense omplir.") 
                     return}
@@ -843,7 +925,7 @@
                     message = `Error inesperat. <button type="button" class="btn btn-link btn-sm" onclick="open_modal('add_lot_info')">lot</button>`
                     alert_type = 'danger'}}
             else {
-                message = `Error, No s'ha pogut realitzar l'operació. <button type="button" class="btn btn-link btn-sm" onclick="open_modal('add_lot_info')">lot</button>`
+                message = `Error, no s'ha pogut realitzar l'operació. <button type="button" class="btn btn-link btn-sm" onclick="open_modal('add_lot_info')">lot</button>`
                 alert_type = 'danger' }
 
             var flashContainer = document.querySelector(".d-flex.justify-content-center .row");
@@ -930,11 +1012,11 @@
      * @descriptor Obrim el modal search_lot, despres ens asegurem qeu el div div_panel_search esta ocult i
      * per últim posarem en blanc el camp code_panel_search.
      */
-    function open_search_lot(){
-        open_modal('search_lot')
-        document.getElementById('code_panel_search').value = ''
-        document.getElementById('div_panel_search').style.display = 'none';
-    }
+    // function open_search_lot(){
+    //     open_modal('search_lot')
+    //     document.getElementById('code_panel_search').value = ''
+    //     document.getElementById('div_panel_search').style.display = 'none';
+    // }
 
 
     function actualizarOtrosInputs(value){
@@ -959,6 +1041,229 @@
             alert("La data no te el format correcta, ha de ser dd-mm-yyyy")
             return
         }
+    }
+
+
+    /**
+     * Envia una sol·licitud AJAX per saber si podem registrar una comanda.
+     * 
+     * @param {string} acronim Acronim de la sessió.
+     * @returns {void} No retorna cap valor.
+     * 
+     * @descriptor Recollim el codi de cerca, assegurant-nos que l'usuari no el deixi en blanc. 
+     * Si tot està correcte, enviem una sol·licitud AJAX per fer la consulta. Si la resposta indica
+     * que no s'ha trobat cap coincidència amb el codi de cerca, mostrem un missatge d'error a l'usuari 
+     * amb una explicació corresponent. Si es troba una coincidència, les dades associades es posen en un
+     * diccionari i es presenten als camps de l'HTML. Si es produeix qualsevol error durant el procés, 
+     * es mostra un missatge d'error.
+     */
+    function info_add_comand(acronim){
+        // Crear form data
+        var form_data = new FormData();
+        
+        // Carregar dades al form de l'html
+        const code_search = document.getElementById('code_search_command').value
+
+        var regex = /^\s*$/;
+        var only_space = regex.test(code_search);
+        if (only_space){alert("El camp no pot estar buït"); return}
+        if (code_search.length < 3){alert("El codi no to tenir menys de 3 caràcters."); return }
+                    
+        form_data.append('code_search', code_search)
+
+        // Creeem l'objecte per l'ajax
+        var xhr = new XMLHttpRequest();
+        // 1er argument si es pots o get
+        // 2n argument url o ruta
+        // 3r argumemt true sempre
+        xhr.open('POST', '/search_add_command', true);
+        xhr.onload = function(){
+            if (xhr.status === 200) {
+                var response = xhr.responseText;
+
+                var split_response = response.split('_//_')
+                
+                close_modal('search_command') 
+
+                if (split_response[0] === 'True'){
+                    if (split_response[1] === 'new'){
+                        message = "Aquest article no esta intoduït, abans de fer comandes has d'introduïr-lo a la BD"
+                        alert_type = "warning"}
+                    else {
+                        // Tranformem en diccionari el json
+                        list_info_lots = JSON.parse(split_response[1]);
+                        // Assignem els valors
+                        document.getElementById("catalog_reference_command").value = list_info_lots['catalog_reference']
+                        document.getElementById("code_sap_command").value = list_info_lots['code_SAP']
+                        document.getElementById("code_loc_command").value = list_info_lots['code_LOG']
+                        document.getElementById("description_command").value = list_info_lots['description']
+                        document.getElementById("key_lot_command").value = list_info_lots['key']
+                        document.getElementById("cost_center").value = '--'
+                        document.getElementById("cost_center_name").value = ''
+                        document.getElementById("div_ceco_manual").style.display ='none'
+                        $('#add_command').modal('show'); 
+                        message = '' }}
+                else if (split_response === 'False'){
+                    message = "La cerca del lot ha fallat."
+                    alert_type = 'danger'} 
+                else{
+                    message = "Error inesperat."
+                    alert_type = 'danger'}}
+            else {
+                message = "Error, No s'ha pogut realitzar l'operació."
+                alert_type = 'danger' }
+
+            if (message !== ''){
+                var flashContainer = document.querySelector(".d-flex.justify-content-center .row");
+                // Eliminar la alerta anterior, si existe
+                if (flashContainer.children.length > 0) {
+                    flashContainer.removeChild(flashContainer.children[0]); }
+
+                var newFlash = document.createElement("div");
+                newFlash.className = "alert alert-" + alert_type + " alert-dismissible fade show ml-3";
+                newFlash.role = "alert";
+                newFlash.innerHTML = "<span>" + message + "</span>" + 
+                                    '<button type="button" class="close" data-dismiss="alert" aria-label="Close">' +
+                                    '<span aria-hidden="true">&times;</span>' +
+                                    '</button>';
+                flashContainer.appendChild(newFlash);
+                flashContainer.style.paddingTop = "20px";}
+        }
+
+        xhr.send(form_data)
+    }
+
+    
+    /**
+     * Afegeix informació a la BD commands utilitzant les dades introduïdes en un modal.
+     * Comprovem que els camps requerits no estiguin buits.
+     * Un cop s'ha realitzar l'operació mostra un missatge per pantalla a l'usuari.
+     * 
+     * @returns {void} No retorna cap valor.
+     * 
+     * @descriptor Aquesta funció afegeix comandes a partir de les dades introduïdes en un modal.
+     * També realitza validacions i assegura que els camps requerits no estiguin buits abans de l'enviament de les dades.
+     */
+    function add_command(){
+        // Crear form data
+        var form_data = new FormData();
+        
+        // Carregar dades al form de l'html
+
+        const key_lot = document.getElementById("key_lot_command").value
+        const units_command = document.getElementById("units_command").value
+        const cost_center = document.getElementById("cost_center").value
+        const cost_center_name = document.getElementById("cost_center_name").value
+        let cost_center_final = ''
+        let new_cost_center = false
+
+        
+        if (cost_center === '--' || cost_center === 'Intoduïr manualment' && cost_center_name === ''){
+                alert("No es pot deixar el centre de cost buït")
+                return}
+        else if (cost_center === 'Intoduïr manualment'){
+                new_cost_center = true
+                cost_center_final = cost_center_name }
+        else{ cost_center_final = cost_center }
+        
+        if (units_command === '0' || units_command === '' || units_command < 0){
+            var divMessage = document.getElementById("div_message_command");
+            if (divMessage) {divMessage.remove();}
+        
+            var html_insert = `
+                <div class="d-flex justify-content-center" id="div_message_command">
+                    <div class="row mt-1 justify-content-center">
+                        <div class="alert alert-danger alert-dismissible fade show ml-3" role="alert">
+                            <span>Has de posar un número d'unitats valid</span>
+                            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            var div_ubication_comand = document.getElementById("flash_message_comand");
+            // Insertar el HTML dentro del elemento objetivo
+            div_ubication_comand.insertAdjacentHTML('beforebegin', html_insert);
+            // var spanElement = document.querySelector('span[name="span_units_command"]');
+            // spanElement.style.backgroundColor = 'red';
+            return }
+ 
+        form_data.append('key_lot', key_lot)
+        form_data.append('units_command', units_command)
+        form_data.append('cost_center', cost_center_final)
+        form_data.append('new_cost_center', new_cost_center)
+
+        $('#add_command').modal('hide');
+
+        // Creeem l'objecte per l'ajax
+        var xhr = new XMLHttpRequest();
+        // 1er argument si es pots o get
+        // 2n argument url o ruta
+        // 3r argumemt true sempre
+        xhr.open('POST', '/add_command', true);
+        xhr.onload = function(){
+            if (xhr.status === 200) {
+                var response = xhr.responseText;
+                if (response.includes('False')){
+                    alert_type = 'danger'
+                    if (response === 'False_duplicate'){
+                        message = `Error, un o més lots ja estan entrats a la bd, no s'ha inserit cap camp, revisa els duplicats i tornar a inserir-lo.`}
+                    else{
+                        message = `Error, no s'ha pogut inserir el lot a la bd. <button type="button" class="btn btn-link btn-sm" onclick="open_modal('add_lot_info')">lot</button>`}}
+                else if (response === 'True'){
+                    message = "La comanda s'ha introduït correctament."
+                    alert_type = 'success'} 
+                else{
+                    message = `Error inesperat.`
+                    alert_type = 'danger'}}
+            else {
+                message = `Error, No s'ha pogut realitzar l'operació.`
+                alert_type = 'danger' }
+
+            var flashContainer = document.querySelector(".d-flex.justify-content-center .row");
+            // Eliminar la alerta anterior, si existe
+            if (flashContainer.children.length > 0) {
+                flashContainer.removeChild(flashContainer.children[0]); }
+
+            var newFlash = document.createElement("div");
+            newFlash.className = "alert alert-" + alert_type + " alert-dismissible fade show ml-3";
+            newFlash.role = "alert";
+            newFlash.innerHTML = "<span>" + message + "</span>" + 
+                                '<button type="button" class="close" data-dismiss="alert" aria-label="Close">' +
+                                '<span aria-hidden="true">&times;</span>' +
+                                '</button>';
+            flashContainer.appendChild(newFlash);
+            flashContainer.style.paddingTop = "20px";
+        }
+
+        xhr.send(form_data)
+    }
+
+
+    function show_reactive(type_reactive){
+        // Seleccionem tots els element amb la clase divs_reatives"
+        var divsReatives = document.querySelectorAll('.divs_reatives');
+
+        if (type_reactive == "Fungible"){
+            // Iterem sobre l'element i l'ocultem
+            divsReatives.forEach(function(div) {
+                div.style.display = 'none'; 
+            });}
+        else{
+            // Iterem sobre l'element i l'ocultem
+            divsReatives.forEach(function(div) {
+                div.style.display = 'block'; 
+            });}
+    }
+
+
+    function show_hide_div_ceco(option){
+        if (option === "Intoduïr manualment"){
+            document.getElementById('cost_center_name').value = '';
+            document.getElementById('div_ceco_manual').style.display = 'block'; }
+        else{
+            document.getElementById('div_ceco_manual').style.display = 'none'}
     }
 </script>
 <style>
@@ -990,40 +1295,58 @@
         <h1 class='mb-4' style="color: rgb(70, 70, 70); text-align: center;">Registre de rectius<hr></h1>
         <div class="d-flex justify-content-center">
             <div class="row">
-                <div class="col-lg-4 col-md-6 col-sm-12">
+                <div class="col-lg-3 col-md-6 col-sm-12">
                     <div class="row">
                         <div class="col-6" style="padding-top: 10px;">
                             <div class="card" style="width: 19rem;height:100%">
                                 <div class="card-body">
                                     <h5 class="card-title"><b>1 - Recepcionar articles </b></h5>
-                                    <p class="card-text">Aquí podreu afegir articles</p>
-                                    <button class="btn btn-outline-primary btn-sm" onclick="insert(`{{session['acronim']}}`)">Accedir</button>
+                                    <p class="card-text" style="font-size: 14px;">Afegir articles nous a la BD o afegir stock d'articles que ja tinguem registrats.</p>
+                                    <p class="card-text" style="font-size: 14px;"></p>
+                                    <button class="btn btn-outline-primary btn-sm" onclick="insert(`{{session['acronim']}}`)">Recepcionar <i class="fa-solid fa-list-check"></i></button>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="col-lg-4 col-md-6 col-sm-12">
+                <div class="col-lg-3 col-md-6 col-sm-12">
                     <div class="row">
                         <div class="col-6" style="padding-top: 10px;">
                             <div class="card" style="width: 19rem;height:100%">
                                 <div class="card-body">
                                     <h5 class="card-title"><b>2 - Documents reactius</b></h5>
-                                    <p class="card-text">Buscador de reactius.</p>
-                                    <button type="button" onclick="open_search_lot()" class="btn btn-outline-primary btn-sm">Accedir</button>
+                                    <p class="card-text" style="font-size: 14px;">Descarregar-te un pdf amb els QC o introduir l'albarà i el certificat.</p>
+                                    <button type="button" onclick="open_modal('search_lot')" class="btn btn-outline-primary btn-sm">Documents <i class="fa-solid fa-clipboard-list"></i></button>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="col-lg-4 col-md-6 col-sm-12">
+                <div class="col-lg-3 col-md-6 col-sm-12">
                     <div class="row">
                         <div class="col-6" style="padding-top: 10px;">
                             <div class="card" style="width: 19rem;height:100%">
                                 <div class="card-body">
-                                    <h5 class="card-title"><b>3 - Obrir/tancar lot reactius</b></h5>
-                                    <p class="card-text">Obrir o tancar lots.</p>
-                                    <button type="button" data-toggle="modal" data-target="#open_close_lot" class="btn btn-outline-primary btn-sm">Accedir</button>
+                                    <h5 class="card-title"><b>3 - Gestió d'articles</b></h5>
+                                    <p class="card-text" style="font-size: 14px;">Obrir / tancar lots i consultar registres tant de reactiu com de fungibles</p>
+                                    <button type="button" data-toggle="modal" data-target="#open_close_lot" class="btn btn-outline-primary btn-sm">Reactiu <i class="fa-solid fa-vial"></i></button>
+                                    <button type="button" data-toggle="modal" data-target="#modal_search_fungible" class="btn btn-outline-success btn-sm">Fungible <i class="fa-solid fa-eye-dropper"></i></button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 col-sm-12">
+                    <div class="row">
+                        <div class="col-6" style="padding-top: 10px;">
+                            <div class="card" style="width: 19rem;height:100%">
+                                <div class="card-body">
+                                    <h5 class="card-title"><b>4 - Comandes</b></h5>
+                                    <p class="card-text" style="font-size: 14px;">Inserir comanda nova o veure les pendents i poder eliminar-les</p>
+                                    <button type="button" onclick="open_modal('search_command')" class="btn btn-outline-primary btn-sm">Inserir <i class="fa-solid fa-file-import"></i></button>
+                                    <form action="/search_commands" style="display: inline;">
+                                        <button type="submit" onclick="open_modal('search_command_stock')" class="btn btn-outline-success btn-sm">Consultar <i class="fa-solid fa-clipboard-list"></i></button>
+                                    </form>
                                 </div>
                             </div>
                         </div>
@@ -1050,7 +1373,7 @@
                             <input type="text" class="form-control" id='code_search' list="datalist-codes2" aria-label="TTN" aria-describedby="basic-addon1" value="lot1">
                             <datalist id="datalist-codes2">
                                 {% for description in list_desciption_lots %}
-                                    <option value="{{description.description}}">{{ description.description }}</option>
+                                    <option value="{{description.description}}">{{description.catalog_reference}} - {{ description.description }}</option>
                                 {% endfor %}
                             </datalist>
                             <button type="button" class="btn btn-secondary btn-sm" onclick="show_panel_input('div_panel')"><i class="fa-solid fa-plus"></i> panell</button>
@@ -1062,11 +1385,7 @@
                             <input type="text" class="form-control" id='code_panel' aria-label="TTN" aria-describedby="basic-addon1">
                         </div>
                     </div>
-                    <div class="col-lg-12 col-md-12 col-sm-12">       
-                        <div class="input-group mb-3">
-                            <button type="button" class="btn btn-primary btn-sm" style="width: 150px;" onclick="info_add_lot(`{{session['acronim']}}`)">Accepta</button>
-                        </div>
-                    </div>
+                    <center><button type="button" class="btn btn-primary btn-sm" onclick="info_add_lot(`{{session['acronim']}}`)">Accepta</button></center>
                 </div>
             </div>
           </div>
@@ -1089,7 +1408,7 @@
                             <input type="text" class="form-control" id='reference_catalog' aria-label="TTN" aria-describedby="basic-addon1">
                         </div>
                     </div>
-                    <div class="col-lg-6 col-md-12 col-sm-12">       
+                    <div class="col-lg-6 col-md-12 col-sm-12 divs_reatives">       
                         <div class="input-group mb-3">
                             <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Subreferències :</b></span>
                             <select class="form-select" id="num_lots" onchange="add_more_lots_in_modal(this.value)">
@@ -1112,16 +1431,22 @@
                             <input type="text" class="form-control" id='code_log' aria-label="TTN" aria-describedby="basic-addon1">
                         </div>
                     </div>
-                    <div class="col-lg-6 col-md-12 col-sm-12">       
+                    <div class="col-lg-6 col-md-12 col-sm-12 divs_reatives">       
                         <div class="input-group mb-3">
                             <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Tècnica analítica :</b></span>
                             <input type="text" class="form-control" id='analytical_technique' aria-label="TTN" aria-describedby="basic-addon1">
                         </div>
                     </div>
-                    <div class="col-lg-6 col-md-12 col-sm-12">       
+                    <div class="col-lg-6 col-md-12 col-sm-12 divs_reatives">       
                         <div class="input-group mb-3">
                             <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Fabricant :</b></span>
                             <input type="text" class="form-control" id='manufacturer' aria-label="TTN" aria-describedby="basic-addon1">
+                        </div>
+                    </div>
+                    <div class="col-lg-6 col-md-12 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Proveïdor :</b></span>
+                            <input type="text" class="form-control" id='supplier' aria-label="TTN" aria-describedby="basic-addon1">
                         </div>
                     </div>
                     <div class="col-lg-12 col-md-12 col-sm-12">       
@@ -1252,6 +1577,18 @@
                         </div>
                     </div>
 
+                    <div class="col-lg-6 col-md-12 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 185px;"><b>Facturació :</b></span>
+                            <select class="form-select" id="billing" >
+                                <option selected></option>
+                                <option>ICS</option>
+                                <option>IDIBGI</option>
+                                <option>FABRICACIÓ</option>
+                            </select>
+                        </div>
+                    </div>
+
                     <div class="col-lg-12 col-md-12 col-sm-12">
                         <div class="input-group mb-3">
                             <span class="input-group-text" id="basic-addon1" style="width: 185px;"><b>Albarà :</b></span>
@@ -1308,7 +1645,7 @@
                                 <input type="text" class="form-control" id='search_code' name="search_code" list="datalist-codes" aria-label="TTN" aria-describedby="basic-addon1" required>
                                 <datalist id="datalist-codes">
                                     {% for description in list_desciption_lots %}
-                                        <option value="{{description.description}}">{{ description.description }}</option>
+                                        <option value="{{description.description}}">{{description.catalog_reference}} - {{ description.description }}</option>
                                     {% endfor %}
                                 </datalist>
                                 <button type="button" class="btn btn-secondary btn-sm" onclick="show_panel_input('div_panel_search')"><i class="fa-solid fa-plus"></i> panell</button>
@@ -1329,6 +1666,142 @@
     </div>
     
 
-    <script src="/static/js/bootstrap.js"></script></body>
+    <div class="modal fade"  id="search_command" tabindex="-1" role="dialog" aria-labelledby="editRegister" aria-hidden="true">
+        <div class="modal-dialog modal-lg" tabindex="-1" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="title">Comandes</h5>
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="close_modal('search_command')"><span aria-hidden="true">&times;</span></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-lg-12 col-md-12 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <!-- <span class="input-group-text" id="basic-addon1"><b>Ref. proveïdor, SAP o LOG:</b></span> -->
+                            <span class="input-group-text" id="basic-addon1"><b>Ref. proveïdor o descripció:</b></span>
+                            <input type="text" class="form-control" id='code_search_command' list="datalist-codes2" aria-label="TTN" aria-describedby="basic-addon1">
+                            <datalist id="datalist-codes2">
+                                {% for description in list_desciption_lots %}
+                                    <option value="{{description.description}}">{{description.catalog_reference}} - {{ description.description }}</option>
+                                {% endfor %}
+                            </datalist>
+                            <!-- <button type="button" class="btn btn-secondary btn-sm" onclick="show_panel_input('div_panel_comand')"><i class="fa-solid fa-plus"></i> panell</button> -->
+                        </div>
+                    </div>
+                    <!-- <div class="col-lg-12 col-md-12 col-sm-12" style="display: none;" id="div_panel_comand">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1"><b>Codi panell (*):</b></span>
+                            <input type="text" class="form-control" id='code_panel' aria-label="TTN" aria-describedby="basic-addon1">
+                        </div>
+                    </div> -->
+                    <center><button type="button" class="btn btn-primary btn-sm" onclick="info_add_comand(`{{session['acronim']}}`)">Accepta</button></center>
+                </div>
+            </div>
+          </div>
+        </div>
+    </div>
+
+
+    <div class="modal fade"  id="add_command" tabindex="-1" role="dialog" aria-labelledby="editRegister" aria-hidden="true">
+        <div class="modal-dialog modal-lg" tabindex="-1" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+                <div class="d-flex justify-content-center w-100">
+                    <h5 class="modal-title">Afegeix Comanda</h5>
+                </div>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="close_modal('add_command')"><span aria-hidden="true">&times;</span></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div id="flash_message_comand"></div>
+                    <div class="col-lg-6 col-md-12 col-sm-12">
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>Codi proveïdor:</b></span>
+                            <input type="text" class="form-control" id="catalog_reference_command" aria-label="TTN" style="background-color: white;" readonly>
+                        </div>
+                    </div>
+                    <div class="col-lg-6 col-md-12 col-sm-12">
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 135px;"><b>Codi SAP:</b></span>
+                            <input type="text" class="form-control" id="code_sap_command" aria-label="TTN" style="background-color: white;" readonly>
+                        </div>
+                    </div>
+                    <div class="col-lg-6 col-md-12 col-sm-12">
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>Codi LOC:</b></span>
+                            <input type="text" class="form-control" id="code_loc_command" aria-label="TTN" style="background-color: white;" readonly>
+                        </div>
+                    </div>
+                    <div class="col-lg-6 col-md-12 col-sm-12">
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 140px;" name="span_units_command"><b>Unitats:</b></span>
+                            <input type="number" class="form-control" id="units_command" aria-label="TTN" value="0">
+                        </div>
+                    </div>
+                    <div class="col-lg-6 col-md-6 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>CECO :</b></span>
+                            <select class="form-select" id="cost_center" onchange="show_hide_div_ceco(this.value)">
+                                <option selected>--</option>
+                                {% for ceco in list_cost_center%}
+                                    <option>{{ ceco.name }}</option>
+                                {% endfor %}
+                                <option>Intoduïr manualment</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-lg-6 col-md-12 col-sm-12" style="display: none;" id="div_ceco_manual">
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>CECO:</b></span>
+                            <input type="text" class="form-control" id="cost_center_name" aria-label="TTN">
+                        </div>
+                    </div>
+                    <div class="col-lg-12 col-md-12 col-sm-12">
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>Descripció:</b></span>
+                            <input type="text" class="form-control" id="description_command" aria-label="TTN" style="background-color: white;" readonly>
+                        </div>
+                    </div>
+                    <input type="hidden" id="key_lot_command" value=""/>
+                    <center><button type="button" class="btn btn-primary btn-sm" onclick="add_command()">Afegir</button></center>
+                </div>
+            </div>
+          </div>
+        </div>
+    </div>
+
+
+    <div class="modal fade"  id="modal_search_fungible" tabindex="-1" role="dialog" aria-labelledby="editRegister" aria-hidden="true">
+        <div class="modal-dialog modal-lg" tabindex="-1" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="title">Fungibles - Cerca fungibles -</h5>
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="close_modal('modal_search_fungible')"><span aria-hidden="true">&times;</span></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <form action="/search_fungible" method="post">
+                        <div class="col-lg-12 col-md-12 col-sm-12">       
+                            <div class="input-group mb-3">
+                                <!-- <span class="input-group-text" id="basic-addon1"><b>Ref. proveïdor, SAP o LOG:</b></span> -->
+                                <span class="input-group-text" id="basic-addon1"><b>Ref. proveïdor, SAP o LOG :</b></span>
+                                <input type="text" class="form-control" id='code_search_fungible' name='code_search_fungible' list="datalist-codes2" aria-label="TTN" aria-describedby="basic-addon1">
+                                <datalist id="datalist-codes2">
+                                    {% for description in list_desciption_lots %}
+                                        <option value="{{description.description}}">{{description.catalog_reference}} - {{ description.description }}</option>
+                                    {% endfor %}
+                                </datalist>
+                            </div>
+                        </div>
+                        <center><button type="submit" class="btn btn-primary btn-sm" >Buscar</button></center>
+                    </form>
+                </div>
+            </div>
+          </div>
+        </div>
+    </div>
+
+
+    <script src="/static/js/bootstrap.js"></script>
 </body>                    
 </html>

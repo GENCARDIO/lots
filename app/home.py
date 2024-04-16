@@ -1,6 +1,6 @@
-from flask import render_template, request, redirect, session
+from flask import render_template, request, redirect, session, flash
 from app import app
-from app.utils import requires_auth, list_desciption_lots
+from app.utils import requires_auth, list_desciption_lots, list_cost_center
 from app.models import IP_HOME, session1, Lots, Stock_lots, Lot_consumptions
 import jwt
 import json
@@ -15,7 +15,8 @@ def main():
     '''
         Redirigeix al home de lots
     '''
-    return render_template('home.html', list_desciption_lots=list_desciption_lots())
+    return render_template('home.html', list_desciption_lots=list_desciption_lots(),
+                           list_cost_center=list_cost_center())
 
 
 @app.route('/logout')
@@ -103,6 +104,7 @@ def search_lot_db():
             dict_lots['code_SAP'] = lot.code_SAP
             dict_lots['code_LOG'] = lot.code_LOG
             dict_lots['catalog_reference'] = lot.catalog_reference
+            dict_lots['info_article'] = f"{lot.key}/-/{lot.catalog_reference}/-/{lot.manufacturer}/-/{lot.description}/-/{lot.analytical_technique}/-/{lot.reference_units}/-/{lot.id_reactive}/-/{lot.code_SAP}/-/{lot.code_LOG}/-/{lot.active}/-/{lot.temp_conservation}/-/{lot.description_subreference}/-/{lot.react_or_fungible}/-/{lot.code_panel}/-/{lot.location}/-/{lot.supplier}"
             dict_lots['description'] = lot.description
             dict_lots['description_subreference'] = lot.description_subreference
             # dict_lots['active'] = lot.active
@@ -149,6 +151,10 @@ def history_lots():
             dict_consumption = {}
             dict_consumption['id'] = consumption.id
             dict_consumption['id_lot'] = consumption.id_lot
+            if stock_lot.description_subreference == '':
+                dict_consumption['description'] = stock_lot.description
+            else:
+                dict_consumption['description_subreference'] = stock_lot.description_subreference
             dict_consumption['lot'] = stock_lot.lot
             dict_consumption['catalog_reference'] = stock_lot.catalog_reference
             dict_consumption['internal_lot'] = stock_lot.internal_lot
@@ -165,6 +171,46 @@ def history_lots():
         return "False_ No s'ha pogut accedir a la informació dels consums."
 
     return f'True_//_{json_data}'
+
+
+@app.route('/search_fungible', methods=['POST'])
+@requires_auth
+def search_fungible():
+    '''
+        1 - Recollim la informació de l'ajax
+        2 - Busquem amb elcodi a les 3 columnes possibles
+        2.1 - Si no en té redirigim a home i mostrem un missatge per pantalla
+        2.2 - Si és que si agafem la informació que hem trobat i la enviem a l'html
+
+        :param str code_search_fungible: Identificador del fungible
+
+        :return: Retornem 3 llistes d'objectes a l'html corresponent
+        :rtype: render_template, list, list, list
+    '''
+    code_search_fungible = request.form['code_search_fungible']
+
+    try:
+        if code_search_fungible == '':
+            select_lots = session1.query(Stock_lots).filter_by(spent=0, react_or_fungible='Fungible').all()
+        else:
+            select_lots = session1.query(Stock_lots).filter_by(spent=0, react_or_fungible='Fungible', description=code_search_fungible).all()
+            if not select_lots:
+                select_lots = session1.query(Stock_lots).filter_by(spent=0, react_or_fungible='Fungible', catalog_reference=code_search_fungible).all()
+                if not select_lots:
+                    select_lots = session1.query(Stock_lots).filter_by(spent=0, react_or_fungible='Fungible', code_SAP=code_search_fungible).all()
+                    if not select_lots:
+                        select_lots = session1.query(Stock_lots).filter_by(spent=0, react_or_fungible='Fungible', code_LOG=code_search_fungible).all()
+
+        if not select_lots:
+            flash("No hi ha cap fungible amb el codi introduït", "warning")
+            return render_template('home.html', list_desciption_lots=list_desciption_lots(),
+                                   list_cost_center=list_cost_center())
+    except Exception:
+        flash("Error, no s'han pogut realitzar la cerca", "danger")
+        return render_template('home.html', list_desciption_lots=list_desciption_lots(),
+                               list_cost_center=list_cost_center())
+
+    return render_template('search_fungible.html', select_lots=select_lots)
 
 
 '''@app.route('/charge_excel')

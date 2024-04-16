@@ -1,6 +1,6 @@
 from flask import render_template, request, flash, send_file
 from app import app
-from app.utils import requires_auth, list_desciption_lots
+from app.utils import requires_auth, list_desciption_lots, list_cost_center
 from app.models import session1, Lots, Stock_lots
 from sqlalchemy import func
 from werkzeug.utils import secure_filename
@@ -67,7 +67,8 @@ def search_lots():
             ).all()
     if not select_lot:
         flash(f"No s'ha trobat cap coincidencia amb el text entrat --> {search_code}", "warning")
-        return render_template('home.html', list_desciption_lots=list_desciption_lots())
+        return render_template('home.html', list_desciption_lots=list_desciption_lots(),
+                               list_cost_center=list_cost_center())
 
     return render_template('search_lot.html', select_lot=select_lot, lot=select_lot[0],
                            list_desciption_lots=list_desciption_lots())
@@ -283,6 +284,8 @@ def create_qc():
             dict_lots['group_insert'] = stock_lot.group_insert
             dict_lots['code_panel'] = stock_lot.code_panel
             dict_lots['location'] = stock_lot.location
+            dict_lots['supplier'] = stock_lot.supplier
+            dict_lots['billing'] = stock_lot.billing
 
             # total_units += int(stock_lot.units_lot)
             info_lots.append(dict_lots)

@@ -28,16 +28,6 @@
 
 
         /**
-         * Tanquem el modal amb l'id que ens passen per paràmetre.
-         * @param {string} modal_id És l'identificador únic del modal
-         * @returns {void} No retorna cap valor.
-         */
-        function close_modal(modal_id){
-            $(`#${modal_id}`).modal('hide');
-        }
-
-
-        /**
          * Obrim el modal que ens donen per paràmetre, i al posem a 2 variables que estan en hidden el seu valor.
          * @param {string} modal_id És l'identificador únic del modal
          * @returns {void} No retorna cap valor.
@@ -267,40 +257,16 @@
 </head>
 <body>
     {% include 'NavBar/navBar.html' %}
-    {% include 'ErrorFlash/errorFlash.html' %} 
-    <!-- <div class="jumbotron bg-grey text-black jomboton-imgae shadow d-flex justify-content-between align-items-center" style="width: 90%; height: 90px; margin: 0 auto; padding-top: 0px; padding-bottom: 0px;">
-        <div class="modal-body">
-            <div class="row">
-                <div class="col-lg-2 col-md-6 col-sm-6" style="padding-top: 15px;">       
-                    <div class="input-group mb-3">
-                        <span class="input-group-text" id="basic-addon1"><b>Codi SAP :</b></span>
-                        <input type="text" class="form-control" aria-label="TTN" aria-describedby="basic-addon1" value="{{select_lot[0].code_SAP}}" style="background-color: white; text-align: center;" readonly>
-                    </div>
-                </div>
-                <div class="col-lg-2 col-md-6 col-sm-6" style="padding-top: 15px;">       
-                    <div class="input-group mb-3">
-                        <span class="input-group-text" id="basic-addon1"><b>Codi LOG :</b></span>
-                        <input type="text" class="form-control" aria-label="TTN" aria-describedby="basic-addon1" value="{{select_lot[0].code_LOG}}" style="background-color: white; text-align: center;" readonly>
-                    </div>
-                </div>
-                <div class="col-lg-2 col-md-6 col-sm-6" style="padding-top: 15px;">       
-                    <div class="input-group mb-3">
-                        <span class="input-group-text" id="basic-addon1"><b>Codi proveïdor :</b></span>
-                        <input type="text" class="form-control" aria-label="TTN" aria-describedby="basic-addon1" value="{{select_lot[0].catalog_reference}}" style="background-color: white; text-align: center;" readonly>
-                    </div>
-                </div>  
-                <div class="col-lg-6 col-md-6 col-sm-6" style="padding-top: 15px;">       
-                    <div class="input-group mb-3">
-                        <span class="input-group-text" id="basic-addon1"><b>Descripció :</b></span>
-                        <input type="text" class="form-control" aria-label="TTN" aria-describedby="basic-addon1" value="{{select_lot[0].description}}" style="background-color: white; text-align: center;" readonly>
-                    </div>
-                </div>  
-            </div>
-        </div>
-    </div> -->
-
+    <br>
+    <div class="jumbotron bg-grey text-black jomboton-imgae shadow d-flex justify-content-between align-items-center" style="width: 90%; height: 80px; margin: 0 auto; padding-top: 0px; padding-bottom: 0px;">
+        <h1 class="mb-0">
+            <span style="color: darkblue;">( 3 ) </span> - 
+            <span>Obrir / tancar lots</span>
+        </h1>
+    </div>
     <div class="d-flex justify-content-center pt-3 mt-3 rounded">
-        <div class="container-fluid rounded table-responsive" style="width: 90%; text-align: center;">
+        <div class="container-fluid rounded table-responsive" style="width: 90%; text-align: center; margin-top: -30px">
+            {% include 'ErrorFlash/errorFlash.html' %} 
             <div id="table1" name="table1">
                 <table id="example" class="display">
                     <thead>
@@ -315,6 +281,7 @@
                             <!-- <th style="min-width: 70px;  max-width: 120px;">Unitats</th> -->
                             <!-- <th style="min-width: 70px;  max-width: 120px;">Data arribada</th> -->
                             <th style="min-width: 70px;  max-width: 120px;">Caducitat</th>
+                            <th style="min-width: 70px;  max-width: 120px;">Facturació</th>
                             <th style="min-width: 120px;  max-width: 180px;">Accions</th>
                         </tr>
                     </thead>
@@ -335,6 +302,7 @@
                                 <!-- <td>{{lot.units_lot}}</td> -->
                                 <!-- <td>{{lot.reception_date}}</td> -->
                                 <td>{{lot.date_expiry}}</td>
+                                <td>{{lot.billing}}</td>
                                 <td>
                                     <div style=" display: inline;">
                                         <!-- <button type="button" class="btn btn-outline-success btn-sm" onclick="show_modal_open_close_lot(`{{lot.id}}`, 'open')"><i class="fa-solid fa-share-from-square"></i> Obrir</button>

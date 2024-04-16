@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    {% include 'Header/header.html' %}
+    <style>
+        #example thead input[type="text"] {
+            max-width: 100%; /* Ajusta este valor según tus necesidades */
+        }
+    </style>
+</head>
+<body>
+    {% include 'NavBar/navBar.html' %}
+    <br>
+    <div class="jumbotron bg-grey text-black jomboton-imgae shadow d-flex justify-content-between align-items-center" style="width: 90%; height: 80px; margin: 0 auto; padding-top: 0px; padding-bottom: 0px;">
+        <h1 class="mb-0">
+            <span style="color: darkblue;">( 3 ) </span> - 
+            <span>Fungibles</span>
+        </h1>
+    </div>
+    
+    
+    <div class="d-flex justify-content-center pt-3 mt-3 rounded">
+        <div class="container-fluid rounded table-responsive" style="width: 90%; text-align: center; margin-top: -30px">
+            {% include 'ErrorFlash/errorFlash.html' %} 
+            <div id="table1" name="table1">
+                <table id="example" class="display">
+                    <thead>
+                        <tr id="thcolor">
+                            <th style="min-width: 70px;  max-width: 120px;">Ref. Proveïdor</th>
+                            {% if select_lots[0].id_reactive != '' %}
+                                <th style="min-width: 70px;  max-width: 120px;">Subreferència</th>
+                            {% endif %}
+                            <th style="min-width: 70px;  max-width: 120px;">Codi SAP</th>
+                            <th style="min-width: 70px;  max-width: 120px;">Codi LOG</th>
+                            <th style="max-width: 300px;">Descripció</th>
+                            <th style="min-width: 70px;  max-width: 120px;">Unitats rebudes</th>
+                            <th style="min-width: 70px;  max-width: 120px;">Nº Comanda</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for lot in select_lots %}
+                            <tr id="{{lot.id}}">
+                                <td>{{lot.catalog_reference}}</td>
+                                {% if lot.id_reactive != '' %}
+                                    <td>{{lot.id_reactive}}</td>
+                                {% endif %}
+                                <td>{{lot.code_SAP}}</td>
+                                <td>{{lot.code_LOG}}</td>
+                                {% if lot.description_subreference == '' %}
+                                    <td>{{lot.description}}</td>
+                                {% else %}
+                                    <td>{{lot.description_subreference}}</td>
+                                {% endif %}
+                                <td>{{lot.units_lot}}</td>
+                                <td>{{lot.comand_number}}</td>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <br>
+        </div>
+    </div>
+
+
+    <script>
+        $(document).ready(function() {
+            // Setup - add a text input to each footer cell
+            $('#example thead tr').clone(true).appendTo( '#example thead' );
+            $('#example thead tr:eq(1) th').each( function (i) {
+                var title = $(this).text();
+                if (title !== ''){
+                    if (title === 'Técnic') {
+                        $(this).html('');
+                    } else {
+                        $(this).html( '<input type="text" placeholder=""/>' );
+                
+                        $( 'input', this ).on( 'keyup change', function () {
+                            if ( table.column(i).search() !== this.value ) {
+                                table
+                                    .column(i)
+                                    .search( this.value )
+                                    .draw();
+                            }
+                        } );
+                    }
+                }
+            } );
+        
+            var table = $('#example').DataTable( {
+                orderCellsTop: true,
+                fixedHeader: true,
+                columnDefs: [
+                    {
+                        targets: 0, // Índice de la columna con las fechas
+                        type: 'numeric', // Usar orden numérico personalizado
+                        render: function(data, type, row) {
+                            // Transformar la fecha en formato DD/MM/YYYY a un número YYYYMMDD para ordenar
+                            if (type === 'sort') {
+                                var parts = data.split('/');
+                                return parseInt(parts[2] + parts[1] + parts[0]);
+                            }
+                            return data; // Mantener el formato original para mostrar
+                        },
+                    },
+                ],
+                order: [[0, 'desc']],
+            } );
+
+            // Adjust column widths to content
+            table.columns.adjust().draw();
+        } );
+
+        $(document).ready(function() {
+            var table = $('#table_history_lots').DataTable( {
+                order: [ 0, 'desc' ],
+                columnDefs: [
+                    { width: '25%', targets: [0, 1, 2, 3] } // Establece el ancho de todas las columnas al 25%
+                ]
+            } );
+        } );
+    </script>
+
+    <script src="/static/js/bootstrap.js"></script>
+</body>
+</html>

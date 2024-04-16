@@ -6,7 +6,7 @@
                 <a class="navbar btn mr-1" style="color:white;padding:5px;" data-toggle="modal" data-target="#open_close_lot"><b><i class="fa-solid fa-plus-minus"></i>&nbsp;Obri/tancar lot</a></b>
             </li>
             <li class="nav-item">
-                <a class="navbar btn mr-1" style="color:white;padding:5px;" onclick="search_lots_db()"><b><i class="fa-solid fa-eye"></i>&nbsp;Veure articles</a></b>
+                <a class="navbar btn mr-1" style="color:white;padding:5px;" onclick="search_lots_db(`{{ session['rol'] }}`)"><b><i class="fa-solid fa-eye"></i>&nbsp;Veure articles</a></b>
             </li>
             <li class="nav-item">
                 <a class="navbar btn mr-1" style="color:white;padding:5px;" onclick="open_modal('open_history_lots')"><b><i class="fa-solid fa-book"></i>&nbsp;Historic lots</a></b>
@@ -33,7 +33,7 @@
     <div class="modal-dialog modal-lg" tabindex="-1" role="document">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title" id="title"> Obrir/tancar lots</h5>
+          <h5 class="modal-title" id="title"> Reactius - Obrir/tancar lots -</h5>
           <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="close_modal('open_lot')"><span aria-hidden="true">&times;</span></button>
         </div>
         <div class="modal-body">
@@ -47,7 +47,7 @@
                                 {% for description in list_desciption_lots %}
                                     <option value="{{description.description}}">{{ description.description }}</option>
                                     {% if description.description_subreference != '' %}
-                                        <option value="{{description.description_subreference}}">{{ description.description_subreference }}</option>
+                                        <option value="{{description.description_subreference}}">{{description.reference_catalog}} - {{ description.description_subreference }}</option>
                                     {% endif %}
                                 {% endfor %}
                             </datalist>
@@ -78,6 +78,7 @@
                                 <th style="width: 80px;">Codi SAP</th>
                                 <th style="width: 80px;">Codi LOG</th>
                                 <th style="width: 100px;">Ref. Proveïdor</th>
+                                <th style="width: 60px;" name="admin_edit_delete">Editar</th>
                                 <th style="width: 350px;">Descripció article</th>
                                 <th style="width: 350px;">Descripció Subref.</th>
                             </tr>
@@ -129,13 +130,14 @@
                     <table id="tbl_history_lots" class="display" style="width: 100%;">
                         <thead>
                             <tr id="thcolor">
-                                <th style="width: 100px;">Lot</th>
-                                <th style="width: 100px;">Ref. Proveïdor</th>
-                                <th style="width: 100px;">Internal lot</th>
-                                <th style="width: 100px;">Data opertura</th>
-                                <th style="width: 80px;">Usuari</th>
-                                <th style="width: 100px;">Data tancament</th>
-                                <th style="width: 80px;">Usuari</th>
+                                <th style="min-width: 100px;" id="td_description">Descripció</th>
+                                <th style="width: 90px;">Lot</th>
+                                <th style="width: 9px;">Ref. Proveïdor</th>
+                                <th style="width: 90px;">Internal lot</th>
+                                <th style="width: 90px;">Data opertura</th>
+                                <th style="width: 60px;">Usuari</th>
+                                <th style="width: 90px;">Data tancament</th>
+                                <th style="width: 60px;">Usuari</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -148,17 +150,144 @@
     </div>
 </div>
 
+
+<div class="modal fade"  id="modal_edit_lot" tabindex="-1" role="dialog" aria-labelledby="editRegister" aria-hidden="true">
+    <div class="modal-dialog modal-lg" tabindex="-1" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="title">Editar article</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="close_modal('modal_edit_lot')"><span aria-hidden="true">&times;</span></button>
+        </div>
+        <div class="modal-body">
+            <div class="row">
+                <div class="col-lg-6 col-md-12 col-sm-12">       
+                    <div class="input-group mb-3">
+                        <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Ref. proveïdor :</b></span>
+                        <input type="text" class="form-control" id='reference_catalog_edit' aria-label="TTN" aria-describedby="basic-addon1" readonly style="background-color: white;">
+                    </div>
+                </div>
+                <div class="col-lg-6 col-md-12 col-sm-12">       
+                    <div class="input-group mb-3">
+                        <span class="input-group-text" id="basic-addon1" style="width: 155px;"><b>Codi SAP :</b></span>
+                        <input type="text" class="form-control" id='code_sap_edit' aria-label="TTN" aria-describedby="basic-addon1">
+                    </div>
+                </div>
+                <div class="col-lg-6 col-md-12 col-sm-12">       
+                    <div class="input-group mb-3">
+                        <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Codi LOG :</b></span>
+                        <input type="text" class="form-control" id='code_log_edit' aria-label="TTN" aria-describedby="basic-addon1">
+                    </div>
+                </div>
+                <div class="col-lg-6 col-md-12 col-sm-12">       
+                    <div class="input-group mb-3">
+                        <span class="input-group-text" id="basic-addon1" style="width: 155px;"><b>Tècnica analítica :</b></span>
+                        <input type="text" class="form-control" id='analytical_technique_edit' aria-label="TTN" aria-describedby="basic-addon1">
+                    </div>
+                </div>
+                <div class="col-lg-6 col-md-12 col-sm-12">       
+                    <div class="input-group mb-3">
+                        <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Fabricant :</b></span>
+                        <input type="text" class="form-control" id='manufacturer_edit' aria-label="TTN" aria-describedby="basic-addon1">
+                    </div>
+                </div>
+                <div class="col-lg-6 col-md-12 col-sm-12">       
+                    <div class="input-group mb-3">
+                        <span class="input-group-text" id="basic-addon1" style="width: 155px;"><b>Actiu :</b></span>
+                        <input type="text" class="form-control" id='active_edit' aria-label="TTN" aria-describedby="basic-addon1">
+                    </div>
+                </div>
+                <div class="col-lg-12 col-md-12 col-sm-12">       
+                    <div class="input-group mb-3">
+                        <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Descripció :</b></span>
+                        <input type="text" class="form-control" id='description_edit' aria-label="TTN" aria-describedby="basic-addon1">
+                    </div>
+                </div>
+                <div class="col-lg-12 col-md-12 col-sm-12" id="div_desc_subref">       
+                    <div class="input-group mb-3">
+                        <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Descripció Subref. :</b></span>
+                        <input type="text" class="form-control" id='description_subref_edit' aria-label="TTN" aria-describedby="basic-addon1">
+                    </div>
+                </div>
+                <div class="col-lg-6 col-md-12 col-sm-12">       
+                    <div class="input-group mb-3">
+                        <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Tp. Conservació :</b></span>
+                        <input type="text" class="form-control" id='temp_conservation_edit' aria-label="TTN" aria-describedby="basic-addon1">
+                    </div>
+                </div>
+                <div class="col-lg-6 col-md-12 col-sm-12">       
+                    <div class="input-group mb-3">
+                        <span class="input-group-text" id="basic-addon1" style="width: 155px;"><b>Id reactiu :</b></span>
+                        <input type="text" class="form-control" id='id_reactive_edit' aria-label="TTN" aria-describedby="basic-addon1">
+                    </div>
+                </div>
+                <div class="col-lg-6 col-md-12 col-sm-12">       
+                    <div class="input-group mb-3">
+                        <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>tipu :</b></span>
+                        <input type="text" class="form-control" id='react_or_fungible_edit' aria-label="TTN" aria-describedby="basic-addon1">
+                    </div>
+                </div>
+                <div class="col-lg-6 col-md-12 col-sm-12">       
+                    <div class="input-group mb-3">
+                        <span class="input-group-text" id="basic-addon1" style="width: 155px;"><b>Codi panel :</b></span>
+                        <input type="text" class="form-control" id='code_panel_edit' aria-label="TTN" aria-describedby="basic-addon1">
+                    </div>
+                </div>
+                <div class="col-lg-6 col-md-12 col-sm-12">       
+                    <div class="input-group mb-3">
+                        <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Localització :</b></span>
+                        <input type="text" class="form-control" id='location_edit' aria-label="TTN" aria-describedby="basic-addon1">
+                    </div>
+                </div>
+                <div class="col-lg-6 col-md-12 col-sm-12">       
+                    <div class="input-group mb-3">
+                        <span class="input-group-text" id="basic-addon1" style="width: 155px;"><b>Proveïdor :</b></span>
+                        <input type="text" class="form-control" id='supplier_edit' aria-label="TTN" aria-describedby="basic-addon1">
+                    </div>
+                </div>
+                <input type="hidden" id="id_lot_edit"/>
+                <center></centere><button type="button" class="btn btn-primary btn-sm" onclick="edit_lot()"><i class="fa-solid fa-circle-plus"></i> Editar </button></center>
+            </div>
+        </div>
+      </div>
+    </div>
+</div>
+
+
+<div class="modal fade"  id="modal_delete_confirmation" tabindex="-1" role="dialog" aria-labelledby="editRegister" aria-hidden="true">
+    <div class="modal-dialog modal-md" tabindex="-1" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="title"> Eliminar lot</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="close_modal('modal_delete_confirmation')"><span aria-hidden="true">&times;</span></button>
+        </div>
+        <div class="modal-body">
+            <div class="row">                                   
+                <div class="col-lg-12 col-md-12 col-sm-12">       
+                    <div class="input-group mb-3">
+                        <span class="input-group-text" id="basic-addon1"><b>Motiu:</b></span>
+                        <input type="text" class="form-control" id='reason_delete' name="reason_delete" aria-label="TTN" aria-describedby="basic-addon1" required>
+                    </div>
+                </div> 
+                <input type="hidden" name="id_lot_delete" id="id_lot_delete"/>
+                <center><button type="button" class="btn btn-danger btn-sm" onclick="delete_lot()">Eliminar <i class="fa-solid fa-trash"></i></button></center>
+            </div>
+        </div>
+      </div>
+    </div>
+</div>
 <script>
     /**
      * Realitza una cerca de lots a la base de dades i mostra els resultats en una taula.
      * 
+     *  @param {string} modal_id És l'identificador únic del modal
+     *
      * Aquesta funció envia una sol·licitud AJAX al servidor per cercar lots a la base de dades.
      * Una vegada rebuda la resposta del servidor, es processa per mostrar un missatge d'èxit
      * o error. Si la cerca és exitosa, els resultats es mostren en una taula utilitzant DataTables.
      * 
      * @returns {void} No retorna cap valor.
      */
-    function search_lots_db(){
+    function search_lots_db(rol){
         // Crear form data
         var form_data = new FormData();
         
@@ -191,11 +320,20 @@
                         for (var key in list_lots[i]) {
                             if (list_lots[i].hasOwnProperty(key)) {
                                 if (key !== 'id' && key !== 'id_lot') {
-                                    new_row_data.push(list_lots[i][key])
+                                    if (key === 'info_article'){ new_row_data.push(`<button class="btn btn-outline-success btn-sm" onclick="show_edit_info('${list_lots[i][key]}')"><i class="fa-solid fa-pen-to-square"></i></button> <button class="btn btn-outline-danger btn-sm" onclick="show_delete_lot('${list_lots[i]['id']}')"><i class="fa-solid fa-trash"></i></button>`) }
+                                    else { new_row_data.push(list_lots[i][key]) }
                                 }
                             }
                         }
                         var new_row = table.row.add(new_row_data).draw(false).node();
+                    }
+                    // Aplicar estilos CSS para centrar el contenido de las primeras cuatro columnas
+                    for (var j = 0; j < 4; j++) {
+                        table.column(j).nodes().to$().addClass('text-center');
+                    }
+                    if (rol !== 'admin'){
+                        var table = $('#table_info_lots_db').DataTable();
+                        table.column(3).visible(false);
                     }
                 } else {
                     message = `Error inesperat. Si persisteix l'error contacta amb un administrador`
@@ -274,6 +412,9 @@
                             if (list_lots[i].hasOwnProperty(key)) {
                                 if (key !== 'id' && key !== 'id_lot') {
                                     new_row_data.push(list_lots[i][key])
+                                    if (key === 'description_subreference'){
+                                        document.getElementById('td_description').innerHTML = 'Descripció Subreferencia'
+                                    }
                                 }
                             }
                         }
@@ -317,9 +458,235 @@
      * @returns {void} No retorna cap valor.
      */
     function open_modal(modal_id){
+        if (modal_id == 'search_lot'){
+            document.getElementById('code_panel_search').value = ''
+            document.getElementById('div_panel_search').style.display = 'none';}
+        else if (modal_id == 'search_command'){
+            document.getElementById('code_search_command').value = ''
+            document.getElementById("catalog_reference_command").value = ''
+            document.getElementById("code_sap_command").value = ''
+            document.getElementById("code_loc_command").value = ''
+            document.getElementById("description_command").value = ''
+            document.getElementById("key_lot_command").value = ''
+            document.getElementById("units_command").value = '0'}
+        else if (modal_id == 'modal_edit_lot'){
+            $('#info_lots_bd').modal('hide');
+        }
         $(`#${modal_id}`).modal('show');
     }
-    
+
+
+    /**
+     * Tanquem el modal amb l'id que ens passen per paràmetre.
+     * @param {string} modal_id És l'identificador únic del modal
+     * @returns {void} No retorna cap valor.
+     */
+     function close_modal(modal_id){
+        $(`#${modal_id}`).modal('hide');
+        if (modal_id === "modal_edit_lot"){ open_modal('info_lots_bd') }
+    }
+
+
+    /**
+     * Obrim el modal, i afegim la informació al camps
+     * @param {string} info_article És un strimg amb tota l'informació del lot
+     * @returns {void} No retorna cap valor.
+     */
+    function show_edit_info(info_article){
+        open_modal('modal_edit_lot')
+        list_info_article = info_article.split('/-/')
+        document.getElementById('id_lot_edit').value = list_info_article[0];
+        document.getElementById('reference_catalog_edit').value = list_info_article[1];
+        document.getElementById('manufacturer_edit').value = list_info_article[2];
+        document.getElementById('description_edit').value = list_info_article[3];
+        document.getElementById('analytical_technique_edit').value = list_info_article[4];
+        document.getElementById('id_reactive_edit').value = list_info_article[6];
+        document.getElementById('code_sap_edit').value = list_info_article[7];
+        document.getElementById('code_log_edit').value = list_info_article[8];
+        document.getElementById('active_edit').value = list_info_article[9];
+        document.getElementById('temp_conservation_edit').value = list_info_article[10];
+        document.getElementById('description_subref_edit').value = list_info_article[11];
+        document.getElementById('react_or_fungible_edit').value = list_info_article[12];
+        document.getElementById('code_panel_edit').value = list_info_article[13];
+        document.getElementById('location_edit').value = list_info_article[14];
+        document.getElementById('supplier_edit').value = list_info_article[15];
+
+        if (list_info_article[11] === ''){ document.getElementById('div_desc_subref').style.display = 'none'}
+        else { document.getElementById('div_desc_subref').style.display = 'block'}
+    }
+
+
+    /**
+     * Obrim el modal, i duardem l'id en una variable hidden
+     * @param {string} id_lot Identificador únic del lot
+     * @returns {void} No retorna cap valor.
+     */
+     function show_delete_lot(id_lot){
+        open_modal('modal_delete_confirmation')
+        document.getElementById('id_lot_delete').value = id_lot;
+        close_modal('info_lots_bd')
+    }
+
+
+    /**
+     * Recollim la informació de l'hmtl i la enviem per ajax, es faran i guardaran tots els canvis, rebem la respota i mostrem un missatge
+     * @param {string} id_lot: Identificador únic del lot.
+     * @param {string} reference_catalog: Referència del proveïdor.
+     * @param {string} manufacturer: Nom del fabricant.
+     * @param {string} description: Descripció del lot.
+     * @param {string} analytical_technique: Nom de la tècnica que es fa servir.
+     * @param {string} id_reactive: Identificador del reactiu.
+     * @param {string} code_sap: Codi SAP del lot.
+     * @param {string} code_log: Codi LOG del lot.
+     * @param {string} active: Si el producte està actiu o no.
+     * @param {string} temp_conservation: Temperatura a la qual es guardarà el producte.
+     * @param {string} description_subref: Descripció de la subreferència.
+     * @param {string} react_or_fungible: Si és un reactiu o un fungible.
+     * @param {string} code_panel: Si és un panell, tindrà un codi de panell.
+     * @param {string} location: On es guarda del laboratori.
+     * @param {string} supplier: Nom del proveïdor.
+     * @returns {void} No retorna cap valor.
+     */
+    function edit_lot(){
+        let id_lot = document.getElementById('id_lot_edit').value
+        let reference_catalog = document.getElementById('reference_catalog_edit').value
+        let manufacturer = document.getElementById('manufacturer_edit').value
+        let description = document.getElementById('description_edit').value
+        let analytical_technique = document.getElementById('analytical_technique_edit').value
+        let id_reactive = document.getElementById('id_reactive_edit').value
+        let code_sap = document.getElementById('code_sap_edit').value
+        let code_log = document.getElementById('code_log_edit').value
+        let active = document.getElementById('active_edit').value
+        let temp_conservation = document.getElementById('temp_conservation_edit').value
+        let description_subref = document.getElementById('description_subref_edit').value
+        let react_or_fungible = document.getElementById('react_or_fungible_edit').value
+        let code_panel = document.getElementById('code_panel_edit').value
+        let location = document.getElementById('location_edit').value
+        let supplier = document.getElementById('supplier_edit').value
+
+        // Crear form data
+        var form_data = new FormData();
+
+        form_data.append('id_lot', id_lot)
+        form_data.append('reference_catalog', reference_catalog)
+        form_data.append('manufacturer', manufacturer)
+        form_data.append('description', description)
+        form_data.append('analytical_technique', analytical_technique)
+        form_data.append('id_reactive', id_reactive)
+        form_data.append('code_sap', code_sap)
+        form_data.append('code_log', code_log)
+        form_data.append('active', active)
+        form_data.append('temp_conservation', temp_conservation)
+        form_data.append('description_subref', description_subref)
+        form_data.append('react_or_fungible', react_or_fungible)
+        form_data.append('code_panel', code_panel)
+        form_data.append('location', location)
+        form_data.append('supplier', supplier)
+
+        // Creeem l'objecte per l'ajax
+        var xhr = new XMLHttpRequest();
+        // 1er argument si es pots o get
+        // 2n argument url o ruta
+        // 3r argumemt true sempre
+        xhr.open('POST', '/edit_lot', true);
+        xhr.onload = function(){
+            show_message = true
+            if (xhr.status === 200) {
+                var response = xhr.responseText;
+                split_response = response.split('_//_')
+                message = split_response[1]
+                $('#modal_edit_lot').modal('hide');
+                if (response.includes('False')){
+                    alert_type = 'danger'}
+                else if (response.includes('True')){
+                    alert_type = 'success'
+                } else {
+                    message = `Error inesperat. Si persisteix l'error contacta amb un administrador`
+                    alert_type = 'danger'
+                }}
+            else {
+                message = `Error, No s'ha pogut realitzar l'operació. Si persisteix l'error contacta amb un administrador`
+                alert_type = 'danger' }
+            
+            var flashContainer = document.querySelector(".d-flex.justify-content-center .row");
+            // Eliminar la alerta anterior, si existe
+            if (flashContainer.children.length > 0) {
+                flashContainer.removeChild(flashContainer.children[0]); }
+            var newFlash = document.createElement("div");
+            newFlash.className = "alert alert-" + alert_type + " alert-dismissible fade show ml-3";
+            newFlash.role = "alert";
+            newFlash.innerHTML = "<span>" + message + "</span>" + 
+                                '<button type="button" class="close" data-dismiss="alert" aria-label="Close">' +
+                                '<span aria-hidden="true">&times;</span>' +
+                                '</button>';
+            flashContainer.appendChild(newFlash);
+            flashContainer.style.paddingTop = "20px";
+        }
+        xhr.send(form_data)
+    }
+
+
+    /**
+     * Recollim l'id de l'hmtl i l'enviem per ajax, s'eliminara l'article i es guardarà un log de l'acció, rebem la respota per ajax i mostrem un missatge
+     * @param {string} id_lot: Identificador únic del lot.
+     * @returns {void} No retorna cap valor.
+     */
+    function delete_lot(){
+        let id_lot = document.getElementById('id_lot_delete').value
+
+        // Crear form data
+        var form_data = new FormData();
+
+        form_data.append('id_lot', id_lot)
+
+        // Creeem l'objecte per l'ajax
+        var xhr = new XMLHttpRequest();
+        // 1er argument si es pots o get
+        // 2n argument url o ruta
+        // 3r argumemt true sempre
+        xhr.open('POST', '/delete_lot', true);
+        xhr.onload = function(){
+            show_message = true
+            if (xhr.status === 200) {
+                var response = xhr.responseText;
+                split_response = response.split('_//_')
+                message = split_response[1]
+                $('#modal_delete_confirmation').modal('hide');
+                if (response.includes('False')){
+                    alert_type = 'danger'}
+                else if (response.includes('True')){
+                    alert_type = 'success'
+                } else {
+                    message = `Error inesperat. Si persisteix l'error contacta amb un administrador`
+                    alert_type = 'danger'
+                }}
+            else {
+                message = `Error, No s'ha pogut realitzar l'operació. Si persisteix l'error contacta amb un administrador`
+                alert_type = 'danger' }
+            
+            var flashContainer = document.querySelector(".d-flex.justify-content-center .row");
+            // Eliminar la alerta anterior, si existe
+            if (flashContainer.children.length > 0) {
+                flashContainer.removeChild(flashContainer.children[0]); }
+            var newFlash = document.createElement("div");
+            newFlash.className = "alert alert-" + alert_type + " alert-dismissible fade show ml-3";
+            newFlash.role = "alert";
+            newFlash.innerHTML = "<span>" + message + "</span>" + 
+                                '<button type="button" class="close" data-dismiss="alert" aria-label="Close">' +
+                                '<span aria-hidden="true">&times;</span>' +
+                                '</button>';
+            flashContainer.appendChild(newFlash);
+            flashContainer.style.paddingTop = "20px";
+        }
+        xhr.send(form_data)
+    }
+
+
+    // para hacer una accion siempre que se cierre el modal
+    // $('#modal_edit_lot').on('hidden.bs.modal', function () {
+    //     open_modal('info_lots_bd')
+    // });
+
 
     $(document).ready(function() {
         var table = $('#table_info_lots_db').DataTable( {
