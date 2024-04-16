@@ -40,8 +40,8 @@
 
 /* Estilo personalizado para el modal */
 .modal-custom2 .modal-dialog {
-    max-width: 65%; /* Ajusta el ancho máximo del modal */
-    max-height: 65%; /* Ajusta la altura máxima del modal */
+    max-width: 90%; /* Ajusta el ancho máximo del modal */
+    max-height: 90%; /* Ajusta la altura máxima del modal */
     margin: 1.75rem auto; /* Centra el modal verticalmente y le da un pequeño margen superior */
 }
 

@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 from datetime import datetime
-from app.models import Logs, session1, Lots
+from app.models import Logs, session1, Lots, Cost_center
 from functools import wraps
 from flask import session, redirect
 from app.models import IP_HOME
+from config import main_dir_docs
 
 
 # Authentication
@@ -67,3 +68,42 @@ def list_desciption_lots():
     '''
     select_lot = session1.query(Lots).filter(Lots.active == 1).all()
     return select_lot
+
+
+def list_cost_center():
+    '''
+        1 - Agafem tots els camps de cost center
+
+        :return: llista amb els objectes de tipo Cost center que hem trobat a la BD
+        :rtype: llista d'objectes
+    '''
+    select_cost_center = session1.query(Cost_center).all()
+    return select_cost_center
+
+
+def create_excel(select_row):
+    '''
+        Creem un csv amb la informació que recollim de la BD
+        Iterem la llista i anem posant la informació on toca
+    '''
+    try:
+        # Crear arxiu nou
+        archivo = f"{main_dir_docs}/comandes_pendents.csv"
+        csv = open(archivo, "w")
+        # Inserir linies al csv
+        csv.write('Codi proveidor;Descripció;Codi SAP;Codi LOG;Unitats;Data creació;Usuari;CECO\n')
+        for command, lot in select_row:
+            linia_csv = str(lot.catalog_reference) + ';'
+            linia_csv += str(lot.description) + ';'
+            linia_csv += str(lot.code_SAP) + ';'
+            linia_csv += str(lot.code_LOG) + ';'
+            linia_csv += str(command.units) + ';'
+            linia_csv += str(command.date_create) + ';'
+            linia_csv += str(command.user_create) + ';'
+            linia_csv += str(command.cost_center) + ';'
+            linia_csv += '\n'
+            csv.write(linia_csv)
+        csv.close()
+        return True
+    except Exception:
+        return False

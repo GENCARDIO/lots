@@ -54,7 +54,8 @@ def search_add_lot():
                              'temp_conservation': lot.temp_conservation,
                              'react_or_fungible': lot.react_or_fungible,
                              'code_panel': lot.code_panel,
-                             'location': lot.location}
+                             'location': lot.location,
+                             'supplier': lot.supplier}
                 list_lots.append(dict_lots)
             json_data = json.dumps(list_lots)
             return f'True_//_{json_data}'
@@ -98,7 +99,8 @@ def register_new_lot():
                               react_or_fungible=lots['react_or_fungible'],
                               description_subreference=lots['description_subreference'],
                               code_panel=lots['code_panel'],
-                              location=lots['location'])
+                              location=lots['location'],
+                              supplier=lots['supplier'])
             session1.add(insert_lot)
 
             json_lots = json.dumps(lots)
@@ -183,12 +185,17 @@ def add_stock_lot():
 
     list_lots = json.loads(list_lots_json)
 
-    suma_units_lot = 0
-    number_unit_lot = 0
+    # suma_units_lot = 0
+    # number_unit_lot = 0
     # Iterar sobre cada diccionario y sumar los valores de 'units_lot'
-    for diccionario in list_lots:
-        suma_units_lot += int(diccionario.get('units_lot', 0))
+    # for diccionario in list_lots:
+    #     suma_units_lot += int(diccionario.get('units_lot', 0))
 
+    # Iterem sobre la llista de lots, transformem el json a diccionari,
+    # consultem si el lo que anem a inserir ja esta introduït
+    # si es que si afegirem les unitats a l'stock.
+    # Si no mirem si es fungible o reactiu, preparem les dades perque es pugin inserir, la part mes dificil es que si
+    # es reactiu s'insereixen un linia per cada unitat i si es fungible una row amb el numero total d'unitas.
     for lots in list_lots:
         try:
             json_lots = json.dumps(lots)
@@ -199,8 +206,24 @@ def add_stock_lot():
             else:
                 type_log = 'insert new stock'
 
-                for i in range(int(lots['units_lot'])):
+                if lots['react_or_fungible'] == 'Fungible':
+                    units_lots_reactive = 1
+                    unit_lot_value = lots['units_lot']
+                    temperature_value = ''
+                else:
+                    units_lots_reactive = int(lots['units_lot'])
+                    unit_lot_value = 1
+                    temperature_value = lots['temp_conservation']
+
+                number_unit_lot = 0
+                for i in range(units_lots_reactive):
                     number_unit_lot += 1
+
+                    if lots['react_or_fungible'] == 'Fungible':
+                        internal_lot_value = ''
+                    else:
+                        internal_lot_value = f"{lots['internal_lot']}_{number_unit_lot}/{lots['units_lot']}"
+
                     insert_lot = Stock_lots(id_lot=lots['key'],
                                             catalog_reference=lots['catalog_reference'],
                                             manufacturer=lots['manufacturer'],
@@ -214,8 +237,8 @@ def add_stock_lot():
                                             lot=lots['lot'],
                                             spent=0,
                                             reception_date=lots['reception_date'],
-                                            units_lot=1,
-                                            internal_lot=f"{lots['internal_lot']}_{number_unit_lot}/{suma_units_lot}",
+                                            units_lot=unit_lot_value,
+                                            internal_lot=internal_lot_value,
                                             transport_conditions=lots['transport_conditions'],
                                             packaging=lots['packaging'],
                                             inspected_by=lots['inspected_by'],
@@ -230,10 +253,12 @@ def add_stock_lot():
                                             type_doc_certificate=type_doc_certificate,
                                             type_doc_delivery=type_doc_delivery,
                                             group_insert=group_insert_number,
-                                            temp_conservation=lots['temp_conservation'],
+                                            temp_conservation=temperature_value,
                                             react_or_fungible=lots['react_or_fungible'],
                                             code_panel=lots['code_panel'],
-                                            location=lots['location'])
+                                            location=lots['location'],
+                                            supplier=lots['supplier'],
+                                            billing=lots['billing'])
                     session1.add(insert_lot)
 
             select_lot = session1.query(Stock_lots).order_by(Stock_lots.id.desc()).first()

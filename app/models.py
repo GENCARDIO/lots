@@ -35,6 +35,7 @@ class Lots(Base):
     react_or_fungible = Column(String())
     code_panel = Column(String())
     location = Column(String())
+    supplier = Column(String())
 
 
 class Stock_lots(Base):
@@ -74,6 +75,8 @@ class Stock_lots(Base):
     group_insert = Column(Integer())
     code_panel = Column(String())
     location = Column(String())
+    supplier = Column(String())
+    billing = Column(String())
 
 
 class Logs(Base):
@@ -99,3 +102,25 @@ class Lot_consumptions(Base):
     user_close = Column(String())
     observations_open = Column(String())
     observations_close = Column(String())
+
+
+class Commands(Base):
+    __tablename__ = 'commands'
+
+    id = Column(Integer(), primary_key=True)
+    id_lot = Column(Integer())
+    units = Column(Integer())
+    date_create = Column(String())
+    user_create = Column(String())
+    user_id_create = Column(String())
+    date_close = Column(String())
+    user_close = Column(String())
+    user_id_close = Column(String())
+    cost_center = Column(String())
+
+
+class Cost_center(Base):
+    __tablename__ = 'cost_center'
+
+    id = Column(Integer(), primary_key=True)
+    name = Column(String())

@@ -7,16 +7,6 @@
     {% include 'Header/header.html' %}
     <script>
         /**
-         * Tanquem el modal amb l'id que ens passen per paràmetre.
-         * @param {string} modal_id És l'identificador únic del modal
-         * @returns {void} No retorna cap valor.
-         */
-        function close_modal(modal_id){
-            $(`#${modal_id}`).modal('hide');
-        }
-
-
-        /**
          * Descarrega un document específic.
          * 
          * Aquesta funció estableix els valors dels camps d'un formulari per descarregar un document
@@ -236,8 +226,15 @@
     </style>
 </head>
 <body>
+    <br>
     {% include 'NavBar/navBar.html' %}
-    {% include 'ErrorFlash/errorFlash.html' %} 
+    <div class="jumbotron bg-grey text-black jomboton-imgae shadow d-flex justify-content-between align-items-center" style="width: 90%; height: 80px; margin: 0 auto; padding-top: 0px; padding-bottom: 0px;">
+        <h1 class="mb-0">
+            <span style="color: darkblue;">( 2 ) </span> - 
+            <span>Gestió de documents</span>
+        </h1>
+    </div>
+    <br>
     <div class="jumbotron bg-grey text-black jomboton-imgae shadow d-flex justify-content-between align-items-center" style="width: 90%; height: 90px; margin: 0 auto; padding-top: 0px; padding-bottom: 0px;">
         <div class="modal-body">
             <div class="row">
@@ -253,13 +250,13 @@
                         <input type="text" class="form-control" aria-label="TTN" aria-describedby="basic-addon1" value="{{select_lot[0].code_LOG}}" style="background-color: white; text-align: center;" readonly>
                     </div>
                 </div>
-                <div class="col-lg-2 col-md-6 col-sm-6" style="padding-top: 15px;">       
+                <div class="col-lg-3 col-md-6 col-sm-6" style="padding-top: 15px;">       
                     <div class="input-group mb-3">
                         <span class="input-group-text" id="basic-addon1"><b>Codi proveïdor :</b></span>
                         <input type="text" class="form-control" aria-label="TTN" aria-describedby="basic-addon1" value="{{select_lot[0].catalog_reference}}" style="background-color: white; text-align: center;" readonly>
                     </div>
                 </div>  
-                <div class="col-lg-6 col-md-6 col-sm-6" style="padding-top: 15px;">       
+                <div class="col-lg-5 col-md-6 col-sm-6" style="padding-top: 15px;">       
                     <div class="input-group mb-3">
                         <span class="input-group-text" id="basic-addon1"><b>Descripció :</b></span>
                         <input type="text" class="form-control" aria-label="TTN" aria-describedby="basic-addon1" value="{{select_lot[0].description}}" style="background-color: white; text-align: center;" readonly>
@@ -268,9 +265,10 @@
             </div>
         </div>
     </div>
+    {% include 'ErrorFlash/errorFlash.html' %} 
     
     <div class="d-flex justify-content-center pt-3 mt-3 rounded">
-        <div class="container-fluid rounded table-responsive" style="width: 90%; text-align: center;">
+        <div class="container-fluid rounded table-responsive" style="width: 90%; text-align: center; margin-top: -30px;">
             <div id="table1" name="table1">
                 <table id="example" class="display">
                     <thead>

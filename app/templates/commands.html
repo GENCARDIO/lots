@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    {% include 'Header/header.html' %}
+    <script>
+        /**
+         * Eliminar la comanda tant a la BD com a l'html.
+         * 
+         * @param {string} id_command L'identificador únic de la comanda.
+         * @returns {void} No retorna cap valor.
+         * 
+         * @descriptor Aquesta funció envia una sol·licitud AJAX al servidor per eliminar la comanda. 
+         * Si s'elimina amb exit a la BD, eliminarem la comanda a la taula de l'html i sempre mostrarem 
+         * un missatge d'informació amb el resultat.
+         */
+        function delete_command(id_command){
+            // Crear form data
+            var form_data = new FormData();
+
+            form_data.append('id_command', id_command)
+
+            // Creeem l'objecte per l'ajax
+            var xhr = new XMLHttpRequest();
+            // 1er argument si es pots o get
+            // 2n argument url o ruta
+            // 3r argumemt true sempre
+            xhr.open('POST', '/delete_command', true);
+            xhr.onload = function(){
+                show_message = true
+                if (xhr.status === 200) {
+                    var response = xhr.responseText;
+                    if (response === 'False'){
+                        message = "No hem rebut resposta del servidor."
+                        alert_type = 'danger'}
+                    else if (response === 'True'){
+                        // Eliminar la fila
+                        var table = $('#example').DataTable();
+                        table.row(`#${id_command}`).remove().draw(false);
+                        message = "Comanda eliminada correctament."
+                        alert_type = 'success'
+                    } else {
+                        message = `Error inesperat. Si persisteix l'error contacta amb un administrador`
+                        alert_type = 'danger'
+                    }
+                }
+                else {
+                    message = `Error, No s'ha pogut realitzar l'operació. Si persisteix l'error contacta amb un administrador`
+                    alert_type = 'danger' }
+                
+                var flashContainer = document.querySelector(".d-flex.justify-content-center .row");
+                // Eliminar la alerta anterior, si existe
+                if (flashContainer.children.length > 0) {
+                    flashContainer.removeChild(flashContainer.children[0]); }
+                var newFlash = document.createElement("div");
+                newFlash.className = "alert alert-" + alert_type + " alert-dismissible fade show ml-3";
+                newFlash.role = "alert";
+                newFlash.innerHTML = "<span>" + message + "</span>" + 
+                                    '<button type="button" class="close" data-dismiss="alert" aria-label="Close">' +
+                                    '<span aria-hidden="true">&times;</span>' +
+                                    '</button>';
+                flashContainer.appendChild(newFlash);
+                flashContainer.style.paddingTop = "20px";
+            }
+
+            xhr.send(form_data)
+        }
+    
+
+        /**
+        * Enviem una sol·licitud per ajax perquè ens retorni tota la informació de les comandes tramitades
+        *
+        * @returns {void} No retorna cap valor.
+        *
+        * @descriptor Aquesta funció envia una sol·licitud AJAX al servidor per consultar les comandes tramitades.
+        * Si ens retorna la informació la transformem en una taula de diccionaris i les inserim a la taula a l'html
+        * Si ens retorna error mostrarem un missatge d'informació amb el resultat.
+         */
+        function commands_success(){
+            // Crear form data
+            var form_data = new FormData();
+
+            // Creeem l'objecte per l'ajax
+            var xhr = new XMLHttpRequest();
+            // 1er argument si es pots o get
+            // 2n argument url o ruta
+            // 3r argumemt true sempre
+            xhr.open('POST', '/command_success', true);
+            xhr.onload = function(){
+                show_message = true
+                if (xhr.status === 200) {
+                    var response = xhr.responseText;
+                    var split_response = response.split('_//_')
+                    if (split_response[0] === 'False'){
+                        message = split_response[1]
+                        alert_type = 'danger'}
+                    else if (split_response[0] === 'True'){
+                        $('#modal_command_success').modal('show');
+
+                        var list_lots = JSON.parse(split_response[1]);
+
+                        var table = $('#table_info_command_success').DataTable();
+                        table.clear().draw();
+
+                        for (var i = 0; i < list_lots.length; i++) {
+                            var new_row_data = [];
+                            // Crea un nuevo elemento td para cada valor en la lista
+                            for (var key in list_lots[i]) {
+                                if (list_lots[i].hasOwnProperty(key)) {
+                                    if (key !== 'id' && key !== 'id_lot') {
+                                        new_row_data.push(list_lots[i][key]) }
+                                }
+                            }
+                            var new_row = table.row.add(new_row_data).draw(false).node();
+                        }
+                        // Aplicar estilos CSS para centrar el contenido de las primeras cuatro columnas
+                        for (var j = 0; j < 10; j++) {
+                            if (j !== 1) {
+                                table.column(j).nodes().to$().addClass('text-center');}
+                        }
+                    } else {
+                        message = `Error inesperat. Si persisteix l'error contacta amb un administrador`
+                        alert_type = 'danger'
+                    }
+                }
+                else {
+                    message = `Error, No s'ha pogut realitzar l'operació. Si persisteix l'error contacta amb un administrador`
+                    alert_type = 'danger' }
+                
+                var flashContainer = document.querySelector(".d-flex.justify-content-center .row");
+                // Eliminar la alerta anterior, si existe
+                if (flashContainer.children.length > 0) {
+                    flashContainer.removeChild(flashContainer.children[0]); }
+                var newFlash = document.createElement("div");
+                newFlash.className = "alert alert-" + alert_type + " alert-dismissible fade show ml-3";
+                newFlash.role = "alert";
+                newFlash.innerHTML = "<span>" + message + "</span>" + 
+                                    '<button type="button" class="close" data-dismiss="alert" aria-label="Close">' +
+                                    '<span aria-hidden="true">&times;</span>' +
+                                    '</button>';
+                flashContainer.appendChild(newFlash);
+                flashContainer.style.paddingTop = "20px";
+            }
+
+            xhr.send(form_data)
+        }
+
+
+        /**
+        * Activem el form down_excel
+        *
+        * @returns {void} No retorna cap valor.
+        *
+        * @descriptor Activem el form i això farà que es creï i se'ns descarregui l'excel de comandes.
+        */
+        function download_excel(){
+            // close_modal(modal_id);
+            document.forms["down_excel"].submit();
+        }
+
+    </script>
+
+    <style>
+        #example thead input[type="text"] {
+            max-width: 100%; /* Ajusta este valor según tus necesidades */
+        }
+    </style>
+</head>
+<body>
+    <br>
+    {% include 'NavBar/navBar.html' %}
+    <div class="jumbotron bg-grey text-black jomboton-imgae shadow d-flex justify-content-between align-items-center" style="width: 90%; height: 80px; margin: 0 auto; padding-top: 0px; padding-bottom: 0px;">
+        <h1 class="mb-0">
+            <span style="color: darkblue;">( 4 ) </span> - 
+            <span>Comandes pendents</span>
+        </h1>
+        <div class="d-flex align-items-center">
+            <button type="button" class="btn btn-link btn-sm" onclick="commands_success()"><i class="fa-solid fa-check-to-slot"></i> Comandes tramitades</button>
+            <button type="button" class="btn btn-link btn-sm" onclick="download_excel()"><i class="fa-solid fa-check-to-slot"></i> Excel comandes</button>
+            <form action="/download_excel" method="post" id="down_excel"></form>
+        </div>
+
+    </div>
+
+    {% include 'ErrorFlash/errorFlash.html' %}
+
+    <div class="d-flex justify-content-center pt-3 mt-3 rounded">
+        <div class="container-fluid rounded table-responsive" style="width: 90%; text-align: center; margin-top: -30px">
+            <div id="table1" name="table1">
+                <table id="example" class="display">
+                    <thead>
+                        <tr id="thcolor">
+                            <th style="min-width: 70px;  max-width: 120px;">Ref. Proveïdor</th>
+                            <th style="max-width: 300px;">Descripció</th>
+                            <th style="min-width: 70px; max-width: 120px;">Codi SAP</th>
+                            <th style="min-width: 70px; max-width: 120px;">Codi LOG</th>
+                            <th style="min-width: 40px; max-width: 60px;">Unitats</th>
+                            <th style="min-width: 70px; max-width: 120px;">Data</th>
+                            <th style="min-width: 60px; max-width: 80px;">Usuari</th>
+                            <th style="min-width: 60px; max-width: 80px;">CECO</th>
+                            <th style="min-width: 60px; max-width: 80px;">Accions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for command, lot in select_commands %}
+                            <tr id="{{command.id}}">
+                                <td>{{lot.catalog_reference}}</td>
+                                {% if lot.description_subreference == '' %}
+                                    <td>{{lot.description}}</td>
+                                {% else %}
+                                    <td>{{lot.description_subreference}}</td>
+                                {% endif %}
+                                <td>{{lot.code_SAP}}</td>
+                                <td>{{lot.code_LOG}}</td>
+                                <td>{{command.units}}</td>
+                                <td>{{command.date_create}}</td>
+                                <td>{{command.user_create}}</td>
+                                <td>{{command.cost_center}}</td>
+                                <td><button type="button" class="btn btn-outline-primary btn-sm" onclick="delete_command(`{{command.id}}`)"><i class="fa-solid fa-check-to-slot"></i> Tramitar</button></td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <br>
+        </div>
+    </div>
+
+
+    <div class="modal fade"  id="modal_accions" tabindex="-1" role="dialog" aria-labelledby="editRegister" aria-hidden="true">
+        <div class="modal-dialog" tabindex="-1" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="title"> Obrir / Tancar lots</h5>
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="close_modal('modal_accions')"><span aria-hidden="true">&times;</span></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">                                   
+                    <div class="col-lg-12 col-md-12 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 135px;"><b>Data :</b></span>
+                            <input type="text" class="form-control" id='date_open_close' name='date_open_close' aria-label="TTN" aria-describedby="basic-addon1" oninput="replae_slash_with_hyphen(this); filter_characters(this)">
+                        </div>
+                    </div>
+                    <div class="col-lg-12 col-md-12 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 135px;"><b>Observacions :</b></span>
+                            <input type="text" class="form-control" id='observations_open_close' name='observations_open_close' aria-label="TTN" aria-describedby="basic-addon1">
+                        </div>
+                    </div>    
+                    <!-- <center><input type="submit" value="Cercar lot" class="btn btn-success btn-sm"/></center> -->
+                    <div class="col-lg-12 col-md-12 col-sm-12 text-center">       
+                        <input type="hidden" id="id_lot_accions" value=""/>
+                        <center><button type="button" class="btn btn-outline-success btn-sm" onclick="show_modal_open_close_lot('open')" id="btn_open" style="display: none;"><i class="fa-solid fa-share-from-square"></i> Obrir</button></center>
+                        <center><button type="button" class="btn btn-outline-danger btn-sm" onclick="show_modal_open_close_lot('close')" id="btn_close" style="margin-left: 5px; display: none;"><i class="fa-solid fa-lock"></i> Tancar</button></center>
+                    </div>    
+                </div>
+            </div>
+          </div>
+        </div>
+    </div>
+
+
+    <div class="modal fade modal-custom3"  id="history_lot" tabindex="-1" role="dialog" aria-labelledby="editRegister" aria-hidden="true">
+        <div class="modal-dialog modal-lg" tabindex="-1" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="title"> Historial</h5>
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="close_modal('history_lot')"><span aria-hidden="true">&times;</span></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">                                   
+                    <div class="col-lg-12 col-md-12 col-sm-12">
+                        <div class="table-responsive">
+                            <table id="table_history_lots" class="table table-sm table-striped table-bordered display nowrap mt-1" style="width:100%;background-color:white;">
+                                <thead>
+                                    <tr>
+                                        <th>data opertura</th>
+                                        <th>user</th>
+                                        <th>Observacions</th>
+                                        <th>data tancament</th>
+                                        <th>user</th>
+                                        <th>Observacions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+          </div>
+        </div>
+    </div>
+
+
+    <div class="modal fade modal-custom"  id="modal_command_success" tabindex="-1" role="dialog" aria-labelledby="editRegister" aria-hidden="true">
+        <div class="modal-dialog modal-xl" tabindex="-1" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="title"> Comandes tramitades</h5>
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="close_modal('modal_command_success')"><span aria-hidden="true">&times;</span></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">                                   
+                    <div class="col-lg-12 col-md-12 col-sm-12">       
+                        <table id="table_info_command_success" class="display" style="width: 100%;">
+                            <thead>
+                                <tr id="thcolor">
+                                    <th style="width: 100px;">Ref. Proveïdor</th>
+                                    <th style="width: 350px;">Descripció</th>
+                                    <!-- <th style="width: 100px;" name="th_subreference">Id Suref.</th>
+                                    <th style="width: 350px;" name="th_subreference">Descripció Subref.</th> -->
+                                    <th style="width: 80px;">Codi SAP</th>
+                                    <th style="width: 80px;">Codi LOG</th>
+                                    <th style="width: 80px;">Unitats</th>
+                                    <th style="width: 80px;">Data creació</th>
+                                    <th style="width: 80px;">Usuari</th>
+                                    <th style="width: 80px;">Data tancament</th>
+                                    <th style="width: 80px;">Usuari</th>
+                                    <th style="width: 80px;">CECO</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table>
+                    </div> 
+                </div>
+            </div>
+          </div>
+        </div>
+    </div>
+    
+
+    <script>
+        $(document).ready(function() {
+            // Setup - add a text input to each footer cell
+            $('#example thead tr').clone(true).appendTo( '#example thead' );
+            $('#example thead tr:eq(1) th').each( function (i) {
+                var title = $(this).text();
+                if (title !== ''){
+                    if (title === 'Técnic') {
+                        $(this).html('');
+                    } else {
+                        $(this).html( '<input type="text" placeholder=""/>' );
+                
+                        $( 'input', this ).on( 'keyup change', function () {
+                            if ( table.column(i).search() !== this.value ) {
+                                table
+                                    .column(i)
+                                    .search( this.value )
+                                    .draw();
+                            }
+                        } );
+                    }
+                }
+            } );
+        
+            var table = $('#example').DataTable( {
+                orderCellsTop: true,
+                fixedHeader: true,
+                columnDefs: [
+                    {
+                        targets: 0, // Índice de la columna con las fechas
+                        type: 'numeric', // Usar orden numérico personalizado
+                        render: function(data, type, row) {
+                            // Transformar la fecha en formato DD/MM/YYYY a un número YYYYMMDD para ordenar
+                            if (type === 'sort') {
+                                var parts = data.split('/');
+                                return parseInt(parts[2] + parts[1] + parts[0]);
+                            }
+                            return data; // Mantener el formato original para mostrar
+                        },
+                    },
+                ],
+                order: [[0, 'desc']],
+            } );
+
+            // Adjust column widths to content
+            table.columns.adjust().draw();
+        } );
+
+        $(document).ready(function() {
+            var table = $('#table_history_lots').DataTable( {
+                order: [ 0, 'desc' ],
+                columnDefs: [
+                    { width: '25%', targets: [0, 1, 2, 3] } // Establece el ancho de todas las columnas al 25%
+                ]
+            } );
+        } );
+    </script>
+
+    <script src="/static/js/bootstrap.js"></script>
+</body>
+</html>
