@@ -285,7 +285,7 @@ def create_qc():
             dict_lots['code_panel'] = stock_lot.code_panel
             dict_lots['location'] = stock_lot.location
             dict_lots['supplier'] = stock_lot.supplier
-            dict_lots['billing'] = stock_lot.billing
+            dict_lots['cost_center_stock'] = stock_lot.cost_center_stock
 
             # total_units += int(stock_lot.units_lot)
             info_lots.append(dict_lots)
