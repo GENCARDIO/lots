@@ -247,6 +247,92 @@
 
             xhr.send(form_data)
         }
+    
+        
+        function show_modify_reactive(id_lot, lot, date_expiry){
+            const date_expiry_modify = document.getElementById(`${id_lot}_date_expiry`).innerText
+            const lot_reactive_modify = document.getElementById(`${id_lot}_lot`).innerText
+            open_modal('modal_modify_reactive')
+            document.getElementById('date_expiry_modify').value = date_expiry_modify;
+            document.getElementById('lot_reactive_modify').value = lot_reactive_modify;
+
+            document.getElementById('id_lot_modify').value = id_lot;
+
+            document.getElementById('log_date_expiry').value = date_expiry;
+            document.getElementById('log_lot_reactive').value = lot;
+        }
+
+
+        function edit_reactive(){
+            const date_expiry_modify = document.getElementById('date_expiry_modify').value
+            const log_date_expiry = document.getElementById('log_date_expiry').value
+            const lot_reactive_modify = document.getElementById('lot_reactive_modify').value
+            const log_lot_reactive = document.getElementById('log_lot_reactive').value
+            const id_lot_modify = document.getElementById('id_lot_modify').value
+
+            if (date_expiry_modify === '' || lot_reactive_modify === ''){
+                alert("No es pot deixar el camp buit.");
+                return
+            }
+
+            if (log_date_expiry === date_expiry_modify && lot_reactive_modify === log_lot_reactive) {
+                alert("No s'ha realizat cap modificació, has de modificar algun camp per realitzar l'operació.");
+                return
+            } 
+
+            // Crear form data
+            var form_data = new FormData();
+
+            form_data.append('date_expiry_modify', date_expiry_modify)
+            form_data.append('lot_reactive_modify', lot_reactive_modify)
+            form_data.append('id_lot_modify', id_lot_modify)
+
+            // Creeem l'objecte per l'ajax
+            var xhr = new XMLHttpRequest();
+            // 1er argument si es pots o get
+            // 2n argument url o ruta
+            // 3r argumemt true sempre
+            xhr.open('POST', '/modify_reactive', true);
+            xhr.onload = function(){
+                if (xhr.status === 200) {
+                    var response = xhr.responseText;
+                    split_response = response.split('_//_')
+                    message = split_response[1]
+                    if (response.includes('False')){
+                        alert_type = 'danger'}
+                    else if (response.includes('True')){
+                        alert_type = 'success'
+                        $('#modal_modify_reactive').modal('hide');
+                        if (log_date_expiry !== date_expiry_modify) {
+                            document.getElementById(`${id_lot_modify}_date_expiry`).innerHTML = date_expiry_modify; }
+                        if (lot_reactive_modify !== log_lot_reactive) {
+                            document.getElementById(`${id_lot_modify}_lot`).innerHTML = lot_reactive_modify; }
+                    } else {
+                        message = `Error inesperat. Si persisteix l'error contacta amb un administrador`
+                        alert_type = 'danger'
+                    }
+                }
+                else {
+                    message = `Error, No s'ha pogut realitzar l'operació. Si persisteix l'error contacta amb un administrador`
+                    alert_type = 'danger' }
+                
+                var flashContainer = document.querySelector(".d-flex.justify-content-center .row");
+                // Eliminar la alerta anterior, si existe
+                if (flashContainer.children.length > 0) {
+                    flashContainer.removeChild(flashContainer.children[0]); }
+                var newFlash = document.createElement("div");
+                newFlash.className = "alert alert-" + alert_type + " alert-dismissible fade show ml-3";
+                newFlash.role = "alert";
+                newFlash.innerHTML = "<span>" + message + "</span>" + 
+                                    '<button type="button" class="close" data-dismiss="alert" aria-label="Close">' +
+                                    '<span aria-hidden="true">&times;</span>' +
+                                    '</button>';
+                flashContainer.appendChild(newFlash);
+                flashContainer.style.paddingTop = "20px";
+            }
+
+            xhr.send(form_data)
+        }
     </script>
 
     <style>
@@ -282,7 +368,7 @@
                             <!-- <th style="min-width: 70px;  max-width: 120px;">Data arribada</th> -->
                             <th style="min-width: 70px;  max-width: 120px;">Caducitat</th>
                             <th style="min-width: 70px;  max-width: 120px;">Facturació</th>
-                            <th style="min-width: 120px;  max-width: 180px;">Accions</th>
+                            <th style="min-width: 120px;  max-width: 190px;">Accions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -297,11 +383,11 @@
                                 {% else %}
                                     <td>{{lot.description_subreference}}</td>
                                 {% endif %}
-                                <td>{{lot.lot}}</td>
+                                <td id="{{lot.id}}_lot">{{lot.lot}}</td>
                                 <td>{{lot.internal_lot}}</td>
                                 <!-- <td>{{lot.units_lot}}</td> -->
                                 <!-- <td>{{lot.reception_date}}</td> -->
-                                <td>{{lot.date_expiry}}</td>
+                                <td id="{{lot.id}}_date_expiry">{{lot.date_expiry}}</td>
                                 <td>{{lot.billing}}</td>
                                 <td>
                                     <div style=" display: inline;">
@@ -316,6 +402,7 @@
                                             {% endif %}
                                         {% endif %}
                                         <button type="button" class="btn btn-outline-primary btn-sm" onclick="show_history_lot(`{{lot.id}}`)"><i class="fa-solid fa-book"></i> Registres</button>
+                                        <button type="button" class="btn btn-outline-success btn-sm" onclick="show_modify_reactive(`{{lot.id}}`)"><i class="fa-solid fa-pen-to-square"></i> Editar</button>
                                     </div>
                                 </td>
                             </tr>
@@ -389,6 +476,40 @@
                             </table>
                         </div>
                     </div>
+                </div>
+            </div>
+          </div>
+        </div>
+    </div>
+
+
+    <div class="modal fade"  id="modal_modify_reactive" tabindex="-1" role="dialog" aria-labelledby="editRegister" aria-hidden="true">
+        <div class="modal-dialog" tabindex="-1" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="title"> Modificar reactiu</h5>
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="close_modal('modal_modify_reactive')"><span aria-hidden="true">&times;</span></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">                                   
+                    <div class="col-lg-12 col-md-12 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 145px;"><b>Data Caducitat :</b></span>
+                            <input type="text" class="form-control" id='date_expiry_modify' name='date_expiry_modify' aria-label="TTN" aria-describedby="basic-addon1" oninput="replae_slash_with_hyphen(this); filter_characters(this)">
+                        </div>
+                    </div>
+                    <div class="col-lg-12 col-md-12 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 145px;"><b>Lot :</b></span>
+                            <input type="text" class="form-control" id='lot_reactive_modify' name='lot_reactive_modify' aria-label="TTN" aria-describedby="basic-addon1">
+                        </div>
+                    </div>    
+                    <div class="col-lg-12 col-md-12 col-sm-12 text-center">       
+                        <input type="hidden" id="id_lot_modify" value=""/>
+                        <input type="hidden" id="log_lot_reactive" value=""/>
+                        <input type="hidden" id="log_date_expiry" value=""/>
+                        <center><button type="button" class="btn btn-outline-success btn-sm" onclick="edit_reactive()" id="btn_open"><i class="fa-solid fa-pen-to-square"></i> Editar</button></center>
+                    </div>    
                 </div>
             </div>
           </div>
