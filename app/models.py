@@ -76,7 +76,7 @@ class Stock_lots(Base):
     code_panel = Column(String())
     location = Column(String())
     supplier = Column(String())
-    billing = Column(String())
+    cost_center_stock = Column(String())
 
 
 class Logs(Base):

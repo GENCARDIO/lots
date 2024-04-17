@@ -841,9 +841,9 @@
         const comand_number = document.getElementById('comand_number').value
         const revised_by = document.getElementById('revised_by').value
         const date_revised = document.getElementById('date_revised').value
-        const billing = document.getElementById('billing').value
+        const cost_center_stock = document.getElementById('cost_center_stock').value
 
-        if (transport_conditions === '' || packaging === '' || inspected_by === '' || date_inspected === '' || state === '' || comand_number === '' || revised_by === '' || date_revised === '' || billing === ''){
+        if (transport_conditions === '' || packaging === '' || inspected_by === '' || date_inspected === '' || state === '' || comand_number === '' || revised_by === '' || date_revised === '' || cost_center_stock === ''){
             alert("No pots deixar camps buits, revisa els camps de recepció de procute i QC recepció.")
             return }
         
@@ -889,7 +889,7 @@
                     dict_info_lot.comand_number = comand_number
                     dict_info_lot.revised_by = revised_by
                     dict_info_lot.date_revised = date_revised
-                    dict_info_lot.billing = billing }
+                    dict_info_lot.cost_center_stock = cost_center_stock }
                 else{
                     alert("No es poden deixar els camps sense omplir.") 
                     return}
@@ -1579,12 +1579,12 @@
 
                     <div class="col-lg-6 col-md-12 col-sm-12">       
                         <div class="input-group mb-3">
-                            <span class="input-group-text" id="basic-addon1" style="width: 185px;"><b>Facturació :</b></span>
-                            <select class="form-select" id="billing" >
+                            <span class="input-group-text" id="basic-addon1" style="width: 185px;"><b>CECO :</b></span>
+                            <select class="form-select" id="cost_center_stock" >
                                 <option selected></option>
-                                <option>ICS</option>
-                                <option>IDIBGI</option>
-                                <option>FABRICACIÓ</option>
+                                {% for ceco in list_cost_center%}
+                                    <option>{{ ceco.name }}</option>
+                                {% endfor %}
                             </select>
                         </div>
                     </div>

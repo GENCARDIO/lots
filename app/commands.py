@@ -104,13 +104,14 @@ def add_command():
 @requires_auth
 def search_commands():
     '''
-        Buscarem a la BD totes les comandas que tenim pendents i les enviarem a l'html
+        Buscarem a la BD totes les comandas que tenim pendents, les orden per ordre d'arribada i les enviarem a l'html
 
         :return: Llista d'objectes de les comanda i els lots corresponents
         :rtype: list objects
     '''
     select_commands = session1.query(Commands, Lots).join(Lots, Commands.id_lot == Lots.key)\
-                                                    .filter(Commands.date_close == '').all()
+                                                    .filter(Commands.date_close == '')\
+                                                    .order_by(Commands.id.desc()).all()
 
     return render_template('commands.html', select_commands=select_commands)
 

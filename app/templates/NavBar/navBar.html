@@ -155,7 +155,7 @@
     <div class="modal-dialog modal-lg" tabindex="-1" role="document">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title" id="title">Editar article</h5>
+          <h5 class="modal-title" id="title" name="title_edit">Editar article</h5>
           <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="close_modal('modal_edit_lot')"><span aria-hidden="true">&times;</span></button>
         </div>
         <div class="modal-body">
@@ -163,19 +163,19 @@
                 <div class="col-lg-6 col-md-12 col-sm-12">       
                     <div class="input-group mb-3">
                         <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Ref. proveïdor :</b></span>
-                        <input type="text" class="form-control" id='reference_catalog_edit' aria-label="TTN" aria-describedby="basic-addon1" readonly style="background-color: white;">
+                        <input type="text" class="form-control" id='reference_catalog_edit' aria-label="TTN" aria-describedby="basic-addon1" style="background-color: white;">
                     </div>
                 </div>
                 <div class="col-lg-6 col-md-12 col-sm-12">       
                     <div class="input-group mb-3">
                         <span class="input-group-text" id="basic-addon1" style="width: 155px;"><b>Codi SAP :</b></span>
-                        <input type="text" class="form-control" id='code_sap_edit' aria-label="TTN" aria-describedby="basic-addon1">
+                        <input type="text" class="form-control" id='code_sap_edit' aria-label="TTN" aria-describedby="basic-addon1" style="background-color: white;">
                     </div>
                 </div>
                 <div class="col-lg-6 col-md-12 col-sm-12">       
                     <div class="input-group mb-3">
                         <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Codi LOG :</b></span>
-                        <input type="text" class="form-control" id='code_log_edit' aria-label="TTN" aria-describedby="basic-addon1">
+                        <input type="text" class="form-control" id='code_log_edit' aria-label="TTN" aria-describedby="basic-addon1" style="background-color: white;">
                     </div>
                 </div>
                 <div class="col-lg-6 col-md-12 col-sm-12">       
@@ -214,7 +214,7 @@
                         <input type="text" class="form-control" id='temp_conservation_edit' aria-label="TTN" aria-describedby="basic-addon1">
                     </div>
                 </div>
-                <div class="col-lg-6 col-md-12 col-sm-12">       
+                <div class="col-lg-6 col-md-12 col-sm-12" id="div_id_reactive_edit">       
                     <div class="input-group mb-3">
                         <span class="input-group-text" id="basic-addon1" style="width: 155px;"><b>Id reactiu :</b></span>
                         <input type="text" class="form-control" id='id_reactive_edit' aria-label="TTN" aria-describedby="basic-addon1">
@@ -222,14 +222,14 @@
                 </div>
                 <div class="col-lg-6 col-md-12 col-sm-12">       
                     <div class="input-group mb-3">
-                        <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>tipu :</b></span>
+                        <span class="input-group-text" id="basic-addon1" style="width: 168px;" name="span_type"><b>tipu :</b></span>
                         <input type="text" class="form-control" id='react_or_fungible_edit' aria-label="TTN" aria-describedby="basic-addon1">
                     </div>
                 </div>
-                <div class="col-lg-6 col-md-12 col-sm-12">       
+                <div class="col-lg-6 col-md-12 col-sm-12" id="div_panel_edit">       
                     <div class="input-group mb-3">
                         <span class="input-group-text" id="basic-addon1" style="width: 155px;"><b>Codi panel :</b></span>
-                        <input type="text" class="form-control" id='code_panel_edit' aria-label="TTN" aria-describedby="basic-addon1">
+                        <input type="text" class="form-control" id='code_panel_edit' aria-label="TTN" aria-describedby="basic-addon1" style="background-color: white;" readonly>
                     </div>
                 </div>
                 <div class="col-lg-6 col-md-12 col-sm-12">       
@@ -513,6 +513,34 @@
 
         if (list_info_article[11] === ''){ document.getElementById('div_desc_subref').style.display = 'none'}
         else { document.getElementById('div_desc_subref').style.display = 'block'}
+
+        if (list_info_article[12] === 'Reactiu'){
+            document.getElementById('reference_catalog_edit').readOnly = true;
+            document.getElementById('code_sap_edit').readOnly = false;
+            document.getElementById('code_log_edit').readOnly = false;
+            document.getElementById('div_panel_edit').style.display = 'block'
+            document.getElementById('div_id_reactive_edit').style.display = 'block'
+            document.querySelector('.input-group-text[name="span_type"]').style.width = '168px'
+            document.querySelectorAll('[name="title_edit"]')[0].innerHTML = 'Editar article &nbsp;&nbsp;- <i style="color: blue;">Reactiu</i> -';
+        }
+        else if (list_info_article[12] === 'Fungible'){
+            document.getElementById('reference_catalog_edit').readOnly = false;
+            document.getElementById('code_sap_edit').readOnly = true;
+            document.getElementById('code_log_edit').readOnly = true;
+            document.getElementById('div_panel_edit').style.display = 'none'
+            document.getElementById('div_id_reactive_edit').style.display = 'none'
+            document.querySelector('.input-group-text[name="span_type"]').style.width = '155px'
+            document.querySelectorAll('[name="title_edit"]')[0].innerHTML = 'Editar article &nbsp;&nbsp;- <i style="color: blue;">Fungible</i> -';
+        }
+        else {
+            document.getElementById('reference_catalog_edit').readOnly = true;
+            document.getElementById('code_sap_edit').readOnly = true;
+            document.getElementById('code_log_edit').readOnly = true;
+            document.getElementById('div_panel_edit').style.display = 'block'
+            document.getElementById('div_id_reactive_edit').style.display = 'block'
+            document.querySelector('.input-group-text[name="span_type"]').style.width = '168px'
+            document.querySelectorAll('[name="title_edit"]')[0].innerHTML = 'Editar article';
+        }
     }
 
 
