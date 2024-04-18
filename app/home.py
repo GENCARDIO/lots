@@ -96,7 +96,7 @@ def search_lot_db():
         list_lots = []
         for lot in select_lots:
             dict_lots = {}
-            # dict_lots['key'] = lot.key
+            dict_lots['id'] = lot.key
             # dict_lots['manufacturer'] = lot.manufacturer
             # dict_lots['analytical_technique'] = lot.analytical_technique
             # dict_lots['reference_units'] = lot.reference_units

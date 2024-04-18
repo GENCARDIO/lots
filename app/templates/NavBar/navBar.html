@@ -71,7 +71,7 @@
         </div>
         <div class="modal-body">
             <div class="row">                                   
-                <div class="col-lg-12 col-md-12 col-sm-12">       
+                <div class="col-lg-12 col-md-12 col-sm-12" id="div_table_look_lots">       
                     <table id="table_info_lots_db" class="display" style="width: 100%;">
                         <thead>
                             <tr id="thcolor">
@@ -326,6 +326,7 @@
                             }
                         }
                         var new_row = table.row.add(new_row_data).draw(false).node();
+                        new_row.id = `${list_lots[i]['id']}_look_lots`;
                     }
                     // Aplicar estilos CSS para centrar el contenido de las primeras cuatro columnas
                     for (var j = 0; j < 4; j++) {
@@ -675,15 +676,24 @@
         xhr.open('POST', '/delete_lot', true);
         xhr.onload = function(){
             show_message = true
+            $('#modal_delete_confirmation').modal('hide');
             if (xhr.status === 200) {
                 var response = xhr.responseText;
                 split_response = response.split('_//_')
                 message = split_response[1]
-                $('#modal_delete_confirmation').modal('hide');
                 if (response.includes('False')){
                     alert_type = 'danger'}
                 else if (response.includes('True')){
                     alert_type = 'success'
+                    
+                    var list_ids_delete = split_response[2].split(';')
+                    for (var i = 0; i < list_ids_delete.length; i++) {
+                        var id_delete = list_ids_delete[i].trim();
+
+                        var table = $('#table_info_lots_db').DataTable();
+                        var tr = table.row(`#${id_delete}_look_lots`).node();
+                        if (tr) {  table.row(tr).remove().draw(false); }
+                    }
                 } else {
                     message = `Error inesperat. Si persisteix l'error contacta amb un administrador`
                     alert_type = 'danger'
@@ -692,19 +702,40 @@
                 message = `Error, No s'ha pogut realitzar l'operació. Si persisteix l'error contacta amb un administrador`
                 alert_type = 'danger' }
             
-            var flashContainer = document.querySelector(".d-flex.justify-content-center .row");
-            // Eliminar la alerta anterior, si existe
-            if (flashContainer.children.length > 0) {
-                flashContainer.removeChild(flashContainer.children[0]); }
-            var newFlash = document.createElement("div");
-            newFlash.className = "alert alert-" + alert_type + " alert-dismissible fade show ml-3";
-            newFlash.role = "alert";
-            newFlash.innerHTML = "<span>" + message + "</span>" + 
-                                '<button type="button" class="close" data-dismiss="alert" aria-label="Close">' +
-                                '<span aria-hidden="true">&times;</span>' +
-                                '</button>';
-            flashContainer.appendChild(newFlash);
-            flashContainer.style.paddingTop = "20px";
+            // var flashContainer = document.querySelector(".d-flex.justify-content-center .row");
+            // // Eliminar la alerta anterior, si existe
+            // if (flashContainer.children.length > 0) {
+            //     flashContainer.removeChild(flashContainer.children[0]); }
+            // var newFlash = document.createElement("div");
+            // newFlash.className = "alert alert-" + alert_type + " alert-dismissible fade show ml-3";
+            // newFlash.role = "alert";
+            // newFlash.innerHTML = "<span>" + message + "</span>" + 
+            //                     '<button type="button" class="close" data-dismiss="alert" aria-label="Close">' +
+            //                     '<span aria-hidden="true">&times;</span>' +
+            //                     '</button>';
+            // flashContainer.appendChild(newFlash);
+            // flashContainer.style.paddingTop = "20px";
+
+            $('#info_lots_bd').modal('show');
+
+            var divMessage = document.getElementById("div_message_look_lots");
+            if (divMessage) {divMessage.remove();}
+        
+            var html_insert = `
+                <div class="d-flex justify-content-center" id="div_message_look_lots">
+                    <div class="row mt-1 justify-content-center">
+                        <div class="alert alert-${alert_type} alert-dismissible fade show ml-3" role="alert">
+                            <span>${message}</span>
+                            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            var div_ubication_comand = document.getElementById("div_table_look_lots");
+            // Insertar el HTML dentro del elemento objetivo
+            div_ubication_comand.insertAdjacentHTML('beforebegin', html_insert);
         }
         xhr.send(form_data)
     }
