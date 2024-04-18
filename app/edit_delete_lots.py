@@ -289,33 +289,73 @@ def delete_lot():
             return "False_//_No hem trobat l'article a la BD"
         else:
             date = instant_date()
+            ids_delete = ''
 
-            dict_info_lot = {"key": select_lot.key,
-                             "catalog_reference": select_lot.catalog_reference,
-                             "manufacturer": select_lot.manufacturer,
-                             "description": select_lot.description,
-                             "analytical_technique": select_lot.analytical_technique,
-                             "reference_units": select_lot.reference_units,
-                             "id_reactive": select_lot.id_reactive,
-                             "code_SAP": select_lot.code_SAP,
-                             "code_LOG": select_lot.code_LOG,
-                             "active": select_lot.active,
-                             "temp_conservation": select_lot.temp_conservation,
-                             "description_subreference": select_lot.description_subreference,
-                             "react_or_fungible": select_lot.react_or_fungible,
-                             "code_panel": select_lot.code_panel,
-                             "location": select_lot.location,
-                             "supplier": select_lot.supplier }
+            if select_lot.id_reactive != '':
+                select_lots = session1.query(Lots).filter(Lots.catalog_reference == select_lot.catalog_reference)\
+                                                  .filter(Lots.id_reactive != '').all()
 
-            dict_save_info = {'id_lot': id_lot,
-                              'type': 'delete',
-                              'user': session['acronim'],
-                              'id_user': session['idClient'],
-                              'date': date,
-                              'info': json.dumps(dict_info_lot)}
+                for lot in select_lots:
+                    ids_delete += f'{lot.key};'
+                    dict_info_lot = {"key": lot.key,
+                                     "catalog_reference": lot.catalog_reference,
+                                     "manufacturer": lot.manufacturer,
+                                     "description": lot.description,
+                                     "analytical_technique": lot.analytical_technique,
+                                     "reference_units": lot.reference_units,
+                                     "id_reactive": lot.id_reactive,
+                                     "code_SAP": lot.code_SAP,
+                                     "code_LOG": lot.code_LOG,
+                                     "active": lot.active,
+                                     "temp_conservation": lot.temp_conservation,
+                                     "description_subreference": lot.description_subreference,
+                                     "react_or_fungible": lot.react_or_fungible,
+                                     "code_panel": lot.code_panel,
+                                     "location": lot.location,
+                                     "supplier": lot.supplier}
 
-            save_log(dict_save_info)
+                    dict_save_info = {'id_lot': id_lot,
+                                      'type': 'delete',
+                                      'user': session['acronim'],
+                                      'id_user': session['idClient'],
+                                      'date': date,
+                                      'info': json.dumps(dict_info_lot)}
 
+                    save_log(dict_save_info)
+
+                    session1.delete(lot)
+
+                if len(ids_delete) > 1:
+                    ids_delete = ids_delete[:-1]
+            else:
+                ids_delete = select_lot.key
+                dict_info_lot = {"key": select_lot.key,
+                                 "catalog_reference": select_lot.catalog_reference,
+                                 "manufacturer": select_lot.manufacturer,
+                                 "description": select_lot.description,
+                                 "analytical_technique": select_lot.analytical_technique,
+                                 "reference_units": select_lot.reference_units,
+                                 "id_reactive": select_lot.id_reactive,
+                                 "code_SAP": select_lot.code_SAP,
+                                 "code_LOG": select_lot.code_LOG,
+                                 "active": select_lot.active,
+                                 "temp_conservation": select_lot.temp_conservation,
+                                 "description_subreference": select_lot.description_subreference,
+                                 "react_or_fungible": select_lot.react_or_fungible,
+                                 "code_panel": select_lot.code_panel,
+                                 "location": select_lot.location,
+                                 "supplier": select_lot.supplier}
+
+                dict_save_info = {'id_lot': id_lot,
+                                  'type': 'delete',
+                                  'user': session['acronim'],
+                                  'id_user': session['idClient'],
+                                  'date': date,
+                                  'info': json.dumps(dict_info_lot)}
+
+                save_log(dict_save_info)
+
+                session1.delete(select_lot)
             # Si es fan canvis al lot s'han de reflexa a l'stock.
             # select_stock_lot = session1.query(Stock_lots).filter(Stock_lots.id_lot == id_lot).all()
             # if len(select_stock_lot) > 0:
@@ -325,9 +365,9 @@ def delete_lot():
 
             session1.commit()
 
-            return "True_//_L'article s'ha eliminat correctament"
+            return f"True_//_L'article s'ha eliminat correctament_//_{ids_delete}"
     except Exception:
-        return "False_//_Error en eliminar l'article a la BD"
+        return f"False_//_Error en eliminar l'article a la BD_//_error"
 
 
 @app.route('/modify_reactive', methods=['POST'])
