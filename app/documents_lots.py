@@ -2,8 +2,7 @@ from flask import render_template, request, flash, send_file
 from app import app
 from app.utils import requires_auth, list_desciption_lots, list_cost_center
 from app.models import session1, Lots, Stock_lots
-from sqlalchemy import func, Integer
-from sqlalchemy.sql import cast
+from sqlalchemy import func
 from werkzeug.utils import secure_filename
 import os
 from config import main_dir_docs
@@ -127,10 +126,10 @@ def upload_docs():
         split_dirname = filename.split(".")
 
         if dir_name == 'delivery_note':
-            max_number_filename = session1.query(func.max(cast(Stock_lots.delivery_note, Integer))).scalar()
+            max_number_filename = session1.query(func.max(Stock_lots.delivery_note)).scalar()
             dirname = 'albarans'
         elif dir_name == 'certificate':
-            max_number_filename = session1.query(func.max(cast(Stock_lots.certificate, Integer))).scalar()
+            max_number_filename = session1.query(func.max(Stock_lots.certificate)).scalar()
             dirname = 'certificats'
         else:
             return 'False'
@@ -287,6 +286,8 @@ def create_qc():
             dict_lots['location'] = stock_lot.location
             dict_lots['supplier'] = stock_lot.supplier
             dict_lots['cost_center_stock'] = stock_lot.cost_center_stock
+            dict_lots['purchase_format'] = stock_lot.purchase_format
+            dict_lots['units_format'] = stock_lot.units_format
 
             # total_units += int(stock_lot.units_lot)
             info_lots.append(dict_lots)
