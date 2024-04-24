@@ -191,6 +191,8 @@
                         document.getElementById('file_certificate').value = ''
                         document.getElementById('revised_by').value = acronim
                         document.getElementById('date_revised').value = formated_date
+                        document.getElementById('cost_center_stock').value = ''
+
                         // Eliminar tots els div amb el name divs_subproduct
                         var elementosAEliminar = document.querySelectorAll('div[name="divs_subproducts"], input[name="divs_subproducts"]');
                         elementosAEliminar.forEach(function(elemento) {
@@ -234,19 +236,19 @@
                             var nuevoHTML_variable2 = `<div class="col-lg-12 col-md-12 col-sm-12" name="divs_subproducts">`
                             var nuevoHTML_context = `
                                     <div class="input-group mb-3">
-                                        <span class="input-group-text" id="basic-addon1" style="width: 135px;"><b>Descripció:</b></span>
+                                        <span class="input-group-text" id="basic-addon1" style="width: 148px;"><b>Descripció :</b></span>
                                         <input type="text" class="form-control" id="descripton0_${i}" aria-label="TTN" value="${list_info_lots[i]['id_reactive']} || ${list_info_lots[i]['description_subreference']}" readonly>
                                     </div>
                                 </div>
                                 <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts">
                                     <div class="input-group mb-3">
-                                        <span class="input-group-text" id="basic-addon1" style="width: 135px;"><b>Lot :</b></span>
+                                        <span class="input-group-text" id="basic-addon1" style="width: 148px;"><b>Lot :</b></span>
                                         <input type="text" class="form-control" id="lot0_${i}" aria-label="TTN">
                                     </div>
                                 </div>
                                 <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts">  
                                     <div class='input-group mb-3'>
-                                        <span class='input-group-text' id='basic-addon1' style='width: 140px;'><b>Data caducitat :</b></span>
+                                        <span class='input-group-text' id='basic-addon1' style='width: 148px;'><b>Data caducitat :</b></span>
                                         <input type="text" class="form-control" id="expiry_date0_${i}" aria-label="TTN" aria-describedby="basic-addon1" oninput="replae_slash_with_hyphen(this); filter_characters(this)">
                                     </div>
                                 </div>
@@ -255,16 +257,41 @@
                                 var nuevoHTML_context = `${nuevoHTML_context}
                                 <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts" style="display: none">
                                     <div class="input-group mb-3">
-                                        <span class="input-group-text" id="basic-addon1" style="width: 135px;"><b>Lot intern :</b></span>
+                                        <span class="input-group-text" id="basic-addon1" style="width: 148px;"><b>Lot intern :</b></span>
                                         <input type="text" class="form-control" id="internal_lot0_${i}" aria-label="TTN" value="${internal_lot}">
+                                    </div>
+                                </div>
+                                <div class="col-lg-12 col-md-12 col-sm-12" name="divs_subproducts">
+                                    <div class="input-group mb-3">
+                                        <span class="input-group-text" id="basic-addon1" style="width: 148px;"><b>Unitats lot :</b></span>
+                                        <select class="form-select" id="units_lot0_${i}">
+                                            <option selected>1</option>
+                                            {% for i in range(2, 5001) %}
+                                                <option>{{ i }}</option>
+                                            {% endfor %}
+                                        </select>
                                     </div>
                                 </div>
                                 <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts">
                                     <div class="input-group mb-3">
-                                        <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>Unitats lot :</b></span>
-                                        <select class="form-select" id="units_lot0_${i}">
+                                        <span class="input-group-text" id="basic-addon1" style="width: 148px;"><b>Format compra :</b></span>
+                                        <select class="form-select" id="purchase_format0_${i}">
+                                            <option selected></option>
+                                            <option>caixa</option>
+                                            <option>ampolla</option>
+                                            <option>bossa</option>
+                                            <option>kit</option>
+                                            <option>rotlle</option>
+                                            <option>unitats</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts">
+                                    <div class="input-group mb-3">
+                                        <span class="input-group-text" id="basic-addon1" style="width: 148px;"><b>Unitats format :</b></span>
+                                        <select class="form-select" id="units_format0_${i}">
                                             <option selected>1</option>
-                                            {% for i in range(2, 1001) %}
+                                            {% for i in range(2, 101) %}
                                                 <option>{{ i }}</option>
                                             {% endfor %}
                                         </select>
@@ -281,18 +308,34 @@
                                 var nuevoHTML_context = `${nuevoHTML_context}
                                 <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts">
                                     <div class="input-group mb-3">
-                                        <span class="input-group-text" id="basic-addon1" style="width: 135px;"><b>Lot intern :</b></span>
+                                        <span class="input-group-text" id="basic-addon1" style="width: 148px;"><b>Lot intern :</b></span>
                                         <input type="text" class="form-control" id="internal_lot0_${i}" aria-label="TTN" value="${internal_lot}">
                                     </div>
                                 </div>
                                 <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts">
                                     <div class="input-group mb-3">
-                                        <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>Unitats lot :</b></span>
+                                        <span class="input-group-text" id="basic-addon1" style="width: 148px;"><b>Unitats lot :</b></span>
                                         <select class="form-select" id="units_lot0_${i}">
                                             <option selected>1</option>
                                             {% for i in range(2, 1001) %}
                                                 <option>{{ i }}</option>
                                             {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts">
+                                    <div class="input-group mb-3">
+                                        <span class="input-group-text" id="basic-addon1" style="width: 148px;"><b>Format compra :</b></span>
+                                        <select class="form-select" id="purchase_format0_${i}">
+                                            <option selected>kit</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts">
+                                    <div class="input-group mb-3">
+                                        <span class="input-group-text" id="basic-addon1" style="width: 148px;"><b>Unitats format :</b></span>
+                                        <select class="form-select" id="units_format0_${i}">
+                                            <option selected>1</option>
                                         </select>
                                     </div>
                                 </div>
@@ -577,19 +620,19 @@
                 var nuevoHTML_variable2 = `<div class="col-lg-12 col-md-12 col-sm-12" name="divs_subproducts">`
                 var nuevoHTML_context = `
                         <div class="input-group mb-3">
-                            <span class="input-group-text" id="basic-addon1" style="width: 135px;"><b>Descripció:</b></span>
+                            <span class="input-group-text" id="basic-addon1" style="width: 145px;"><b>Descripció:</b></span>
                             <input type="text" class="form-control" aria-label="TTN" id="description${x}_${i}" value="${list_info_lots[i]['id_reactive']} || ${list_info_lots[i]['description_subreference']}" readonly>
                         </div>
                     </div>
                     <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts">
                         <div class="input-group mb-3">
-                            <span class="input-group-text" id="basic-addon1" style="width: 135px;"><b>Lot :</b></span>
+                            <span class="input-group-text" id="basic-addon1" style="width: 145px;"><b>Lot :</b></span>
                             <input type="text" class="form-control" id="lot${x}_${i}" aria-label="TTN">
                         </div>
                     </div>
                     <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts">  
                         <div class='input-group mb-3'>
-                            <span class='input-group-text' id='basic-addon1' style='width: 140px;'><b>Data caducitat :</b></span>
+                            <span class='input-group-text' id='basic-addon1' style='width: 145px;'><b>Data caducitat :</b></span>
                             <input type='text' class='form-control' id='expiry_date${x}_${i}' aria-label='TTN' aria-describedby='basic-addon1' oninput="replae_slash_with_hyphen(this); filter_characters(this)">
                         </div>
                     </div>
@@ -598,16 +641,41 @@
                         var nuevoHTML_context = `${nuevoHTML_context}
                             <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts" style="display: none;">
                                 <div class="input-group mb-3">
-                                    <span class="input-group-text" id="basic-addon1" style="width: 135px;"><b>Lot intern :</b></span>
+                                    <span class="input-group-text" id="basic-addon1" style="width: 145px;"><b>Lot intern :</b></span>
                                     <input type="text" class="form-control" id="internal_lot${x}_${i}" aria-label="TTN" value="${internal_lot}">
                                 </div>
                             </div>
                             <div class="col-lg-12 col-md-12 col-sm-12" name="divs_subproducts">
                                 <div class="input-group mb-3">
-                                    <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>Unitats lot :</b></span>
+                                    <span class="input-group-text" id="basic-addon1" style="width: 145px;"><b>Unitats lot :</b></span>
                                     <select class="form-select" id="units_lot${x}_${i}">
                                         <option selected>1</option>
-                                        {% for i in range(2, 1001) %}
+                                        {% for i in range(2, 5001) %}
+                                            <option>{{ i }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts">
+                                <div class="input-group mb-3">
+                                    <span class="input-group-text" id="basic-addon1" style="width: 148px;"><b>Format compra :</b></span>
+                                    <select class="form-select" id="purchase_format${x}_${i}">
+                                        <option selected></option>
+                                        <option>caixa</option>
+                                        <option>ampolla</option>
+                                        <option>bossa</option>
+                                        <option>kit</option>
+                                        <option>rotlle</option>
+                                        <option>unitats</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts">
+                                <div class="input-group mb-3">
+                                    <span class="input-group-text" id="basic-addon1" style="width: 148px;"><b>Unitats format :</b></span>
+                                    <select class="form-select" id="units_format${x}_${i}">
+                                        <option selected>1</option>
+                                        {% for i in range(2, 101) %}
                                             <option>{{ i }}</option>
                                         {% endfor %}
                                     </select>
@@ -623,18 +691,34 @@
                         var nuevoHTML_context = `${nuevoHTML_context}
                             <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts">
                                 <div class="input-group mb-3">
-                                    <span class="input-group-text" id="basic-addon1" style="width: 135px;"><b>Lot intern :</b></span>
+                                    <span class="input-group-text" id="basic-addon1" style="width: 145px;"><b>Lot intern :</b></span>
                                     <input type="text" class="form-control" id="internal_lot${x}_${i}" aria-label="TTN" value="${internal_lot}">
                                 </div>
                             </div>
                             <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts">
                                 <div class="input-group mb-3">
-                                    <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>Unitats lot :</b></span>
+                                    <span class="input-group-text" id="basic-addon1" style="width: 145px;"><b>Unitats lot :</b></span>
                                     <select class="form-select" id="units_lot${x}_${i}">
                                         <option selected>1</option>
                                         {% for i in range(2, 1001) %}
                                             <option>{{ i }}</option>
                                         {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts">
+                                <div class="input-group mb-3">
+                                    <span class="input-group-text" id="basic-addon1" style="width: 148px;"><b>Format compra :</b></span>
+                                    <select class="form-select" id="purchase_format${x}_${i}">
+                                        <option selected>kit</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts">
+                                <div class="input-group mb-3">
+                                    <span class="input-group-text" id="basic-addon1" style="width: 148px;"><b>Unitats format :</b></span>
+                                    <select class="form-select" id="units_format${x}_${i}">
+                                        <option selected>1</option>
                                     </select>
                                 </div>
                             </div>
@@ -828,7 +912,7 @@
         // Carregar dades al form de l'html
         const unit_lots = document.getElementById('unit_lots').value
         const date_recepcion_lot = document.getElementById('date_recepcion_lot').value
-        if (!check_format_date.test(date_recepcion_lot) && date_recepcion_lot !== 'NA') {
+        if (!check_format_date.test(date_recepcion_lot)) {
             alert("El format de la data no és correcta, ha de ser dd-mm-yyyy");
             return }
 
@@ -868,9 +952,13 @@
                 const expiry_date = document.getElementById(`expiry_date${x}_${i}`).value
                 const internal_lot = document.getElementById(`internal_lot${x}_${i}`).value
                 const units_lot = document.getElementById(`units_lot${x}_${i}`).value
-                if (!check_format_date.test(expiry_date)) {
+                const purchase_format = document.getElementById(`purchase_format${x}_${i}`).value
+                const units_format = document.getElementById(`units_format${x}_${i}`).value
+                if (!check_format_date.test(expiry_date) && !["NA", "--"].includes(expiry_date.toUpperCase())) {
                     alert("El format de la data no és correcta, ha de ser dd-mm-yyyy");
                     return }
+                
+                var total_units_lot = parseInt(units_lot, 10) * parseInt(units_format, 10);
 
                 if (lot !== '' && expiry_date !== '' && internal_lot !== ''){
                     const json_info_lot = document.getElementById(`json_info_lot${x}_${i}`).value
@@ -879,7 +967,7 @@
                     dict_info_lot.lot = lot
                     dict_info_lot.date_expiry = expiry_date 
                     dict_info_lot.internal_lot = internal_lot 
-                    dict_info_lot.units_lot = units_lot
+                    dict_info_lot.units_lot = total_units_lot
                     dict_info_lot.transport_conditions = transport_conditions
                     dict_info_lot.packaging = packaging
                     dict_info_lot.inspected_by = inspected_by
@@ -889,7 +977,10 @@
                     dict_info_lot.comand_number = comand_number
                     dict_info_lot.revised_by = revised_by
                     dict_info_lot.date_revised = date_revised
-                    dict_info_lot.cost_center_stock = cost_center_stock }
+                    dict_info_lot.cost_center_stock = cost_center_stock
+                    dict_info_lot.purchase_format = purchase_format 
+                    dict_info_lot.units_format = units_format }
+
                 else{
                     alert("No es poden deixar els camps sense omplir.") 
                     return}
@@ -1369,7 +1460,7 @@
                     <div class="col-lg-12 col-md-12 col-sm-12">       
                         <div class="input-group mb-3">
                             <!-- <span class="input-group-text" id="basic-addon1"><b>Ref. proveïdor, SAP o LOG:</b></span> -->
-                            <span class="input-group-text" id="basic-addon1"><b>Ref. proveïdor o descripció:</b></span>
+                            <span class="input-group-text" id="basic-addon1" style="width: 233px;"><b>Ref. proveïdor o descripció :</b></span>
                             <input type="text" class="form-control" id='code_search' list="datalist-codes2" aria-label="TTN" aria-describedby="basic-addon1" value="lot1">
                             <datalist id="datalist-codes2">
                                 {% for description in list_desciption_lots %}
@@ -1381,7 +1472,7 @@
                     </div>
                     <div class="col-lg-12 col-md-12 col-sm-12" style="display: none;" id="div_panel">       
                         <div class="input-group mb-3">
-                            <span class="input-group-text" id="basic-addon1"><b>Codi panell (*):</b></span>
+                            <span class="input-group-text" id="basic-addon1" style="width: 233px;"><b>Codi panell (*):</b></span>
                             <input type="text" class="form-control" id='code_panel' aria-label="TTN" aria-describedby="basic-addon1">
                         </div>
                     </div>
@@ -1490,7 +1581,7 @@
                 <div class="row" id="product_reception">
                     <div class="col-lg-6 col-md-12 col-sm-12">       
                         <div class="input-group mb-3">
-                            <span class="input-group-text" id="basic-addon1" style="width: 135px;"><b>Lots diferents:</b></span>
+                            <span class="input-group-text" id="basic-addon1" style="width: 145px;"><b>Lots diferents:</b></span>
                             <select class="form-select" id="unit_lots" onchange="add_more_lines_in_modal(this.value)">
                                 <option selected>1</option>
                                 {% for i in range(2, 5) %}
@@ -1501,13 +1592,13 @@
                     </div>
                     <div class="col-lg-6 col-md-12 col-sm-12">       
                         <div class="input-group mb-3">
-                            <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>Data recepció:</b></span>
+                            <span class="input-group-text" id="basic-addon1" style="width: 145px;"><b>Data recepció:</b></span>
                             <input type="text" class="form-control" id='date_recepcion_lot' aria-label="TTN" aria-describedby="basic-addon1" oninput="replae_slash_with_hyphen(this); filter_characters(this)" onchange="actualizarOtrosInputs(this.value)">
                         </div>
                     </div>
                     <div class="col-lg-12 col-md-12 col-sm-12">
                         <div class="input-group mb-3">
-                            <span class="input-group-text" id="basic-addon1" style="width: 135px;"><b>Descripció:</b></span>
+                            <span class="input-group-text" id="basic-addon1" style="width: 145px;"><b>Descripció:</b></span>
                             <input type="text" class="form-control" id="description_add_lot" aria-label="TTN" readonly>
                         </div>
                     </div>
@@ -1562,7 +1653,7 @@
 
                     <div class="col-lg-6 col-md-12 col-sm-12">       
                         <div class="input-group mb-3">
-                            <span class="input-group-text" id="basic-addon1" style="width: 185px;"><b>Estat:</b></span>
+                            <span class="input-group-text" id="basic-addon1" style="width: 185px;"><b>Estat :</b></span>
                             <select class="form-select" id="state">
                                 <option>Acceptat</option>
                                 <option>Rebutjat</option>
@@ -1609,13 +1700,13 @@
 
                     <div class="col-lg-6 col-md-12 col-sm-12">       
                         <div class="input-group mb-3">
-                            <span class="input-group-text" id="basic-addon1" style="width: 185px;"><b>Revisat per:</b></span>
+                            <span class="input-group-text" id="basic-addon1" style="width: 185px;"><b>Revisat per :</b></span>
                             <input type="text" class="form-control" id='revised_by' aria-label="TTN" aria-describedby="basic-addon1">
                         </div>
                     </div>
                     <div class="col-lg-6 col-md-12 col-sm-12">       
                         <div class="input-group mb-3">
-                            <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>Data revisat:</b></span>
+                            <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>Data revisat :</b></span>
                             <input type="text" class="form-control" id='date_revised' aria-label="TTN" aria-describedby="basic-addon1" oninput="replae_slash_with_hyphen(this); filter_characters(this)">
                         </div>
                     </div>
@@ -1641,7 +1732,7 @@
                         <div class="col-lg-12 col-md-12 col-sm-12">       
                             <div class="input-group mb-3">
                                 <!-- <span class="input-group-text" id="basic-addon1"><b>Codi Cataleg, SAP o LOG :</b></span> -->
-                                <span class="input-group-text" id="basic-addon1"><b>Codi Cataleg o Descripció:</b></span>
+                                <span class="input-group-text" id="basic-addon1" style="width: 225px"><b>Codi Cataleg o Descripció :</b></span>
                                 <input type="text" class="form-control" id='search_code' name="search_code" list="datalist-codes" aria-label="TTN" aria-describedby="basic-addon1" required>
                                 <datalist id="datalist-codes">
                                     {% for description in list_desciption_lots %}
@@ -1653,7 +1744,7 @@
                         </div>
                         <div class="col-lg-12 col-md-12 col-sm-12" style="display: none;" id="div_panel_search">       
                             <div class="input-group mb-3">
-                                <span class="input-group-text" id="basic-addon1"><b>Codi panell (*):</b></span>
+                                <span class="input-group-text" id="basic-addon1" style="width: 225px"><b>Codi panell (*):</b></span>
                                 <input type="text" class="form-control" id='code_panel_search' name='code_panel_search' aria-label="TTN" aria-describedby="basic-addon1">
                             </div>
                         </div>    

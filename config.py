@@ -2,9 +2,9 @@
 import os
 
 main_dir = os.path.dirname(os.path.abspath(__file__))
-# ip_address = 'http://172.16.82.47'
-# main_dir = f'{main_dir}_db'
-# main_dir_docs = f"{main_dir}/docs"
+ip_address = 'http://172.16.82.47'
+main_dir = f'{main_dir}_db'
+main_dir_docs = f"{main_dir}/docs"
 
 # Docker
 # ip_address = 'http://172.16.78.83'
@@ -12,9 +12,9 @@ main_dir = os.path.dirname(os.path.abspath(__file__))
 # main_dir_docs = f"{main_dir}/docs"
 
 # Producció qumulo
-ip_address = 'http://172.16.83.23'
-main_dir = f'{main_dir}/DB'
-main_dir_docs = f"{main_dir}/docs"
+# ip_address = 'http://172.16.83.23'
+# main_dir = f'{main_dir}/DB'
+# main_dir_docs = f"{main_dir}/docs"
 
 
 class Config(object):

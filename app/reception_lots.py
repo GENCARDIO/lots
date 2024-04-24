@@ -259,7 +259,9 @@ def add_stock_lot():
                                             code_panel=lots['code_panel'],
                                             location=lots['location'],
                                             supplier=lots['supplier'],
-                                            cost_center_stock=lots['cost_center_stock'])
+                                            cost_center_stock=lots['cost_center_stock'],
+                                            purchase_format=lots['purchase_format'],
+                                            units_format=lots['units_format'])
                     session1.add(insert_lot)
 
             select_lot = session1.query(Stock_lots).order_by(Stock_lots.id.desc()).first()

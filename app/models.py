@@ -77,6 +77,8 @@ class Stock_lots(Base):
     location = Column(String())
     supplier = Column(String())
     cost_center_stock = Column(String())
+    purchase_format = Column(String())
+    units_format = Column(Integer())
 
 
 class Logs(Base):
