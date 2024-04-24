@@ -2,7 +2,8 @@ from flask import request, session
 from app import app
 from app.utils import instant_date, requires_auth, save_log
 from app.models import session1, Lots, Stock_lots
-from sqlalchemy import func
+from sqlalchemy import func, Integer
+from sqlalchemy.sql import cast
 from werkzeug.utils import secure_filename
 import os
 import json
@@ -153,7 +154,7 @@ def add_stock_lot():
         f = request.files["file_delivery_note"]
         filename_delivery_note = secure_filename(f.filename)
         split_dirname = filename_delivery_note.split(".")
-        max_number_delivery = session1.query(func.max(Stock_lots.delivery_note)).scalar()
+        max_number_delivery = session1.query(func.max(cast(Stock_lots.delivery_note, Integer))).scalar()
         if max_number_delivery is not None:
             filename_delivery = int(max_number_delivery) + 1
             type_doc_delivery = f'.{split_dirname[1]}'
@@ -170,7 +171,7 @@ def add_stock_lot():
         f2 = request.files["file_certificate"]
         filename_certificate_aux = secure_filename(f2.filename)
         split_dirname = filename_certificate_aux.split(".")
-        max_number_certificate = session1.query(func.max(Stock_lots.certificate)).scalar()
+        max_number_certificate = session1.query(func.max(cast(Stock_lots.certificate, Integer))).scalar()
         if max_number_certificate is not None:
             filename_certificate = int(max_number_certificate) + 1
             type_doc_certificate = f'.{split_dirname[1]}'
