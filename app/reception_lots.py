@@ -1,6 +1,6 @@
 from flask import request, session
 from app import app
-from app.utils import instant_date, requires_auth, save_log
+from app.utils import instant_date, requires_auth, save_log, send_mail
 from app.models import session1, Lots, Stock_lots
 from sqlalchemy import func, Integer
 from sqlalchemy.sql import cast
@@ -197,6 +197,7 @@ def add_stock_lot():
     # si es que si afegirem les unitats a l'stock.
     # Si no mirem si es fungible o reactiu, preparem les dades perque es pugin inserir, la part mes dificil es que si
     # es reactiu s'insereixen un linia per cada unitat i si es fungible una row amb el numero total d'unitas.
+    list_info_excel = []
     for lots in list_lots:
         try:
             json_lots = json.dumps(lots)
@@ -204,6 +205,16 @@ def add_stock_lot():
             if select_lot:
                 select_lot.units_lot = int(select_lot.units_lot) + int(lots['units_lot'])
                 type_log = 'insert add stock'
+                dict_info_excel = {'catalog_reference': lots['catalog_reference'],
+                                   'description': lots['description'],
+                                   'description_subreference': lots['description_subreference'],
+                                   'id_reactive': lots['id_reactive'],
+                                   'lot': lots['lot'],
+                                   'internal_lot_value': lots['internal_lot'],
+                                   'reception_date': lots['reception_date'],
+                                   'date_expiry': lots['date_expiry'],
+                                   'analytical_technique': lots['analytical_technique']}
+                list_info_excel.append(dict_info_excel)
             else:
                 type_log = 'insert new stock'
 
@@ -264,6 +275,17 @@ def add_stock_lot():
                                             units_format=lots['units_format'])
                     session1.add(insert_lot)
 
+                    dict_info_excel = {'catalog_reference': lots['catalog_reference'],
+                                       'description': lots['description'],
+                                       'description_subreference': lots['description_subreference'],
+                                       'id_reactive': lots['id_reactive'],
+                                       'lot': lots['lot'],
+                                       'internal_lot_value': internal_lot_value,
+                                       'reception_date': lots['reception_date'],
+                                       'date_expiry': lots['date_expiry'],
+                                       'analytical_technique': lots['analytical_technique']}
+                    list_info_excel.append(dict_info_excel)
+
             select_lot = session1.query(Stock_lots).order_by(Stock_lots.id.desc()).first()
             info_lot = {'id_lot': select_lot.id,
                         'type': type_log,
@@ -276,4 +298,5 @@ def add_stock_lot():
             session1.rollback()
             return 'False_error'
     session1.commit()
+    send_mail(list_info_excel)
     return 'True'
