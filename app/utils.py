@@ -5,6 +5,8 @@ from functools import wraps
 from flask import session, redirect
 from app.models import IP_HOME
 from config import main_dir_docs
+from email.message import EmailMessage
+import smtplib
 
 
 # Authentication
@@ -101,6 +103,95 @@ def create_excel(select_row):
             linia_csv += str(command.date_create) + ';'
             linia_csv += str(command.user_create) + ';'
             linia_csv += str(command.cost_center) + ';'
+            linia_csv += '\n'
+            csv.write(linia_csv)
+        csv.close()
+        return True
+    except Exception:
+        return False
+
+
+def send_mail(list_info_excel):
+    '''
+        1 - Cridem a create excel info reception pero que ens crei un excel
+        2 - Preparem totes les dades del correu
+        3 - Adjuntem l'archiu al correu
+        3 - Enviem el correu amb totes les dades requerides.
+
+        :param list list_info_excel: llista de diccionaris amb la informació requerida
+
+        :return: None
+        :rtype: None
+    '''
+    try:
+        create_excel_info_reception(list_info_excel)
+
+        message = "S'han rebut productes associats a la teva tècnica analítica. T'adjunto un excel amb la informació."
+
+        subject = 'UDMMP | Recepció de productes'
+
+        em = EmailMessage()
+        email_sender = "udmmp.girona.ics@gencat.cat"
+        em["From"] = email_sender
+
+        if list_info_excel[0]['analytical_technique'] == 'NGS':
+            emails = ['monicacoll.girona.ics@gencat.cat', 'llopez@gencardio.com', 'mcorona.girona.ics@gencat.cat', 'mmoliner@idibgi.org', 'msoriano@idibgi.cat', 'mpinsach.girona.ics@gencat.cat', 'aperezs.girona.ics@gencat.cat']
+            em["To"] = ', '.join(emails)
+        elif list_info_excel[0]['analytical_technique'] == 'Genotipat2':
+            emails = ['nneto.girona.ics@gencat.cat', 'mpuigmule.girona.ics@gencat.cat', 'mmoliner@idibgi.org']
+            em["To"] = ', '.join(emails)
+        elif list_info_excel[0]['analytical_technique'] == 'Sanger2':
+            emails = ['ferran.pico@gencardio.com', 'aardila@idibgi.org', 'aperezs.girona.ics@gencat.cat']
+            em["To"] = ', '.join(emails)
+        if list_info_excel[0]['analytical_technique'] == 'Extracció2':
+            emails = ['abatchelli.girona.ics@gencat.cat', 'igomez.girona.ics@gencat.cat']
+            em["To"] = ', '.join(emails)
+        else:
+            # emails = ['asimon.girona.ics@gencat.cat', 'asimon@gencardio.com']
+            # em["To"] = ', '.join(emails)
+            return
+
+        em["Subject"] = subject
+        em.set_content(message)
+
+        with open(f"{main_dir_docs}/recepcio_stock.csv", 'rb') as file:
+            file_data = file.read()
+            file_name = 'recepcio_stock.csv'
+        em.add_attachment(file_data, maintype='application', subtype='octet-stream', filename=file_name)
+
+        with smtplib.SMTP("172.16.2.137", 25) as smtp:
+            smtp.sendmail(email_sender, emails, em.as_string())
+            # smtp.send_message(em)
+    except Exception:
+        return
+    return
+
+
+def create_excel_info_reception(list_info_excel):
+    '''
+        Creem un excel i l'omplim amb la informació de la llista que ens pasen per parametre
+
+        :param list list_info_excel: llista de diccionaris amb la informació requerida
+
+        :return: False o True
+        :rtype: bool
+    '''
+    try:
+        # Crear arxiu nou
+        archivo = f"{main_dir_docs}/recepcio_stock.csv"
+        csv = open(archivo, "w")
+        # Inserir linies al csv
+        csv.write('Nom producte;Referencia producte;Nom producte subreferencia;Identificador subreferencia;Lot;Lot intern;Data recepcio;Data caducitat;\n')
+
+        for info_excel in list_info_excel:
+            linia_csv = str(info_excel['catalog_reference']) + ';'
+            linia_csv += str(info_excel['description']) + ';'
+            linia_csv += str(info_excel['description_subreference']) + ';'
+            linia_csv += str(info_excel['id_reactive']) + ';'
+            linia_csv += str(info_excel['lot']) + ';'
+            linia_csv += str(info_excel['internal_lot_value']) + ';'
+            linia_csv += str(info_excel['reception_date']) + ';'
+            linia_csv += str(info_excel['date_expiry']) + ';'
             linia_csv += '\n'
             csv.write(linia_csv)
         csv.close()
