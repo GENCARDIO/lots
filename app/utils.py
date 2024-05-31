@@ -135,7 +135,7 @@ def send_mail(list_info_excel):
         em["From"] = email_sender
 
         if list_info_excel[0]['analytical_technique'] == 'NGS':
-            emails = ['monicacoll.girona.ics@gencat.cat', 'llopez@gencardio.com', 'mcorona.girona.ics@gencat.cat', 'mmoliner@idibgi.org', 'msoriano@idibgi.cat', 'mpinsach.girona.ics@gencat.cat', 'aperezs.girona.ics@gencat.cat']
+            emails = ['monicacoll.girona.ics@gencat.cat', 'llopez@gencardio.com', 'mcorona.girona.ics@gencat.cat', 'mmoliner@idibgi.org', 'msoriano@idibgi.cat', 'mpinsach.girona.ics@gencat.cat', 'aperezs.girona.ics@gencat.cat', 'asimon.girona.ics@gencat.cat']
             em["To"] = ', '.join(emails)
         elif list_info_excel[0]['analytical_technique'] == 'Genotipat2':
             emails = ['nneto.girona.ics@gencat.cat', 'mpuigmule.girona.ics@gencat.cat', 'mmoliner@idibgi.org']
@@ -143,7 +143,7 @@ def send_mail(list_info_excel):
         elif list_info_excel[0]['analytical_technique'] == 'Sanger2':
             emails = ['ferran.pico@gencardio.com', 'aardila@idibgi.org', 'aperezs.girona.ics@gencat.cat']
             em["To"] = ', '.join(emails)
-        if list_info_excel[0]['analytical_technique'] == 'Extracció2':
+        elif list_info_excel[0]['analytical_technique'] == 'Extracció2':
             emails = ['abatchelli.girona.ics@gencat.cat', 'igomez.girona.ics@gencat.cat']
             em["To"] = ', '.join(emails)
         else:
