@@ -5,6 +5,7 @@ from app.models import session1, Lots, Commands, Cost_center, Stock_lots
 from sqlalchemy import func
 from config import main_dir_docs
 import json
+from datetime import datetime
 
 
 @app.route('/search_add_command', methods=['POST'])
@@ -135,14 +136,30 @@ def delete_command():
         :return: json amb un True o un False.
         :rtype: json
     '''
-    id_command = request.form.get("id_command")
+    str_ids_commands = request.form.get("list_ids_commands")
+    list_ids_commands = str_ids_commands.split(',')
+
     date = instant_date()
 
+    date_now = datetime.now()
+    code_command = date_now.strftime("%Y%m%d")
+
+    # Comprobem que no s'haji fet cap altre peticio aquell dia, si es així posarem el _2 o el que toco per distingir les comandes.
+    select_command_code = session1.query(Commands).filter(Commands.code_command == code_command).first()
+    if select_command_code is not None:
+        for i in range(2, 20):
+            code_command_aux = f'{code_command}_{i}'
+            select_command_code_aux = session1.query(Commands).filter(Commands.code_command == code_command_aux).first()
+            if select_command_code_aux is None:
+                code_command = code_command_aux
+                break
     try:
-        select_command = session1.query(Commands).filter(Commands.id == id_command).first()
-        select_command.date_close = date
-        select_command.user_close = session['acronim']
-        select_command.user_id_close = session['idClient']
+        for id_command in list_ids_commands:
+            select_command = session1.query(Commands).filter(Commands.id == id_command).first()
+            select_command.date_close = date
+            select_command.user_close = session['acronim']
+            select_command.user_id_close = session['idClient']
+            select_command.code_command = code_command
     except Exception:
         session1.rollback()
         return 'False'

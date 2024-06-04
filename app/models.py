@@ -116,6 +116,7 @@ class Commands(Base):
     __tablename__ = 'commands'
 
     id = Column(Integer(), primary_key=True)
+    code_command = Column(Integer())
     id_lot = Column(Integer())
     units = Column(Integer())
     date_create = Column(String())
