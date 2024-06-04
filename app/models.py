@@ -2,7 +2,7 @@
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy import Column, Integer, String
+from sqlalchemy import Column, Integer, String, Numeric
 from config import main_dir, ip_address
 
 # Connexio amb la BD
@@ -36,6 +36,10 @@ class Lots(Base):
     code_panel = Column(String())
     location = Column(String())
     supplier = Column(String())
+    purchase_format = Column(String())
+    units_format = Column(Integer())
+    import_unit_ics = Column(String())
+    import_unit_idibgi = Column(String())
 
 
 class Stock_lots(Base):
@@ -79,6 +83,8 @@ class Stock_lots(Base):
     cost_center_stock = Column(String())
     purchase_format = Column(String())
     units_format = Column(Integer())
+    import_unit_ics = Column(String())
+    import_unit_idibgi = Column(String())
 
 
 class Logs(Base):

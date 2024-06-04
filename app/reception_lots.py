@@ -56,7 +56,11 @@ def search_add_lot():
                              'react_or_fungible': lot.react_or_fungible,
                              'code_panel': lot.code_panel,
                              'location': lot.location,
-                             'supplier': lot.supplier}
+                             'supplier': lot.supplier,
+                             'purchase_format': lot.purchase_format,
+                             'units_format': lot.units_format,
+                             'import_unit_ics': lot.import_unit_ics,
+                             'import_unit_idibgi': lot.import_unit_idibgi}
                 list_lots.append(dict_lots)
             json_data = json.dumps(list_lots)
             return f'True_//_{json_data}'
@@ -79,6 +83,7 @@ def register_new_lot():
         :return: json amb un True o un False i si es False una paraula amb el motiu.
         :rtype: json
     '''
+    print("arriba aquiiii")
     reference_catalog = request.form.get("reference_catalog")
     list_lots_json = request.form.get("list_lots")
 
@@ -101,7 +106,11 @@ def register_new_lot():
                               description_subreference=lots['description_subreference'],
                               code_panel=lots['code_panel'],
                               location=lots['location'],
-                              supplier=lots['supplier'])
+                              supplier=lots['supplier'],
+                              purchase_format=lots['purchase_format'],
+                              units_format=lots['units_format'],
+                              import_unit_ics=lots['import_unit_ics'],
+                              import_unit_idibgi=lots['import_unit_idibgi'])
             session1.add(insert_lot)
 
             json_lots = json.dumps(lots)
@@ -272,7 +281,9 @@ def add_stock_lot():
                                             supplier=lots['supplier'],
                                             cost_center_stock=lots['cost_center_stock'],
                                             purchase_format=lots['purchase_format'],
-                                            units_format=lots['units_format'])
+                                            units_format=lots['units_format'],
+                                            import_unit_ics=lots['import_unit_ics'],
+                                            import_unit_idibgi=lots['import_unit_idibgi'])
                     session1.add(insert_lot)
 
                     dict_info_excel = {'catalog_reference': lots['catalog_reference'],
