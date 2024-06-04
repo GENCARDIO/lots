@@ -17,10 +17,20 @@
          * un missatge d'informació amb el resultat.
          */
         function delete_command(id_command){
+            // Comprobem si ha fet servir la seleccio multiple
+            var checkboxes = document.querySelectorAll('input[name="selection_multiple"]:checked');
+            var list_ids_commands = [];
+
+            checkboxes.forEach(function(checkbox) {
+                list_ids_commands.push(checkbox.value);
+            });
+
+            if (!list_ids_commands){
+                list_ids_commands.push(id_command) }
+
             // Crear form data
             var form_data = new FormData();
-
-            form_data.append('id_command', id_command)
+            form_data.append('list_ids_commands', list_ids_commands)
 
             // Creeem l'objecte per l'ajax
             var xhr = new XMLHttpRequest();
@@ -38,7 +48,8 @@
                     else if (response === 'True'){
                         // Eliminar la fila
                         var table = $('#example').DataTable();
-                        table.row(`#${id_command}`).remove().draw(false);
+                        for (var i = 0; i < list_ids_commands.length; i++) {
+                            table.row(`#${list_ids_commands[i]}`).remove().draw(false); }
                         message = "Comanda eliminada correctament."
                         alert_type = 'success'
                     } else {
@@ -218,7 +229,12 @@
                                 <td>{{command.date_create}}</td>
                                 <td>{{command.user_create}}</td>
                                 <td>{{command.cost_center}}</td>
-                                <td><button type="button" class="btn btn-outline-primary btn-sm" onclick="delete_command(`{{command.id}}`)"><i class="fa-solid fa-check-to-slot"></i> Tramitar</button></td>
+                                <td>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="{{command.id}}" id="flexCheckDefault" name="selection_multiple" style="margin-top: 8px;" checked>
+                                        <button type="button" class="btn btn-link btn-sm" onclick="delete_command(`{{command.id}}`)"><i class="fa-solid fa-check-to-slot"></i> Tramitar</button>
+                                    </div>    
+                                </td>
                             </tr>
                         {% endfor %}
                     </tbody>
