@@ -107,6 +107,7 @@
                 if (split_response[0] === 'True'){
                     message = ''
                     if (split_response[1] === 'new'){
+                        show_reactive('')
                         document.getElementById("code_log").value = '';
                         document.getElementById("code_sap").value = '';
                         document.getElementById("manufacturer").value = '';
@@ -114,6 +115,7 @@
                         document.getElementById("description").value = '';
                         document.getElementById('num_lots').value = 0;            
                         document.getElementById('reference_catalog').value = code_search;      
+                        document.getElementById("supplier").value = '';
 
                         // Eliminar tots els divs amb el name divs_new_lots
                         var elementosAEliminar = document.querySelectorAll('div[name="divs_new_lots"]');
@@ -162,6 +164,34 @@
                                         <option>Magatzem</option>
                                         <option>Magatzem Fred</option>
                                     </select>
+                                </div>
+                            </div>
+                            <div class="col-lg-6 col-md-12 col-sm-12" name="divs_new_lots">
+                                <div class="input-group mb-3">
+                                    <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Format compra :</b></span>
+                                    <select class="form-select" id="purchase_format0">
+                                        <option selected>kit</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-lg-6 col-md-12 col-sm-12" name="divs_new_lots">
+                                <div class="input-group mb-3">
+                                    <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Unitats format :</b></span>
+                                    <select class="form-select" id="units_format0">
+                                        <option selected>1</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-lg-6 col-md-6 col-sm-12" name="divs_new_lots">       
+                                <div class="input-group mb-3">
+                                    <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Import u. ICS :</b></span>
+                                    <input type="number" class="form-control" aria-label="TTN" id="import_unit_ics0">
+                                </div>
+                            </div>
+                            <div class="col-lg-6 col-md-6 col-sm-12" name="divs_new_lots">       
+                                <div class="input-group mb-3">
+                                    <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Import u. IDIBGI :</b></span>
+                                    <input type="number" class="form-control" aria-label="TTN" id="import_unit_idibgi0">
                                 </div>
                             </div>
                             `;
@@ -275,26 +305,13 @@
                                 <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts">
                                     <div class="input-group mb-3">
                                         <span class="input-group-text" id="basic-addon1" style="width: 148px;"><b>Format compra :</b></span>
-                                        <select class="form-select" id="purchase_format0_${i}">
-                                            <option selected></option>
-                                            <option>caixa</option>
-                                            <option>ampolla</option>
-                                            <option>bossa</option>
-                                            <option>kit</option>
-                                            <option>rotlle</option>
-                                            <option>unitats</option>
-                                        </select>
+                                        <input type="text" class="form-control" id="purchase_format0_${i}" aria-label="TTN" value="${list_info_lots[i]['purchase_format']}" readonly>
                                     </div>
                                 </div>
                                 <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts">
                                     <div class="input-group mb-3">
                                         <span class="input-group-text" id="basic-addon1" style="width: 148px;"><b>Unitats format :</b></span>
-                                        <select class="form-select" id="units_format0_${i}">
-                                            <option selected>1</option>
-                                            {% for i in range(2, 101) %}
-                                                <option>{{ i }}</option>
-                                            {% endfor %}
-                                        </select>
+                                        <input type="text" class="form-control" id="units_format0_${i}" aria-label="TTN" value="${list_info_lots[i]['units_format']}" readonly>
                                     </div>
                                 </div>
                                 <div class="col-lg-12 col-md-12 col-sm-12" name="divs_subproducts" style="display: none">
@@ -326,17 +343,13 @@
                                 <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts">
                                     <div class="input-group mb-3">
                                         <span class="input-group-text" id="basic-addon1" style="width: 148px;"><b>Format compra :</b></span>
-                                        <select class="form-select" id="purchase_format0_${i}">
-                                            <option selected>kit</option>
-                                        </select>
+                                        <input type="text" class="form-control" id="purchase_format0_${i}" aria-label="TTN" value="${list_info_lots[i]['purchase_format']}" readonly>
                                     </div>
                                 </div>
                                 <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts">
                                     <div class="input-group mb-3">
                                         <span class="input-group-text" id="basic-addon1" style="width: 148px;"><b>Unitats format :</b></span>
-                                        <select class="form-select" id="units_format0_${i}">
-                                            <option selected>1</option>
-                                        </select>
+                                        <input type="text" class="form-control" id="units_format0_${i}" aria-label="TTN" value="${list_info_lots[i]['units_format']}" readonly>
                                     </div>
                                 </div>
                                 <div class="col-lg-12 col-md-12 col-sm-12" name="divs_subproducts">
@@ -465,6 +478,43 @@
                         <input type="text" class="form-control" id='description_subreference${x}' aria-label="TTN" aria-describedby="basic-addon1">
                     </div>
                 </div>
+                <div class="col-lg-6 col-md-12 col-sm-12" name="divs_new_lots">
+                    <div class="input-group mb-3">
+                        <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Format compra :</b></span>
+                        <select class="form-select" id="purchase_format${x}">
+                            <option selected></option>
+                            <option>kit</option>
+                            <option>caixa</option>
+                            <option>ampolla</option>
+                            <option>bossa</option>
+                            <option>rotlle</option>
+                            <option>unitats</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-lg-6 col-md-12 col-sm-12" name="divs_new_lots">
+                    <div class="input-group mb-3">
+                        <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Unitats format :</b></span>
+                        <select class="form-select" id="units_format${x}">
+                            <option selected>1</option>
+                            {% for i in range(2, 101) %}
+                                <option>{{ i }}</option>
+                            {% endfor %}                            
+                        </select>
+                    </div>
+                </div>
+                <div class="col-lg-6 col-md-6 col-sm-12" name="divs_new_lots">       
+                    <div class="input-group mb-3">
+                        <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Import u. ICS :</b></span>
+                        <input type="number" class="form-control" aria-label="TTN" id="import_unit_ics${x}">
+                    </div>
+                </div>
+                <div class="col-lg-6 col-md-6 col-sm-12" name="divs_new_lots">       
+                    <div class="input-group mb-3">
+                        <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Import u. IDIBGI :</b></span>
+                        <input type="number" class="form-control" aria-label="TTN" id="import_unit_idibgi${x}">
+                    </div>
+                </div>
                 `;
 
                 // Agrega el nuevo conjunto debajo del div existente
@@ -534,6 +584,43 @@
                             <option>Magatzem</option>
                             <option>Magatzem Fred</option>
                         </select>
+                    </div>
+                </div>
+                <div class="col-lg-6 col-md-12 col-sm-12" name="divs_new_lots">
+                    <div class="input-group mb-3">
+                        <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Format compra :</b></span>
+                        <select class="form-select" id="purchase_format0">
+                            <option selected></option>
+                            <option>kit</option>
+                            <option>caixa</option>
+                            <option>ampolla</option>
+                            <option>bossa</option>
+                            <option>rotlle</option>
+                            <option>unitats</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-lg-6 col-md-12 col-sm-12" name="divs_new_lots">
+                    <div class="input-group mb-3">
+                        <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Unitats format :</b></span>
+                        <select class="form-select" id="units_format0">
+                            <option selected>1</option>
+                            {% for i in range(2, 101) %}
+                                <option>{{ i }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="col-lg-6 col-md-6 col-sm-12" name="divs_new_lots">       
+                    <div class="input-group mb-3">
+                        <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Import u. ICS :</b></span>
+                        <input type="number" class="form-control" aria-label="TTN" id="import_unit_ics0">
+                    </div>
+                </div>
+                <div class="col-lg-6 col-md-6 col-sm-12" name="divs_new_lots">       
+                    <div class="input-group mb-3">
+                        <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Import u. IDIBGI :</b></span>
+                        <input type="number" class="form-control" aria-label="TTN" id="import_unit_idibgi0">
                     </div>
                 </div>
                 `;
@@ -659,26 +746,13 @@
                             <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts">
                                 <div class="input-group mb-3">
                                     <span class="input-group-text" id="basic-addon1" style="width: 148px;"><b>Format compra :</b></span>
-                                    <select class="form-select" id="purchase_format${x}_${i}">
-                                        <option selected></option>
-                                        <option>caixa</option>
-                                        <option>ampolla</option>
-                                        <option>bossa</option>
-                                        <option>kit</option>
-                                        <option>rotlle</option>
-                                        <option>unitats</option>
-                                    </select>
+                                    <input type="text" class="form-control" id="purchase_format${x}_${i}" aria-label="TTN" value="${list_info_lots[i]['purchase_format']}" readonly>
                                 </div>
                             </div>
                             <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts">
                                 <div class="input-group mb-3">
                                     <span class="input-group-text" id="basic-addon1" style="width: 148px;"><b>Unitats format :</b></span>
-                                    <select class="form-select" id="units_format${x}_${i}">
-                                        <option selected>1</option>
-                                        {% for i in range(2, 101) %}
-                                            <option>{{ i }}</option>
-                                        {% endfor %}
-                                    </select>
+                                    <input type="text" class="form-control" id="units_format${x}_${i}" aria-label="TTN" value="${list_info_lots[i]['units_format']}" readonly>
                                 </div>
                             </div>
                             <div class="col-lg-12 col-md-12 col-sm-12" name="divs_subproducts" style="display: none;">
@@ -709,17 +783,13 @@
                             <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts">
                                 <div class="input-group mb-3">
                                     <span class="input-group-text" id="basic-addon1" style="width: 148px;"><b>Format compra :</b></span>
-                                    <select class="form-select" id="purchase_format${x}_${i}">
-                                        <option selected>kit</option>
-                                    </select>
+                                    <input type="text" class="form-control" id="purchase_format${x}_${i}" aria-label="TTN" value="${list_info_lots[i]['purchase_format']}" readonly>
                                 </div>
                             </div>
                             <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts">
                                 <div class="input-group mb-3">
                                     <span class="input-group-text" id="basic-addon1" style="width: 148px;"><b>Unitats format :</b></span>
-                                    <select class="form-select" id="units_format${x}_${i}">
-                                        <option selected>1</option>
-                                    </select>
+                                    <input type="text" class="form-control" id="units_format${x}_${i}" aria-label="TTN" value="${list_info_lots[i]['units_format']}" readonly>
                                 </div>
                             </div>
                             <div class="col-lg-12 col-md-12 col-sm-12" name="divs_subproducts">
@@ -774,9 +844,13 @@
 
         if (num_lots === '0'){
             let temp_conservation = document.getElementById('temp_conservation0').value
-            const react_or_fungible = document.getElementById('react_or_fungible0').value
-            const code_panel = document.getElementById('code_panel0').value
-            const location = document.getElementById(`location0`).value
+            var react_or_fungible = document.getElementById('react_or_fungible0').value
+            var code_panel = document.getElementById('code_panel0').value
+            var location = document.getElementById(`location0`).value
+            var purchase_format = document.getElementById(`purchase_format0`).value
+            var units_format = document.getElementById(`units_format0`).value
+            var import_unit_ics = document.getElementById(`import_unit_ics0`).value
+            var import_unit_idibgi = document.getElementById(`import_unit_idibgi0`).value
             
             // Si es un fungible aquest camps estaran en blanc i donarà error, per això hi posem --.
             if (react_or_fungible === 'Fungible'){
@@ -786,7 +860,7 @@
             
             // Aquí m'han fet treure la restricció de que el codi SAP i LOG siguin obligatoris
             // if (code_sap !== '' && code_log !== '' && analytical_technique !== '' && description !== '' && reference_catalog !== '' && manufacturer !== '' && location !== '') {
-            if (analytical_technique !== '' && description !== '' && reference_catalog !== '' && manufacturer !== '' && location !== '') {
+            if (analytical_technique !== '' && description !== '' && reference_catalog !== '' && manufacturer !== '' && location !== '' && purchase_format !== '' && import_unit_ics !== '' && import_unit_idibgi !== '') {
                 // Si es un funbile hem de possar aquest camps en blanc.
                 if (react_or_fungible === 'Fungible'){
                     temp_conservation = ''
@@ -805,7 +879,11 @@
                     description_subreference: '',
                     code_panel: code_panel,
                     location: location,
-                    supplier: supplier }; }
+                    supplier: supplier,
+                    purchase_format: purchase_format,
+                    units_format: units_format,
+                    import_unit_ics: import_unit_ics,
+                    import_unit_idibgi: import_unit_idibgi }; }
             else {  
                 alert("No es poden deixar els camps sense omplir.")
                 return
@@ -814,13 +892,23 @@
         }
 
         for (var x = 0; x < num_lots; x++){
-            const id_reactiu = document.getElementById(`id_reactiu${x}`).value
-            const description_subreference = document.getElementById(`description_subreference${x}`).value
-            const temp_conservation = document.getElementById(`temp_conservation${x}`).value
-            const react_or_fungible = document.getElementById(`react_or_fungible${x}`).value
-            const code_panel = document.getElementById(`code_panel${x}`).value
-            const location = document.getElementById(`location${x}`).value
-            if (code_sap !== '' && code_log !== '' && id_reactiu !== '' && analytical_technique !== '' && description !== '' && reference_catalog !== '' && manufacturer !== '' && location !== '') {
+            var id_reactiu = document.getElementById(`id_reactiu${x}`).value
+            var description_subreference = document.getElementById(`description_subreference${x}`).value
+            var temp_conservation = document.getElementById(`temp_conservation${x}`).value
+            var react_or_fungible = document.getElementById(`react_or_fungible${x}`).value
+            var code_panel = document.getElementById(`code_panel${x}`).value
+            var location = document.getElementById(`location${x}`).value
+            if (react_or_fungible === 'Reactiu'){
+                var purchase_format = 'kit'
+                var units_format = '1'
+            } else {
+                var purchase_format = document.getElementById(`purchase_format${x}`).value
+                var units_format = document.getElementById(`units_format${x}`).value
+            }
+            var import_unit_ics = document.getElementById(`import_unit_ics${x}`).value
+            var import_unit_idibgi = document.getElementById(`import_unit_idibgi${x}`).value
+
+            if (id_reactiu !== '' && analytical_technique !== '' && description !== '' && reference_catalog !== '' && manufacturer !== '' && location !== '' && purchase_format !== '' && import_unit_ics !== '' && import_unit_idibgi !== '') {
                 var dict_lots = {
                     code_sap: code_sap,
                     code_log: code_log,
@@ -833,12 +921,15 @@
                     description_subreference: description_subreference,
                     code_panel: code_panel,
                     location: location,
-                    supplier: supplier}; }
+                    supplier: supplier,
+                    purchase_format: purchase_format,
+                    units_format: units_format,
+                    import_unit_ics: import_unit_ics,
+                    import_unit_idibgi: import_unit_idibgi }; }
             else {
                 alert("No es poden deixar els camps sense omplir.")
                 return
             }
-
             list_lots.push(dict_lots)
         }
 
@@ -1143,10 +1234,9 @@
      * 
      * @descriptor Recollim el codi de cerca, assegurant-nos que l'usuari no el deixi en blanc. 
      * Si tot està correcte, enviem una sol·licitud AJAX per fer la consulta. Si la resposta indica
-     * que no s'ha trobat cap coincidència amb el codi de cerca, mostrem un missatge d'error a l'usuari 
-     * amb una explicació corresponent. Si es troba una coincidència, les dades associades es posen en un
-     * diccionari i es presenten als camps de l'HTML. Si es produeix qualsevol error durant el procés, 
-     * es mostra un missatge d'error.
+     * que no s'ha trobat cap coincidència amb el codi de cerca, obrim el modal de registrar article nou.
+     * Si es troba una coincidència, les dades associades es posen en un diccionari i es presenten als
+     * camps de l'HTML. Si es produeix qualsevol error durant el procés es mostra un missatge d'error.
      */
     function info_add_comand(acronim){
         // Crear form data
@@ -1154,6 +1244,8 @@
         
         // Carregar dades al form de l'html
         const code_search = document.getElementById('code_search_command').value
+        const code_panel = document.getElementById('code_panel_command').value
+
 
         var regex = /^\s*$/;
         var only_space = regex.test(code_search);
@@ -1161,6 +1253,7 @@
         if (code_search.length < 3){alert("El codi no to tenir menys de 3 caràcters."); return }
                     
         form_data.append('code_search', code_search)
+        form_data.append('code_panel', code_panel)
 
         // Creeem l'objecte per l'ajax
         var xhr = new XMLHttpRequest();
@@ -1178,8 +1271,112 @@
 
                 if (split_response[0] === 'True'){
                     if (split_response[1] === 'new'){
-                        message = "Aquest article no esta intoduït, abans de fer comandes has d'introduïr-lo a la BD"
-                        alert_type = "warning"}
+                        show_reactive('')
+                        // $('#add_command').modal('show'); 
+                        // message = "Aquest article no esta intoduït, abans de fer comandes has d'introduïr-lo a la BD"
+                        // alert_type = "warning"
+                        message = ''
+                        alert_type = ""
+                    
+                        document.getElementById("code_log").value = '';
+                        document.getElementById("code_sap").value = '';
+                        document.getElementById("manufacturer").value = '';
+                        document.getElementById("analytical_technique").value = '';
+                        document.getElementById("description").value = '';
+                        document.getElementById('num_lots').value = 0;            
+                        document.getElementById('reference_catalog').value = code_search;
+                        document.getElementById("supplier").value = '';  
+
+                        // Eliminar tots els divs amb el name divs_new_lots
+                        var elementosAEliminar = document.querySelectorAll('div[name="divs_new_lots"]');
+                            elementosAEliminar.forEach(function(elemento) {
+                                elemento.remove(); });
+
+                        var miDiv = document.getElementById('div_info_new_lot');
+                        var nuevoHTML = `
+                            <div class="col-lg-6 col-md-6 col-sm-12 divs_reatives" name="divs_new_lots">       
+                                <div class="input-group mb-3">
+                                    <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Temp. conservació :</b></span>
+                                    <select class="form-select" id="temp_conservation0">
+                                        <option>-20</option>
+                                        <option>-80</option>
+                                        <option>Ambient</option>
+                                        <option>4</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-lg-6 col-md-6 col-sm-12" name="divs_new_lots">       
+                                <div class="input-group mb-3">
+                                    <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Reactiu o fungible :</b></span>
+                                    <select class="form-select" id="react_or_fungible0" onchange="show_reactive(this.value)">
+                                        <option>Reactiu</option>
+                                        <option>Fungible</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-lg-6 col-md-6 col-sm-12 divs_reatives" name="divs_new_lots">       
+                                <div class="input-group mb-3">
+                                    <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Id panell(*) :</b></span>
+                                    <input type="text" class="form-control" aria-label="TTN" id="code_panel0" value='${code_panel}'>
+                                </div>
+                            </div>
+                            <div class="col-lg-6 col-md-12 col-sm-12" name="divs_new_lots">       
+                                <div class="input-group mb-3">
+                                    <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Ubicació :</b></span>
+                                    <select class="form-select" id="location0">
+                                        <option selected></option>
+                                        <option>Lab1-Extracció</option>
+                                        <option>Lab2-AP</option>
+                                        <option>Lab3-Màquines</option>
+                                        <option>Lab4-PCR</option>
+                                        <option>Lab5-PrePCR</option>
+                                        <option>Lab Cuina</option>
+                                        <option>Magatzem</option>
+                                        <option>Magatzem Fred</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-lg-6 col-md-12 col-sm-12" name="divs_new_lots">
+                                <div class="input-group mb-3">
+                                    <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Format compra :</b></span>
+                                    <select class="form-select" id="purchase_format0">
+                                        <option selected></option>
+                                        <option>kit</option>
+                                        <option>caixa</option>
+                                        <option>ampolla</option>
+                                        <option>bossa</option>
+                                        <option>rotlle</option>
+                                        <option>unitats</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-lg-6 col-md-12 col-sm-12" name="divs_new_lots">
+                                <div class="input-group mb-3">
+                                    <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Unitats format :</b></span>
+                                    <select class="form-select" id="units_format0">
+                                        <option selected>1</option>
+                                        {% for i in range(2, 101) %}
+                                            <option>{{ i }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-lg-6 col-md-6 col-sm-12" name="divs_new_lots">       
+                                <div class="input-group mb-3">
+                                    <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Import u. ICS :</b></span>
+                                    <input type="number" class="form-control" aria-label="TTN" id="import_unit_ics0">
+                                </div>
+                            </div>
+                            <div class="col-lg-6 col-md-6 col-sm-12" name="divs_new_lots">       
+                                <div class="input-group mb-3">
+                                    <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Import u. IDIBGI :</b></span>
+                                    <input type="number" class="form-control" aria-label="TTN" id="import_unit_idibgi0">
+                                </div>
+                            </div>
+                            `;
+                        // Agrega el nuevo conjunto debajo del div existente
+                        miDiv.insertAdjacentHTML('afterend', nuevoHTML);
+                        $('#add_new_lot').modal('show'); }
                     else {
                         // Tranformem en diccionari el json
                         list_info_lots = JSON.parse(split_response[1]);
@@ -1391,9 +1588,24 @@
                         <div class="col-6" style="padding-top: 10px;">
                             <div class="card" style="width: 19rem;height:100%">
                                 <div class="card-body">
-                                    <h5 class="card-title"><b>1 - Recepcionar articles </b></h5>
-                                    <p class="card-text" style="font-size: 14px;">Afegir articles nous a la BD o afegir stock d'articles que ja tinguem registrats.</p>
-                                    <p class="card-text" style="font-size: 14px;"></p>
+                                    <h5 class="card-title"><b>1 - Comandes / Registra Art.</b></h5>
+                                    <p class="card-text" style="font-size: 14px;">Inserir comanda nova, veure les pendents, poder eliminar-les i inserir productes nous</p>
+                                    <button type="button" onclick="open_modal('search_command')" class="btn btn-outline-primary btn-sm">Inserir <i class="fa-solid fa-file-import"></i></button>
+                                    <form action="/search_commands" style="display: inline;">
+                                        <button type="submit" class="btn btn-outline-success btn-sm">Consultar <i class="fa-solid fa-clipboard-list"></i></button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 col-sm-12">
+                    <div class="row">
+                        <div class="col-6" style="padding-top: 10px;">
+                            <div class="card" style="width: 19rem;height:100%">
+                                <div class="card-body">
+                                    <h5 class="card-title"><b>2 - Recepcionar articles </b></h5>
+                                    <p class="card-text" style="font-size: 14px;">Afegir stock d'articles a la BD que ja tinguem registrats.</p>
                                     <button class="btn btn-outline-primary btn-sm" onclick="insert(`{{session['acronim']}}`)">Recepcionar <i class="fa-solid fa-list-check"></i></button>
                                 </div>
                             </div>
@@ -1405,7 +1617,7 @@
                         <div class="col-6" style="padding-top: 10px;">
                             <div class="card" style="width: 19rem;height:100%">
                                 <div class="card-body">
-                                    <h5 class="card-title"><b>2 - Documents reactius</b></h5>
+                                    <h5 class="card-title"><b>3 - Documents reactius</b></h5>
                                     <p class="card-text" style="font-size: 14px;">Descarregar-te un pdf amb els QC o introduir l'albarà i el certificat.</p>
                                     <button type="button" onclick="open_modal('search_lot')" class="btn btn-outline-primary btn-sm">Documents <i class="fa-solid fa-clipboard-list"></i></button>
                                 </div>
@@ -1418,26 +1630,10 @@
                         <div class="col-6" style="padding-top: 10px;">
                             <div class="card" style="width: 19rem;height:100%">
                                 <div class="card-body">
-                                    <h5 class="card-title"><b>3 - Gestió d'articles</b></h5>
+                                    <h5 class="card-title"><b>4 - Gestió d'articles</b></h5>
                                     <p class="card-text" style="font-size: 14px;">Obrir / tancar lots i consultar registres tant de reactiu com de fungibles</p>
                                     <button type="button" data-toggle="modal" data-target="#open_close_lot" class="btn btn-outline-primary btn-sm">Reactiu <i class="fa-solid fa-vial"></i></button>
                                     <button type="button" data-toggle="modal" data-target="#modal_search_fungible" class="btn btn-outline-success btn-sm">Fungible <i class="fa-solid fa-eye-dropper"></i></button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-lg-3 col-md-6 col-sm-12">
-                    <div class="row">
-                        <div class="col-6" style="padding-top: 10px;">
-                            <div class="card" style="width: 19rem;height:100%">
-                                <div class="card-body">
-                                    <h5 class="card-title"><b>4 - Comandes</b></h5>
-                                    <p class="card-text" style="font-size: 14px;">Inserir comanda nova o veure les pendents i poder eliminar-les</p>
-                                    <button type="button" onclick="open_modal('search_command')" class="btn btn-outline-primary btn-sm">Inserir <i class="fa-solid fa-file-import"></i></button>
-                                    <form action="/search_commands" style="display: inline;">
-                                        <button type="submit" onclick="open_modal('search_command_stock')" class="btn btn-outline-success btn-sm">Consultar <i class="fa-solid fa-clipboard-list"></i></button>
-                                    </form>
                                 </div>
                             </div>
                         </div>
@@ -1780,22 +1976,22 @@
                     <div class="col-lg-12 col-md-12 col-sm-12">       
                         <div class="input-group mb-3">
                             <!-- <span class="input-group-text" id="basic-addon1"><b>Ref. proveïdor, SAP o LOG:</b></span> -->
-                            <span class="input-group-text" id="basic-addon1"><b>Ref. proveïdor o descripció:</b></span>
+                            <span class="input-group-text" id="basic-addon1" style="width: 235px;"><b>Ref. proveïdor o descripció:</b></span>
                             <input type="text" class="form-control" id='code_search_command' list="datalist-codes2" aria-label="TTN" aria-describedby="basic-addon1">
                             <datalist id="datalist-codes2">
                                 {% for description in list_desciption_lots %}
                                     <option value="{{description.description}}">{{description.catalog_reference}} - {{ description.description }}</option>
                                 {% endfor %}
                             </datalist>
-                            <!-- <button type="button" class="btn btn-secondary btn-sm" onclick="show_panel_input('div_panel_comand')"><i class="fa-solid fa-plus"></i> panell</button> -->
+                            <button type="button" class="btn btn-secondary btn-sm" onclick="show_panel_input('div_panel_comand')"><i class="fa-solid fa-plus"></i> panell</button>
                         </div>
                     </div>
-                    <!-- <div class="col-lg-12 col-md-12 col-sm-12" style="display: none;" id="div_panel_comand">       
+                    <div class="col-lg-12 col-md-12 col-sm-12" style="display: none;" id="div_panel_comand">       
                         <div class="input-group mb-3">
-                            <span class="input-group-text" id="basic-addon1"><b>Codi panell (*):</b></span>
-                            <input type="text" class="form-control" id='code_panel' aria-label="TTN" aria-describedby="basic-addon1">
+                            <span class="input-group-text" id="basic-addon1" style="width: 235px;"><b>Codi panell (*):</b></span>
+                            <input type="text" class="form-control" id='code_panel_command' aria-label="TTN" aria-describedby="basic-addon1">
                         </div>
-                    </div> -->
+                    </div>
                     <center><button type="button" class="btn btn-primary btn-sm" onclick="info_add_comand(`{{session['acronim']}}`)">Accepta</button></center>
                 </div>
             </div>
