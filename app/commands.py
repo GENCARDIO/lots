@@ -1,6 +1,6 @@
 from flask import request, session, render_template, flash, send_file
 from app import app
-from app.utils import instant_date, requires_auth, create_excel
+from app.utils import instant_date, requires_auth, create_excel, list_desciption_lots, list_cost_center
 from app.models import session1, Lots, Commands, Cost_center, Stock_lots
 from sqlalchemy import func
 from config import main_dir_docs
@@ -92,7 +92,10 @@ def add_command():
                                   date_close='',
                                   user_close='',
                                   user_id_close='',
-                                  cost_center=cost_center)
+                                  cost_center=cost_center,
+                                  received=0,
+                                  num_received=0,
+                                  code_command='')
         session1.add(insert_command)
 
         select_stock_lot = session1.query(Stock_lots).filter_by(id_lot=key_lot, spent=0, react_or_fungible='Fungible').all()
@@ -119,6 +122,10 @@ def search_commands():
     select_commands = session1.query(Commands, Lots).join(Lots, Commands.id_lot == Lots.key)\
                                                     .filter(Commands.date_close == '')\
                                                     .order_by(Commands.id.desc()).all()
+    # if not select_commands:
+    #     flash("No hi han comandes pendents de tramitar", "warning")
+    #     return render_template('home.html', list_desciption_lots=list_desciption_lots(),
+    #                            list_cost_center=list_cost_center())
 
     return render_template('commands.html', select_commands=select_commands)
 

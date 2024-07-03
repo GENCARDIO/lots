@@ -126,6 +126,9 @@ class Commands(Base):
     user_close = Column(String())
     user_id_close = Column(String())
     cost_center = Column(String())
+    received = Column(Integer())
+    num_received = Column(Integer())
+
 
 
 class Cost_center(Base):
