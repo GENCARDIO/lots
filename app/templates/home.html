@@ -236,6 +236,15 @@
                         document.getElementsByName("title_add_lots")[0].textContent = `Afegeix article : ${list_info_lots[0]['catalog_reference']}`;
 
                         document.getElementById("description_add_lot").value = `${list_info_lots[0]['description']}`;
+                        
+                        document.getElementById("info_command").style.display = 'none';
+
+                        if (list_info_lots[0]['command_pending'] != ''){
+                            document.getElementById("info_command").style.display = 'block';
+                            document.getElementById("text_info_command").innerHTML = "<b><i>" + list_info_lots[0]['command_pending'] + "</i></b>";
+                            document.getElementById('id_command').value = list_info_lots[0]['id_command']
+                            document.getElementById('cost_center_stock').value = list_info_lots[0]['ceco_command']
+                        }
 
                         var HTML = `
                             <div class="col-lg-5 col-md-12 col-sm-12" name="divs_subproducts">
@@ -1017,6 +1026,7 @@
         const revised_by = document.getElementById('revised_by').value
         const date_revised = document.getElementById('date_revised').value
         const cost_center_stock = document.getElementById('cost_center_stock').value
+        const id_command = document.getElementById('id_command').value
 
         if (transport_conditions === '' || packaging === '' || inspected_by === '' || date_inspected === '' || state === '' || comand_number === '' || revised_by === '' || date_revised === '' || cost_center_stock === ''){
             alert("No pots deixar camps buits, revisa els camps de recepció de procute i QC recepció.")
@@ -1036,6 +1046,7 @@
         const file_certificate = file_certificate_input.files[0];
 
         var list_lots = []
+        var unit_total_command = 0
         
         for (var x = 0; x < unit_lots; x++){
             for (var i = 0; i < list_info_lots.length; i++){
@@ -1048,8 +1059,11 @@
                 if (!check_format_date.test(expiry_date) && !["NA", "--"].includes(expiry_date.toUpperCase())) {
                     alert("El format de la data no és correcta, ha de ser dd-mm-yyyy");
                     return }
-                
+
                 var total_units_lot = parseInt(units_lot, 10) * parseInt(units_format, 10);
+                if (i == 0) {
+                    var unit_total_command = parseInt(unit_total_command) + parseInt(total_units_lot)
+                }
 
                 if (lot !== '' && expiry_date !== '' && internal_lot !== ''){
                     const json_info_lot = document.getElementById(`json_info_lot${x}_${i}`).value
@@ -1070,8 +1084,8 @@
                     dict_info_lot.date_revised = date_revised
                     dict_info_lot.cost_center_stock = cost_center_stock
                     dict_info_lot.purchase_format = purchase_format 
-                    dict_info_lot.units_format = units_format }
-
+                    dict_info_lot.units_format = units_format 
+                    dict_info_lot.id_command = id_command }
                 else{
                     alert("No es poden deixar els camps sense omplir.") 
                     return}
@@ -1082,6 +1096,7 @@
         form_data.append('list_lots', jsonData)
         form_data.append('file_delivery_note', file_delivery_note)
         form_data.append('file_certificate', file_certificate)
+        form_data.append('unit_total_command', unit_total_command)
 
         $('#add_lot_info').modal('hide');
 
@@ -1098,10 +1113,13 @@
                     alert_type = 'danger'
                     if (response === 'False_duplicate'){
                         message = `Error, un o més lots ja estan entrats a la bd, no s'ha inserit cap camp, revisa els duplicats i tornar a inserir-lo. <button type="button" class="btn btn-link btn-sm" onclick="open_modal('add_lot_info')">lot</button>`}
+                    else if (response === 'reactive'){
+                        message = "Error, els reactius no poden sumar-se"}
                     else{
                         message = `Error, no s'ha pogut inserir el lot a la bd. <button type="button" class="btn btn-link btn-sm" onclick="open_modal('add_lot_info')">lot</button>`}}
-                else if (response === 'True'){
-                    message = "El lot s'ha introduït correctament."
+                else if (response.includes('True')){
+                    let text_command = response.replace("True_", "");
+                    message = `El lot s'ha introduït correctament.<br>${text_command}`
                     alert_type = 'success'} 
                 else{
                     message = `Error inesperat. <button type="button" class="btn btn-link btn-sm" onclick="open_modal('add_lot_info')">lot</button>`
@@ -1785,6 +1803,13 @@
                 </div>
             </div>
             <div class="modal-body">
+                <div class="row" id="info_command" style="display: none;">
+                    <div class="col-lg-12 col-md-12 col-sm-12">
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="text_info_command" style="width: 100%; background-color: lightgreen; display: flex; align-items: center; justify-content: center; text-align: center;"><b></b></span>
+                        </div>
+                    </div>
+                </div>
                 <div class="row" id="product_reception">
                     <div class="col-lg-6 col-md-12 col-sm-12">       
                         <div class="input-group mb-3">
@@ -1920,6 +1945,7 @@
 
                     <center><button type="button" class="btn btn-primary btn-sm" onclick="add_stock_lot()">Afegir</button></center>
                 </div>
+                <input type="hidden" id="id_command" value="" />
             </div>
           </div>
         </div>

@@ -1,7 +1,7 @@
 from flask import request, session
 from app import app
 from app.utils import instant_date, requires_auth, save_log, send_mail
-from app.models import session1, Lots, Stock_lots
+from app.models import session1, Lots, Stock_lots, Commands
 from sqlalchemy import func, Integer
 from sqlalchemy.sql import cast
 from werkzeug.utils import secure_filename
@@ -39,6 +39,19 @@ def search_add_lot():
         if not select_lot:
             return 'True_//_new'
         else:
+            command_pending = ''
+            id_command = ''
+            ceco_command = ''
+            select_command = session1.query(Commands).filter(Commands.id_lot == select_lot[0].key).filter(Commands.received == 0).filter(Commands.code_command != '').all()
+            if select_command:
+                for command in select_command:
+                    units_command = int(command.units) - int(command.num_received)
+                    command_pending += f"La comanda {command.code_command} esta esperant {units_command} unitat/s."
+                    id_command = f'{command.id};'
+                    ceco_command = command.cost_center
+                if id_command[-1] == ';':
+                    id_command = id_command[:-1]
+
             list_lots = []
             for lot in select_lot:
                 dict_lots = {'key': lot.key,
@@ -60,7 +73,10 @@ def search_add_lot():
                              'purchase_format': lot.purchase_format,
                              'units_format': lot.units_format,
                              'import_unit_ics': lot.import_unit_ics,
-                             'import_unit_idibgi': lot.import_unit_idibgi}
+                             'import_unit_idibgi': lot.import_unit_idibgi,
+                             'command_pending': command_pending,
+                             'id_command': id_command,
+                             'ceco_command': ceco_command}
                 list_lots.append(dict_lots)
             json_data = json.dumps(list_lots)
             return f'True_//_{json_data}'
@@ -150,6 +166,7 @@ def add_stock_lot():
         :return: json amb un True o un False i si es falte una paraula amb el motiu.
         :rtype: json
     '''
+    unit_total_command = request.form.get("unit_total_command")
     list_lots_json = request.form.get("list_lots")
     date = instant_date()
 
@@ -212,7 +229,10 @@ def add_stock_lot():
             json_lots = json.dumps(lots)
             select_lot = session1.query(Stock_lots).filter_by(code_SAP=lots['code_SAP'], code_LOG=lots['code_LOG'], lot=lots['lot'], date_expiry=lots['date_expiry'], internal_lot=lots['internal_lot'], spent=0).first()
             if select_lot:
-                select_lot.units_lot = int(select_lot.units_lot) + int(lots['units_lot'])
+                if select_lot.react_or_fungible != 'Reactiu':
+                    select_lot.units_lot = int(select_lot.units_lot) + int(lots['units_lot'])
+                else:
+                    return 'False_reactive'
                 type_log = 'insert add stock'
                 dict_info_excel = {'catalog_reference': lots['catalog_reference'],
                                    'description': lots['description'],
@@ -308,6 +328,22 @@ def add_stock_lot():
         except Exception:
             session1.rollback()
             return 'False_error'
+
+    split_id_command = list_lots[0]['id_command'].split(';')
+    select_command = session1.query(Commands).filter(Commands.id == split_id_command[0]).first()
+
+    # total_received = int(select_command.num_received) + int(list_lots[0]['units_lot'])
+    total_received = int(select_command.num_received) + int(unit_total_command)
+    select_command.num_received = total_received
+    if int(total_received) == int(select_command.units):
+        message_command = f"S'ha rebut tot el contingut de la comanda {select_command.code_command}"
+        select_command.received = 1
+    elif int(total_received) > int(select_command.units):
+        message_command = f"S'ha rebut més estock del que haviem demanat a la comanda {select_command.code_command}"
+        select_command.received = 1
+    elif int(total_received) < int(select_command.units):
+        message_command = f"Stock guardat, encara falten productes per arribar de la comanda {select_command.code_command}"
+
     session1.commit()
     send_mail(list_info_excel)
-    return 'True'
+    return f'True_{message_command}'
