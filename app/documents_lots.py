@@ -2,7 +2,7 @@ from flask import render_template, request, flash, send_file
 from app import app
 from app.utils import requires_auth, list_desciption_lots, list_cost_center
 from app.models import session1, Lots, Stock_lots
-from sqlalchemy import func
+from sqlalchemy import func, cast, Integer
 from werkzeug.utils import secure_filename
 import os
 from config import main_dir_docs
@@ -126,10 +126,10 @@ def upload_docs():
         split_dirname = filename.split(".")
 
         if dir_name == 'delivery_note':
-            max_number_filename = session1.query(func.max(Stock_lots.delivery_note)).scalar()
+            max_number_filename = session1.query(func.max(cast(Stock_lots.delivery_note, Integer))).scalar()
             dirname = 'albarans'
         elif dir_name == 'certificate':
-            max_number_filename = session1.query(func.max(Stock_lots.certificate)).scalar()
+            max_number_filename = session1.query(func.max(cast(Stock_lots.certificate, Integer))).scalar()
             dirname = 'certificats'
         else:
             return 'False'
@@ -335,3 +335,38 @@ def create_qc():
     except Exception:
         return "False_ No s'ha pogut accedir a la informació dels consums."
     return f'True_//_{name}.pdf'
+
+
+@app.route('/delete_documents', methods=['POST'])
+@requires_auth
+def delete_documents():
+    '''
+        1 - Recollim la informació de l'ajax
+        2 - Amb el codi group insert, seleccionem tots els registres que s'han deliminar
+        3 - ELiminem el registre que necesitem
+        4 - Retorem true o false més un text explicatiu si fa falta.
+
+        :param str group_insert_delete: Identificador de grup dels articles.
+        :param str delivery_note: string que indica si s'ha de borrar o no l'arxiu de comandes
+        :param str certificate: string que indica si s'ha de borrar o no l'arxiu del certificat
+
+        :return: True o false i un text explicatiu si fa falta
+        :rtype: json
+    '''
+    group_insert_delete = request.form.get("group_insert_delete")
+    delivery_note = request.form.get("delivery_note")
+    certificate = request.form.get("certificate")
+
+    try:
+        select_stock_lot = session1.query(Stock_lots).filter(Stock_lots.group_insert == group_insert_delete).all()
+        for stock_lot in select_stock_lot:
+            if delivery_note == 'true':
+                stock_lot.delivery_note = ''
+                stock_lot.type_doc_delivery_note = ''
+            if certificate == 'true':
+                stock_lot.certificate = ''
+                stock_lot.type_doc_certificate = ''
+        session1.commit()
+    except Exception:
+        return "False_No s'ha pogut eliminar el document a la BD"
+    return 'True'

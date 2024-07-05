@@ -19,7 +19,7 @@ WORKDIR /lots
 COPY . /lots
 
 
-RUN pip3 --no-cache-dir install -r requirements.txt
+RUN pip3 --default-timeout=180 --no-cache-dir install -r requirements.txt
 
 
 VOLUME /lots/DB

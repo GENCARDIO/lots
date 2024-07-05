@@ -126,42 +126,42 @@ def send_mail(list_info_excel):
     try:
         create_excel_info_reception(list_info_excel)
 
-        # message = "S'han rebut productes associats a la teva tècnica analítica. T'adjunto un excel amb la informació."
+        message = "S'han rebut productes associats a la teva tècnica analítica. T'adjunto un excel amb la informació."
 
-        # subject = 'UDMMP | Recepció de productes'
+        subject = 'UDMMP | Recepció de productes'
 
-        # em = EmailMessage()
-        # email_sender = "udmmp.girona.ics@gencat.cat"
-        # em["From"] = email_sender
+        em = EmailMessage()
+        email_sender = "udmmp.girona.ics@gencat.cat"
+        em["From"] = email_sender
 
-        # if list_info_excel[0]['analytical_technique'] == 'NGS':
-        #     emails = ['monicacoll.girona.ics@gencat.cat', 'llopez@gencardio.com', 'mcorona.girona.ics@gencat.cat', 'mmoliner@idibgi.org', 'msoriano@idibgi.org', 'mpinsach.girona.ics@gencat.cat', 'aperezs.girona.ics@gencat.cat', 'asimon.girona.ics@gencat.cat']
-        #     em["To"] = ', '.join(emails)
-        # elif list_info_excel[0]['analytical_technique'] == 'Genotipat2':
-        #     emails = ['nneto.girona.ics@gencat.cat', 'mpuigmule.girona.ics@gencat.cat', 'mmoliner@idibgi.org']
-        #     em["To"] = ', '.join(emails)
-        # elif list_info_excel[0]['analytical_technique'] == 'Sanger2':
-        #     emails = ['ferran.pico@gencardio.com', 'aardila@idibgi.org', 'aperezs.girona.ics@gencat.cat']
-        #     em["To"] = ', '.join(emails)
-        # elif list_info_excel[0]['analytical_technique'] == 'Extracció2':
-        #     emails = ['abatchelli.girona.ics@gencat.cat', 'igomez.girona.ics@gencat.cat']
-        #     em["To"] = ', '.join(emails)
-        # else:
-        #     # emails = ['asimon.girona.ics@gencat.cat', 'asimon@gencardio.com']
-        #     # em["To"] = ', '.join(emails)
-        #     return
+        if list_info_excel[0]['analytical_technique'] == 'NGS':
+            emails = ['monicacoll.girona.ics@gencat.cat', 'llopez@gencardio.com', 'mcorona.girona.ics@gencat.cat', 'mmoliner@idibgi.org', 'msoriano@idibgi.org', 'mpinsach.girona.ics@gencat.cat', 'aperezs.girona.ics@gencat.cat', 'asimon.girona.ics@gencat.cat']
+            em["To"] = ', '.join(emails)
+        elif list_info_excel[0]['analytical_technique'] == 'Genotipat2':
+            emails = ['nneto.girona.ics@gencat.cat', 'mpuigmule.girona.ics@gencat.cat', 'mmoliner@idibgi.org']
+            em["To"] = ', '.join(emails)
+        elif list_info_excel[0]['analytical_technique'] == 'Sanger2':
+            emails = ['ferran.pico@gencardio.com', 'aardila@idibgi.org', 'aperezs.girona.ics@gencat.cat']
+            em["To"] = ', '.join(emails)
+        elif list_info_excel[0]['analytical_technique'] == 'Extracció2':
+            emails = ['abatchelli.girona.ics@gencat.cat', 'igomez.girona.ics@gencat.cat']
+            em["To"] = ', '.join(emails)
+        else:
+            # emails = ['asimon.girona.ics@gencat.cat', 'asimon@gencardio.com']
+            # em["To"] = ', '.join(emails)
+            return
 
-        # em["Subject"] = subject
-        # em.set_content(message)
+        em["Subject"] = subject
+        em.set_content(message)
 
-        # with open(f"{main_dir_docs}/recepcio_stock.csv", 'rb') as file:
-        #     file_data = file.read()
-        #     file_name = 'recepcio_stock.csv'
-        # em.add_attachment(file_data, maintype='application', subtype='octet-stream', filename=file_name)
+        with open(f"{main_dir_docs}/recepcio_stock.csv", 'rb') as file:
+            file_data = file.read()
+            file_name = 'recepcio_stock.csv'
+        em.add_attachment(file_data, maintype='application', subtype='octet-stream', filename=file_name)
 
-        # with smtplib.SMTP("172.16.2.137", 25) as smtp:
-        #     smtp.sendmail(email_sender, emails, em.as_string())
-        #     # smtp.send_message(em)
+        with smtplib.SMTP("172.16.2.137", 25) as smtp:
+            smtp.sendmail(email_sender, emails, em.as_string())
+            # smtp.send_message(em)
     except Exception:
         return
     return
@@ -181,13 +181,21 @@ def create_excel_info_reception(list_info_excel):
         archivo = f"{main_dir_docs}/recepcio_stock.csv"
         csv = open(archivo, "w")
         # Inserir linies al csv
-        csv.write('Nom producte;Referencia producte;Nom producte subreferencia;Identificador subreferencia;Lot;Lot intern;Data recepcio;Data caducitat;\n')
+
+        if str(list_info_excel[0]['description_subreference']) == '' or str(list_info_excel[0]['description_subreference']) == 'None':
+            csv.write('Usuari petició;Nom producte;Referencia producte;Lot;Lot intern;Data recepcio;Data caducitat;\n')
+        else:
+            csv.write('Usuari petició;Nom producte;Referencia producte;Nom producte subreferencia;Identificador subreferencia;Lot;Lot intern;Data recepcio;Data caducitat;\n')
 
         for info_excel in list_info_excel:
-            linia_csv = str(info_excel['catalog_reference']) + ';'
+            linia_csv = str(info_excel['user_add_command']) + ';'
+            linia_csv += str(info_excel['catalog_reference']) + ';'
             linia_csv += str(info_excel['description']) + ';'
-            linia_csv += str(info_excel['description_subreference']) + ';'
-            linia_csv += str(info_excel['id_reactive']) + ';'
+            if str(info_excel['description_subreference']) == '' or str(info_excel['description_subreference']) == 'None':
+                pass
+            else:
+                linia_csv += str(info_excel['description_subreference']) + ';'
+                linia_csv += str(info_excel['id_reactive']) + ';'
             linia_csv += str(info_excel['lot']) + ';'
             linia_csv += str(info_excel['internal_lot_value']) + ';'
             linia_csv += str(info_excel['reception_date']) + ';'

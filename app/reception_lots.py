@@ -42,6 +42,7 @@ def search_add_lot():
             command_pending = ''
             id_command = ''
             ceco_command = ''
+            user_add_command = ''
             select_command = session1.query(Commands).filter(Commands.id_lot == select_lot[0].key).filter(Commands.received == 0).filter(Commands.code_command != '').all()
             if select_command:
                 for command in select_command:
@@ -49,6 +50,7 @@ def search_add_lot():
                     command_pending += f"La comanda {command.code_command} esta esperant {units_command} unitat/s."
                     id_command = f'{command.id};'
                     ceco_command = command.cost_center
+                    user_add_command = command.user_create
                 if id_command[-1] == ';':
                     id_command = id_command[:-1]
 
@@ -76,7 +78,8 @@ def search_add_lot():
                              'import_unit_idibgi': lot.import_unit_idibgi,
                              'command_pending': command_pending,
                              'id_command': id_command,
-                             'ceco_command': ceco_command}
+                             'ceco_command': ceco_command,
+                             'user_add_command': user_add_command}
                 list_lots.append(dict_lots)
             json_data = json.dumps(list_lots)
             return f'True_//_{json_data}'
@@ -242,7 +245,8 @@ def add_stock_lot():
                                    'internal_lot_value': lots['internal_lot'],
                                    'reception_date': lots['reception_date'],
                                    'date_expiry': lots['date_expiry'],
-                                   'analytical_technique': lots['analytical_technique']}
+                                   'analytical_technique': lots['analytical_technique'],
+                                   'user_add_command': lots['user_add_command']}
                 list_info_excel.append(dict_info_excel)
             else:
                 type_log = 'insert new stock'
@@ -314,7 +318,8 @@ def add_stock_lot():
                                        'internal_lot_value': internal_lot_value,
                                        'reception_date': lots['reception_date'],
                                        'date_expiry': lots['date_expiry'],
-                                       'analytical_technique': lots['analytical_technique']}
+                                       'analytical_technique': lots['analytical_technique'],
+                                       'user_add_command': lots['user_add_command']}
                     list_info_excel.append(dict_info_excel)
 
             select_lot = session1.query(Stock_lots).order_by(Stock_lots.id.desc()).first()
