@@ -23,7 +23,7 @@ def search_add_command():
     '''
     code_search = request.form.get("code_search")
     code_panel = request.form.get("code_panel")
-
+    
     select_lot = session1.query(Lots).filter(func.lower(Lots.catalog_reference) == code_search.lower()).filter(Lots.active == 1).first()
     if not select_lot:
         select_lot = session1.query(Lots).filter(func.lower(Lots.description) == code_search.lower()).filter(Lots.active == 1).first()
@@ -195,13 +195,14 @@ def command_success():
                          'id_lot': command.id_lot,
                          'catalog_reference': lot.catalog_reference,
                          'description': lot.description,
+                         'code_command': command.code_command,
                          #  'id_reactive': lot.id_reactive,
                          #  'description_subreference': lot.description_subreference,
                          'code_SAP': lot.code_SAP,
                          'code_LOG': lot.code_LOG,
                          'units': command.units,
-                         'date_create': command.date_create,
-                         'user_create': command.user_create,
+                         # 'date_create': command.date_create,
+                         # 'user_create': command.user_create,
                          'date_close': command.date_close,
                          'user_close': command.user_close,
                          'cost_center': command.cost_center}

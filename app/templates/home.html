@@ -243,6 +243,7 @@
                             document.getElementById("info_command").style.display = 'block';
                             document.getElementById("text_info_command").innerHTML = "<b><i>" + list_info_lots[0]['command_pending'] + "</i></b>";
                             document.getElementById('id_command').value = list_info_lots[0]['id_command']
+                            document.getElementById('user_add_command').value = list_info_lots[0]['user_add_command']
                             document.getElementById('cost_center_stock').value = list_info_lots[0]['ceco_command']
                         }
 
@@ -845,7 +846,7 @@
         const description = document.getElementById(`description`).value
         const supplier = document.getElementById(`supplier`).value
         
-        if (reference_catalog === code_sap || reference_catalog === code_log || code_sap === code_log && code_log !== '' && codi_sap != '') {
+        if (reference_catalog === code_sap || reference_catalog === code_log || code_sap === code_log && code_log !== '' && code_sap != '') {
             alert("Els camps ref. proveïdor, codi SAP i codi LOG no poden ser iguals")
             return } 
 
@@ -860,6 +861,9 @@
             var units_format = document.getElementById(`units_format0`).value
             var import_unit_ics = document.getElementById(`import_unit_ics0`).value
             var import_unit_idibgi = document.getElementById(`import_unit_idibgi0`).value
+
+            if (import_unit_ics == ''){ import_unit_ics = '0'}
+            if (import_unit_idibgi == ''){ import_unit_idibgi = '0'}
             
             // Si es un fungible aquest camps estaran en blanc i donarà error, per això hi posem --.
             if (react_or_fungible === 'Fungible'){
@@ -869,7 +873,7 @@
             
             // Aquí m'han fet treure la restricció de que el codi SAP i LOG siguin obligatoris
             // if (code_sap !== '' && code_log !== '' && analytical_technique !== '' && description !== '' && reference_catalog !== '' && manufacturer !== '' && location !== '') {
-            if (analytical_technique !== '' && description !== '' && reference_catalog !== '' && manufacturer !== '' && location !== '' && purchase_format !== '' && import_unit_ics !== '' && import_unit_idibgi !== '') {
+            if (analytical_technique !== '' && description !== '' && reference_catalog !== '' && manufacturer !== '' && location !== '' && purchase_format !== '') {
                 // Si es un funbile hem de possar aquest camps en blanc.
                 if (react_or_fungible === 'Fungible'){
                     temp_conservation = ''
@@ -1027,6 +1031,7 @@
         const date_revised = document.getElementById('date_revised').value
         const cost_center_stock = document.getElementById('cost_center_stock').value
         const id_command = document.getElementById('id_command').value
+        const user_add_command = document.getElementById('user_add_command').value      
 
         if (transport_conditions === '' || packaging === '' || inspected_by === '' || date_inspected === '' || state === '' || comand_number === '' || revised_by === '' || date_revised === '' || cost_center_stock === ''){
             alert("No pots deixar camps buits, revisa els camps de recepció de procute i QC recepció.")
@@ -1085,7 +1090,8 @@
                     dict_info_lot.cost_center_stock = cost_center_stock
                     dict_info_lot.purchase_format = purchase_format 
                     dict_info_lot.units_format = units_format 
-                    dict_info_lot.id_command = id_command }
+                    dict_info_lot.id_command = id_command,
+                    dict_info_lot.user_add_command = user_add_command}
                 else{
                     alert("No es poden deixar els camps sense omplir.") 
                     return}
@@ -1196,6 +1202,9 @@
         var element = document.getElementById(div_panel);
         var estiloDisplay = window.getComputedStyle(element).display;
         // Verificar si el estilo de visualización es 'block' o 'none' y hacer algo en consecuencia
+        document.getElementById('code_panel').value = '';
+        document.getElementById('code_panel_search').value = '';
+        document.getElementById('code_panel_command').value = '';
         if (estiloDisplay === 'block') {
             document.getElementById(div_panel).style.display = 'none';
         } else if (estiloDisplay === 'none') {
@@ -1946,6 +1955,7 @@
                     <center><button type="button" class="btn btn-primary btn-sm" onclick="add_stock_lot()">Afegir</button></center>
                 </div>
                 <input type="hidden" id="id_command" value="" />
+                <input type="hidden" id="user_add_command" value="" />
             </div>
           </div>
         </div>
@@ -2052,7 +2062,7 @@
                     </div>
                     <div class="col-lg-6 col-md-12 col-sm-12">
                         <div class="input-group mb-3">
-                            <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>Codi LOC:</b></span>
+                            <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>Codi LOG:</b></span>
                             <input type="text" class="form-control" id="code_loc_command" aria-label="TTN" style="background-color: white;" readonly>
                         </div>
                     </div>

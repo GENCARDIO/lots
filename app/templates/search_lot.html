@@ -103,19 +103,20 @@
                     else if (response.includes('True')){
                         var split_response = response.split('///')
                         var id_lots = split_response[1].split(';')
-
                         message = "El document s'ha carregat correctament."
                         alert_type = 'success'
                         // Obtener la referencia al elemento tr por su ID
                         for (var i = 0; i < id_lots.length; i++) {
                             var buttonElement = document.getElementById(`${id_lots[i]}_${dir_name}`);
-                            buttonElement.classList.remove("btn-outline-danger");
-                            buttonElement.classList.add("btn-outline-success");
+                            if (buttonElement) {
+                                buttonElement.classList.remove("btn-outline-danger");
+                                buttonElement.classList.add("btn-outline-success");
 
-                            if (dir_name == 'delivery_note'){
-                                buttonElement.setAttribute("onclick", "download_doc('albarans', `" + split_response[2] + "`, `" + split_response[3] + "`)");
-                            } else {
-                                buttonElement.setAttribute("onclick", "download_doc('certificats', `" + split_response[2] + "`, `" + split_response[3] + "`)");
+                                if (dir_name == 'delivery_note'){
+                                    buttonElement.setAttribute("onclick", "download_doc('albarans', `" + split_response[2] + "`, `" + split_response[3] + "`)");
+                                } else {
+                                    buttonElement.setAttribute("onclick", "download_doc('certificats', `" + split_response[2] + "`, `" + split_response[3] + "`)");
+                                }
                             }
                         }
                     } else {
@@ -218,6 +219,102 @@
             xhr.send(form_data)
         }
 
+
+        function open_delete_documents(group_insert, lot_id){
+            document.getElementById('group_insert_delete').value = group_insert;
+            document.getElementById('lot_id_delete').value = lot_id;
+            document.getElementById('inlineCheckbox1').checked = false;
+            document.getElementById('inlineCheckbox2').checked = false;
+            open_modal('modal_delete_documents')
+        }
+
+
+        function delete_documents(){
+            // Crear form data
+            var form_data = new FormData();
+
+            // Carregar dades al form de l'html
+            const group_insert_delete = document.getElementById('group_insert_delete').value
+            const lot_id_delete = document.getElementById('lot_id_delete').value
+            const delivery_note = document.getElementById('inlineCheckbox1').checked
+            const certificate = document.getElementById('inlineCheckbox2').checked
+            
+
+            form_data.append('group_insert_delete', group_insert_delete)
+            form_data.append('delivery_note', delivery_note)
+            form_data.append('certificate', certificate)
+            
+            if (delivery_note == false && certificate == false){
+                alert("S'ha de seleccionar com a mínim una de les 2 opcions")
+                return
+            }
+
+            close_modal('modal_delete_documents')
+
+            // Creeem l'objecte per l'ajax
+            var xhr = new XMLHttpRequest();
+            // 1er argument si es pots o get
+            // 2n argument url o ruta
+            // 3r argumemt true sempre
+            
+            xhr.open('POST', '/delete_documents', true);
+            xhr.onload = function(){
+                if (xhr.status === 200) {
+                    var response = xhr.responseText;
+                    if (response.includes('False')){
+                        alert_type = 'danger'
+                        message = response.replace("False_", "");}
+                    else if (response.includes('True')){
+                        message = "El document/s eliminat/s correctament."
+                        alert_type = 'success'
+                        // Obtener la referencia al elemento tr por su ID
+                        
+                        if (delivery_note){
+                            var buttonElement = document.getElementById(`${lot_id_delete}_delivery_note`);
+                            if (buttonElement) {
+                                buttonElement.classList.remove("btn-outline-success");
+                                buttonElement.classList.add("btn-outline-danger");
+                                buttonElement.setAttribute("onclick", "open_upload_documents('delivery_note', `" + group_insert_delete + "`)");
+                            }
+                        }
+
+                        if (certificate){
+                            var buttonElement = document.getElementById(`${lot_id_delete}_certificate`);
+                            if (buttonElement) {
+                                buttonElement.classList.remove("btn-outline-success");
+                                buttonElement.classList.add("btn-outline-danger");
+                                buttonElement.setAttribute("onclick", "open_upload_documents('certificate', `" + group_insert_delete + "`)");
+                            }
+                        }
+                    } else {
+                        message = `Error inesperat. Si persisteix l'error contacta amb un administrador`
+                        alert_type = 'danger'
+                    }
+                }
+                else {
+                    message = `Error, No s'ha pogut realitzar l'operació. Si persisteix l'error contacta amb un administrador`
+                    alert_type = 'danger' }
+
+                var flashContainer = document.querySelector(".d-flex.justify-content-center .row");
+                // Eliminar la alerta anterior, si existe
+                if (flashContainer.children.length > 0) {
+                    flashContainer.removeChild(flashContainer.children[0]); }
+
+                var newFlash = document.createElement("div");
+                newFlash.className = "alert alert-" + alert_type + " alert-dismissible fade show ml-3";
+                newFlash.role = "alert";
+                newFlash.innerHTML = "<span>" + message + "</span>" + 
+                                    '<button type="button" class="close" data-dismiss="alert" aria-label="Close">' +
+                                    '<span aria-hidden="true">&times;</span>' +
+                                    '</button>';
+                flashContainer.appendChild(newFlash);
+                flashContainer.style.paddingTop = "20px";
+            }
+
+            xhr.send(form_data)
+        }
+
+
     </script>
     <style>
         #example thead input[type="text"] {
@@ -230,8 +327,8 @@
     {% include 'NavBar/navBar.html' %}
     <div class="jumbotron bg-grey text-black jomboton-imgae shadow d-flex justify-content-between align-items-center" style="width: 90%; height: 80px; margin: 0 auto; padding-top: 0px; padding-bottom: 0px;">
         <h1 class="mb-0">
-            <span style="color: darkblue;">( 2 ) </span> - 
-            <span>Gestió de documents</span>
+            <span style="color: darkblue;">( 3 ) </span> - 
+            <span>Gestió documental</span>
         </h1>
     </div>
     <br>
@@ -286,7 +383,7 @@
                             <th style="min-width: 70px; max-width: 130px;">Data arribada</th>
                             <th style="min-width: 70px; max-width: 130px;">Caducitat</th>
                             <th style="min-width: 50px; max-width: 130px;">QC</th>
-                            <th style="max-width: 160px;">Docs.</th>
+                            <th style="max-width: 220px;">Docs.</th>
                             <th>Observacions</th>
                         </tr>
                     </thead>
@@ -319,6 +416,8 @@
                                     {% else %}
                                         <button type="button" class="btn btn-outline-success btn-sm" id='{{lot.id}}_certificate' onclick="download_doc('certificats', `{{lot.certificate}}`, `{{lot.type_doc_certificate}}`)"><i class="fa-solid fa-file-arrow-down"></i> Certificat</button>
                                     {% endif %}
+
+                                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="open_delete_documents(`{{lot.group_insert}}`, `{{lot.id}}`)"><i class="fa-solid fa-trash"></i></button>
                                     </div>
                                 </td>
                                 <td>{{lot.observations_inspection}}</td>
@@ -362,6 +461,40 @@
           </div>
         </div>
     </div>
+
+
+    <div class="modal fade"  id="modal_delete_documents" tabindex="-1" role="dialog" aria-labelledby="editRegister" aria-hidden="true">
+        <div class="modal-dialog" tabindex="-1" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="title">Eliminar documents</h5>
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="close_modal('modal_delete_documents')"><span aria-hidden="true">&times;</span></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-lg-12 col-md-12 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <!-- <span class="input-group-text" id="basic-addon1"><b>Ref. proveïdor, SAP o LOG:</b></span> -->
+                            <span class="input-group-text" id="basic-addon1"><b>Document a eliminar :</b></span>&nbsp;&nbsp;&nbsp;&nbsp;
+                            <div class="form-check form-check-inline" style="padding-top: 9px;">
+                                <input class="form-check-input" type="checkbox" id="inlineCheckbox1" value="albara">
+                                <label class="form-check-label" for="inlineCheckbox1">Albarà</label>
+                            </div>
+                            <div class="form-check form-check-inline" style="padding-top: 9px;">
+                                <input class="form-check-input" type="checkbox" id="inlineCheckbox2" value="certificat">
+                                <label class="form-check-label" for="inlineCheckbox2">Certificat</label>
+                            </div>
+                        </div>
+                    </div>
+                    <center><button type="button" class="btn btn-danger btn-sm" onclick="delete_documents()">Eliminar</button></center>
+                    <input type="hidden" id="group_insert_delete" value="" />
+                    <input type="hidden" id="lot_id_delete" value="" />
+                </div>
+            </div>
+          </div>
+        </div>
+    </div>
+
 
     <script>
         $(document).ready(function() {
