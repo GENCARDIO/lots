@@ -161,7 +161,7 @@ def send_mail(list_info_excel):
 
         with smtplib.SMTP("172.16.2.137", 25) as smtp:
             smtp.sendmail(email_sender, emails, em.as_string())
-            # smtp.send_message(em)
+            smtp.send_message(em)
     except Exception:
         return
     return

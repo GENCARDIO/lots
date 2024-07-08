@@ -336,18 +336,20 @@ def add_stock_lot():
 
     split_id_command = list_lots[0]['id_command'].split(';')
     select_command = session1.query(Commands).filter(Commands.id == split_id_command[0]).first()
-
-    # total_received = int(select_command.num_received) + int(list_lots[0]['units_lot'])
-    total_received = int(select_command.num_received) + int(unit_total_command)
-    select_command.num_received = total_received
-    if int(total_received) == int(select_command.units):
-        message_command = f"S'ha rebut tot el contingut de la comanda {select_command.code_command}"
-        select_command.received = 1
-    elif int(total_received) > int(select_command.units):
-        message_command = f"S'ha rebut més estock del que haviem demanat a la comanda {select_command.code_command}"
-        select_command.received = 1
-    elif int(total_received) < int(select_command.units):
-        message_command = f"Stock guardat, encara falten productes per arribar de la comanda {select_command.code_command}"
+    if select_command:
+        # total_received = int(select_command.num_received) + int(list_lots[0]['units_lot'])
+        total_received = int(select_command.num_received) + int(unit_total_command)
+        select_command.num_received = total_received
+        if int(total_received) == int(select_command.units):
+            message_command = f"S'ha rebut tot el contingut de la comanda {select_command.code_command}"
+            select_command.received = 1
+        elif int(total_received) > int(select_command.units):
+            message_command = f"S'ha rebut més estock del que haviem demanat a la comanda {select_command.code_command}"
+            select_command.received = 1
+        elif int(total_received) < int(select_command.units):
+            message_command = f"Stock guardat, encara falten productes per arribar de la comanda {select_command.code_command}"
+    else:
+        message_command = ''
 
     session1.commit()
     send_mail(list_info_excel)
