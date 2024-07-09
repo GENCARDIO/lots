@@ -73,7 +73,7 @@
      * També es fan comprobacions de que el que ens ha entrat per paràmetre sigui correcta.
      * 
      */
-    function info_add_lot(acronim){
+    function info_add_lot(acronim, rol){
         document.getElementById('unit_lots').value = 1;
         // Crear form data
         var form_data = new FormData();
@@ -107,97 +107,102 @@
                 if (split_response[0] === 'True'){
                     message = ''
                     if (split_response[1] === 'new'){
-                        show_reactive('')
-                        document.getElementById("code_log").value = '';
-                        document.getElementById("code_sap").value = '';
-                        document.getElementById("manufacturer").value = '';
-                        document.getElementById("analytical_technique").value = '';
-                        document.getElementById("description").value = '';
-                        document.getElementById('num_lots').value = 0;            
-                        document.getElementById('reference_catalog').value = code_search;      
-                        document.getElementById("supplier").value = '';
+                        if (rol === 'admin'){
+                            show_reactive('')
+                            document.getElementById("code_log").value = '';
+                            document.getElementById("code_sap").value = '';
+                            document.getElementById("manufacturer").value = '';
+                            document.getElementById("analytical_technique").value = '';
+                            document.getElementById("description").value = '';
+                            document.getElementById('num_lots').value = 0;            
+                            document.getElementById('reference_catalog').value = code_search;      
+                            document.getElementById("supplier").value = '';
 
-                        // Eliminar tots els divs amb el name divs_new_lots
-                        var elementosAEliminar = document.querySelectorAll('div[name="divs_new_lots"]');
-                            elementosAEliminar.forEach(function(elemento) {
-                                elemento.remove(); });
+                            // Eliminar tots els divs amb el name divs_new_lots
+                            var elementosAEliminar = document.querySelectorAll('div[name="divs_new_lots"]');
+                                elementosAEliminar.forEach(function(elemento) {
+                                    elemento.remove(); });
 
-                        var miDiv = document.getElementById('div_info_new_lot');
-                        var nuevoHTML = `
-                            <div class="col-lg-6 col-md-6 col-sm-12 divs_reatives" name="divs_new_lots">       
-                                <div class="input-group mb-3">
-                                    <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Temp. conservació :</b></span>
-                                    <select class="form-select" id="temp_conservation0">
-                                        <option>-20</option>
-                                        <option>-80</option>
-                                        <option>Ambient</option>
-                                        <option>4</option>
-                                    </select>
+                            var miDiv = document.getElementById('div_info_new_lot');
+                            var nuevoHTML = `
+                                <div class="col-lg-6 col-md-6 col-sm-12 divs_reatives" name="divs_new_lots">       
+                                    <div class="input-group mb-3">
+                                        <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Temp. conservació :</b></span>
+                                        <select class="form-select" id="temp_conservation0">
+                                            <option>-20</option>
+                                            <option>-80</option>
+                                            <option>Ambient</option>
+                                            <option>4</option>
+                                        </select>
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="col-lg-6 col-md-6 col-sm-12" name="divs_new_lots">       
-                                <div class="input-group mb-3">
-                                    <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Reactiu o fungible :</b></span>
-                                    <select class="form-select" id="react_or_fungible0" onchange="show_reactive(this.value)">
-                                        <option>Reactiu</option>
-                                        <option>Fungible</option>
-                                    </select>
+                                <div class="col-lg-6 col-md-6 col-sm-12" name="divs_new_lots">       
+                                    <div class="input-group mb-3">
+                                        <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Reactiu o fungible :</b></span>
+                                        <select class="form-select" id="react_or_fungible0" onchange="show_reactive(this.value)">
+                                            <option>Reactiu</option>
+                                            <option>Fungible</option>
+                                        </select>
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="col-lg-6 col-md-6 col-sm-12 divs_reatives" name="divs_new_lots">       
-                                <div class="input-group mb-3">
-                                    <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Id panell(*) :</b></span>
-                                    <input type="text" class="form-control" aria-label="TTN" id="code_panel0" value='${code_panel}'>
+                                <div class="col-lg-6 col-md-6 col-sm-12 divs_reatives" name="divs_new_lots">       
+                                    <div class="input-group mb-3">
+                                        <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Id panell(*) :</b></span>
+                                        <input type="text" class="form-control" aria-label="TTN" id="code_panel0" value='${code_panel}'>
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="col-lg-6 col-md-12 col-sm-12" name="divs_new_lots">       
-                                <div class="input-group mb-3">
-                                    <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Ubicació :</b></span>
-                                    <select class="form-select" id="location0">
-                                        <option selected></option>
-                                        <option>Lab1-Extracció</option>
-                                        <option>Lab2-AP</option>
-                                        <option>Lab3-Màquines</option>
-                                        <option>Lab4-PCR</option>
-                                        <option>Lab5-PrePCR</option>
-                                        <option>Lab Cuina</option>
-                                        <option>Magatzem</option>
-                                        <option>Magatzem Fred</option>
-                                    </select>
+                                <div class="col-lg-6 col-md-12 col-sm-12" name="divs_new_lots">       
+                                    <div class="input-group mb-3">
+                                        <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Ubicació :</b></span>
+                                        <select class="form-select" id="location0">
+                                            <option selected></option>
+                                            <option>Lab1-Extracció</option>
+                                            <option>Lab2-AP</option>
+                                            <option>Lab3-Màquines</option>
+                                            <option>Lab4-PCR</option>
+                                            <option>Lab5-PrePCR</option>
+                                            <option>Lab Cuina</option>
+                                            <option>Magatzem</option>
+                                            <option>Magatzem Fred</option>
+                                        </select>
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="col-lg-6 col-md-12 col-sm-12" name="divs_new_lots">
-                                <div class="input-group mb-3">
-                                    <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Format compra :</b></span>
-                                    <select class="form-select" id="purchase_format0">
-                                        <option selected>kit</option>
-                                    </select>
+                                <div class="col-lg-6 col-md-12 col-sm-12" name="divs_new_lots">
+                                    <div class="input-group mb-3">
+                                        <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Format compra :</b></span>
+                                        <select class="form-select" id="purchase_format0">
+                                            <option selected>kit</option>
+                                        </select>
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="col-lg-6 col-md-12 col-sm-12" name="divs_new_lots">
-                                <div class="input-group mb-3">
-                                    <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Unitats format :</b></span>
-                                    <select class="form-select" id="units_format0">
-                                        <option selected>1</option>
-                                    </select>
+                                <div class="col-lg-6 col-md-12 col-sm-12" name="divs_new_lots">
+                                    <div class="input-group mb-3">
+                                        <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Unitats format :</b></span>
+                                        <select class="form-select" id="units_format0">
+                                            <option selected>1</option>
+                                        </select>
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="col-lg-6 col-md-6 col-sm-12" name="divs_new_lots">       
-                                <div class="input-group mb-3">
-                                    <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Import u. ICS :</b></span>
-                                    <input type="number" class="form-control" aria-label="TTN" id="import_unit_ics0">
+                                <div class="col-lg-6 col-md-6 col-sm-12" name="divs_new_lots">       
+                                    <div class="input-group mb-3">
+                                        <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Import u. ICS :</b></span>
+                                        <input type="number" class="form-control" aria-label="TTN" id="import_unit_ics0">
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="col-lg-6 col-md-6 col-sm-12" name="divs_new_lots">       
-                                <div class="input-group mb-3">
-                                    <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Import u. IDIBGI :</b></span>
-                                    <input type="number" class="form-control" aria-label="TTN" id="import_unit_idibgi0">
+                                <div class="col-lg-6 col-md-6 col-sm-12" name="divs_new_lots">       
+                                    <div class="input-group mb-3">
+                                        <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Import u. IDIBGI :</b></span>
+                                        <input type="number" class="form-control" aria-label="TTN" id="import_unit_idibgi0">
+                                    </div>
                                 </div>
-                            </div>
-                            `;
-                        // Agrega el nuevo conjunto debajo del div existente
-                        miDiv.insertAdjacentHTML('afterend', nuevoHTML);
-                        $('#add_new_lot').modal('show'); }
+                                `;
+                            // Agrega el nuevo conjunto debajo del div existente
+                            miDiv.insertAdjacentHTML('afterend', nuevoHTML);
+                            $('#add_new_lot').modal('show'); }
+                        else { 
+                            message = `L'article ${code_search} no està registrat, contacta amb un administrador perquè registri el producte.`
+                            alert_type = 'warning'}
+                    }
                     else {
                         // obtenir i formatar la data
                         var current_date = new Date();
@@ -1265,7 +1270,7 @@
      * Si es troba una coincidència, les dades associades es posen en un diccionari i es presenten als
      * camps de l'HTML. Si es produeix qualsevol error durant el procés es mostra un missatge d'error.
      */
-    function info_add_comand(acronim){
+    function info_add_comand(acroni, rol){
         // Crear form data
         var form_data = new FormData();
         
@@ -1298,112 +1303,116 @@
 
                 if (split_response[0] === 'True'){
                     if (split_response[1] === 'new'){
-                        show_reactive('')
-                        // $('#add_command').modal('show'); 
-                        // message = "Aquest article no esta intoduït, abans de fer comandes has d'introduïr-lo a la BD"
-                        // alert_type = "warning"
-                        message = ''
-                        alert_type = ""
-                    
-                        document.getElementById("code_log").value = '';
-                        document.getElementById("code_sap").value = '';
-                        document.getElementById("manufacturer").value = '';
-                        document.getElementById("analytical_technique").value = '';
-                        document.getElementById("description").value = '';
-                        document.getElementById('num_lots').value = 0;            
-                        document.getElementById('reference_catalog').value = code_search;
-                        document.getElementById("supplier").value = '';  
+                        if (rol === 'admin'){
+                            show_reactive('')
+                            // $('#add_command').modal('show'); 
+                            // message = "Aquest article no esta intoduït, abans de fer comandes has d'introduïr-lo a la BD"
+                            // alert_type = "warning"
+                            message = ''
+                            alert_type = ""
+                        
+                            document.getElementById("code_log").value = '';
+                            document.getElementById("code_sap").value = '';
+                            document.getElementById("manufacturer").value = '';
+                            document.getElementById("analytical_technique").value = '';
+                            document.getElementById("description").value = '';
+                            document.getElementById('num_lots').value = 0;            
+                            document.getElementById('reference_catalog').value = code_search;
+                            document.getElementById("supplier").value = '';  
 
-                        // Eliminar tots els divs amb el name divs_new_lots
-                        var elementosAEliminar = document.querySelectorAll('div[name="divs_new_lots"]');
-                            elementosAEliminar.forEach(function(elemento) {
-                                elemento.remove(); });
+                            // Eliminar tots els divs amb el name divs_new_lots
+                            var elementosAEliminar = document.querySelectorAll('div[name="divs_new_lots"]');
+                                elementosAEliminar.forEach(function(elemento) {
+                                    elemento.remove(); });
 
-                        var miDiv = document.getElementById('div_info_new_lot');
-                        var nuevoHTML = `
-                            <div class="col-lg-6 col-md-6 col-sm-12 divs_reatives" name="divs_new_lots">       
-                                <div class="input-group mb-3">
-                                    <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Temp. conservació :</b></span>
-                                    <select class="form-select" id="temp_conservation0">
-                                        <option>-20</option>
-                                        <option>-80</option>
-                                        <option>Ambient</option>
-                                        <option>4</option>
-                                    </select>
+                            var miDiv = document.getElementById('div_info_new_lot');
+                            var nuevoHTML = `
+                                <div class="col-lg-6 col-md-6 col-sm-12 divs_reatives" name="divs_new_lots">       
+                                    <div class="input-group mb-3">
+                                        <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Temp. conservació :</b></span>
+                                        <select class="form-select" id="temp_conservation0">
+                                            <option>-20</option>
+                                            <option>-80</option>
+                                            <option>Ambient</option>
+                                            <option>4</option>
+                                        </select>
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="col-lg-6 col-md-6 col-sm-12" name="divs_new_lots">       
-                                <div class="input-group mb-3">
-                                    <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Reactiu o fungible :</b></span>
-                                    <select class="form-select" id="react_or_fungible0" onchange="show_reactive(this.value)">
-                                        <option>Reactiu</option>
-                                        <option>Fungible</option>
-                                    </select>
+                                <div class="col-lg-6 col-md-6 col-sm-12" name="divs_new_lots">       
+                                    <div class="input-group mb-3">
+                                        <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Reactiu o fungible :</b></span>
+                                        <select class="form-select" id="react_or_fungible0" onchange="show_reactive(this.value)">
+                                            <option>Reactiu</option>
+                                            <option>Fungible</option>
+                                        </select>
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="col-lg-6 col-md-6 col-sm-12 divs_reatives" name="divs_new_lots">       
-                                <div class="input-group mb-3">
-                                    <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Id panell(*) :</b></span>
-                                    <input type="text" class="form-control" aria-label="TTN" id="code_panel0" value='${code_panel}'>
+                                <div class="col-lg-6 col-md-6 col-sm-12 divs_reatives" name="divs_new_lots">       
+                                    <div class="input-group mb-3">
+                                        <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Id panell(*) :</b></span>
+                                        <input type="text" class="form-control" aria-label="TTN" id="code_panel0" value='${code_panel}'>
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="col-lg-6 col-md-12 col-sm-12" name="divs_new_lots">       
-                                <div class="input-group mb-3">
-                                    <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Ubicació :</b></span>
-                                    <select class="form-select" id="location0">
-                                        <option selected></option>
-                                        <option>Lab1-Extracció</option>
-                                        <option>Lab2-AP</option>
-                                        <option>Lab3-Màquines</option>
-                                        <option>Lab4-PCR</option>
-                                        <option>Lab5-PrePCR</option>
-                                        <option>Lab Cuina</option>
-                                        <option>Magatzem</option>
-                                        <option>Magatzem Fred</option>
-                                    </select>
+                                <div class="col-lg-6 col-md-12 col-sm-12" name="divs_new_lots">       
+                                    <div class="input-group mb-3">
+                                        <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Ubicació :</b></span>
+                                        <select class="form-select" id="location0">
+                                            <option selected></option>
+                                            <option>Lab1-Extracció</option>
+                                            <option>Lab2-AP</option>
+                                            <option>Lab3-Màquines</option>
+                                            <option>Lab4-PCR</option>
+                                            <option>Lab5-PrePCR</option>
+                                            <option>Lab Cuina</option>
+                                            <option>Magatzem</option>
+                                            <option>Magatzem Fred</option>
+                                        </select>
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="col-lg-6 col-md-12 col-sm-12" name="divs_new_lots">
-                                <div class="input-group mb-3">
-                                    <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Format compra :</b></span>
-                                    <select class="form-select" id="purchase_format0">
-                                        <option selected></option>
-                                        <option>kit</option>
-                                        <option>caixa</option>
-                                        <option>ampolla</option>
-                                        <option>bossa</option>
-                                        <option>rotlle</option>
-                                        <option>unitats</option>
-                                    </select>
+                                <div class="col-lg-6 col-md-12 col-sm-12" name="divs_new_lots">
+                                    <div class="input-group mb-3">
+                                        <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Format compra :</b></span>
+                                        <select class="form-select" id="purchase_format0">
+                                            <option selected></option>
+                                            <option>kit</option>
+                                            <option>caixa</option>
+                                            <option>ampolla</option>
+                                            <option>bossa</option>
+                                            <option>rotlle</option>
+                                            <option>unitats</option>
+                                        </select>
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="col-lg-6 col-md-12 col-sm-12" name="divs_new_lots">
-                                <div class="input-group mb-3">
-                                    <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Unitats format :</b></span>
-                                    <select class="form-select" id="units_format0">
-                                        <option selected>1</option>
-                                        {% for i in range(2, 101) %}
-                                            <option>{{ i }}</option>
-                                        {% endfor %}
-                                    </select>
+                                <div class="col-lg-6 col-md-12 col-sm-12" name="divs_new_lots">
+                                    <div class="input-group mb-3">
+                                        <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Unitats format :</b></span>
+                                        <select class="form-select" id="units_format0">
+                                            <option selected>1</option>
+                                            {% for i in range(2, 101) %}
+                                                <option>{{ i }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="col-lg-6 col-md-6 col-sm-12" name="divs_new_lots">       
-                                <div class="input-group mb-3">
-                                    <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Import u. ICS :</b></span>
-                                    <input type="number" class="form-control" aria-label="TTN" id="import_unit_ics0">
+                                <div class="col-lg-6 col-md-6 col-sm-12" name="divs_new_lots">       
+                                    <div class="input-group mb-3">
+                                        <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Import u. ICS :</b></span>
+                                        <input type="number" class="form-control" aria-label="TTN" id="import_unit_ics0">
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="col-lg-6 col-md-6 col-sm-12" name="divs_new_lots">       
-                                <div class="input-group mb-3">
-                                    <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Import u. IDIBGI :</b></span>
-                                    <input type="number" class="form-control" aria-label="TTN" id="import_unit_idibgi0">
+                                <div class="col-lg-6 col-md-6 col-sm-12" name="divs_new_lots">       
+                                    <div class="input-group mb-3">
+                                        <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Import u. IDIBGI :</b></span>
+                                        <input type="number" class="form-control" aria-label="TTN" id="import_unit_idibgi0">
+                                    </div>
                                 </div>
-                            </div>
-                            `;
-                        // Agrega el nuevo conjunto debajo del div existente
-                        miDiv.insertAdjacentHTML('afterend', nuevoHTML);
-                        $('#add_new_lot').modal('show'); }
+                                `;
+                            // Agrega el nuevo conjunto debajo del div existente
+                            miDiv.insertAdjacentHTML('afterend', nuevoHTML);
+                            $('#add_new_lot').modal('show'); } 
+                        else { 
+                            message = `L'article ${code_search} no està registrat, contacta amb un administrador perquè registri el producte.`
+                            alert_type = 'warning'}}
                     else {
                         // Tranformem en diccionari el json
                         list_info_lots = JSON.parse(split_response[1]);
@@ -1684,8 +1693,8 @@
                         <div class="input-group mb-3">
                             <!-- <span class="input-group-text" id="basic-addon1"><b>Ref. proveïdor, SAP o LOG:</b></span> -->
                             <span class="input-group-text" id="basic-addon1" style="width: 233px;"><b>Ref. proveïdor o descripció :</b></span>
-                            <input type="text" class="form-control" id='code_search' list="datalist-codes2" aria-label="TTN" aria-describedby="basic-addon1" value="lot1">
-                            <datalist id="datalist-codes2">
+                            <input type="text" class="form-control" id='code_search' list="datalist-codes5" aria-label="TTN" aria-describedby="basic-addon1" value="lot1">
+                            <datalist id="datalist-codes5">
                                 {% for description in list_desciption_lots %}
                                     <option value="{{description.description}}">{{description.catalog_reference}} - {{ description.description }}</option>
                                 {% endfor %}
@@ -1699,7 +1708,7 @@
                             <input type="text" class="form-control" id='code_panel' aria-label="TTN" aria-describedby="basic-addon1">
                         </div>
                     </div>
-                    <center><button type="button" class="btn btn-primary btn-sm" onclick="info_add_lot(`{{session['acronim']}}`)">Accepta</button></center>
+                    <center><button type="button" class="btn btn-primary btn-sm" onclick="info_add_lot(`{{session['acronim']}}`, `{{session['rol']}}`)">Accepta</button></center>
                 </div>
             </div>
           </div>
@@ -2028,7 +2037,7 @@
                             <input type="text" class="form-control" id='code_panel_command' aria-label="TTN" aria-describedby="basic-addon1">
                         </div>
                     </div>
-                    <center><button type="button" class="btn btn-primary btn-sm" onclick="info_add_comand(`{{session['acronim']}}`)">Accepta</button></center>
+                    <center><button type="button" class="btn btn-primary btn-sm" onclick="info_add_comand(`{{session['acronim']}}`, `{{session['rol']}}`)">Accepta</button></center>
                 </div>
             </div>
           </div>
@@ -2119,10 +2128,12 @@
                             <div class="input-group mb-3">
                                 <!-- <span class="input-group-text" id="basic-addon1"><b>Ref. proveïdor, SAP o LOG:</b></span> -->
                                 <span class="input-group-text" id="basic-addon1"><b>Ref. proveïdor, SAP o LOG :</b></span>
-                                <input type="text" class="form-control" id='code_search_fungible' name='code_search_fungible' list="datalist-codes2" aria-label="TTN" aria-describedby="basic-addon1">
-                                <datalist id="datalist-codes2">
+                                <input type="text" class="form-control" id='code_search_fungible' name='code_search_fungible' list="datalist-codes4" aria-label="TTN" aria-describedby="basic-addon1">
+                                <datalist id="datalist-codes4">
                                     {% for description in list_desciption_lots %}
-                                        <option value="{{description.description}}">{{description.catalog_reference}} - {{ description.description }}</option>
+                                        {% if description.react_or_fungible == 'Fungible' %}
+                                            <option value="{{description.description}}">{{description.catalog_reference}} - {{ description.description }}</option>
+                                        {% endif %}
                                     {% endfor %}
                                 </datalist>
                             </div>
@@ -2135,6 +2146,41 @@
         </div>
     </div>
 
+
+    <div class="modal fade"  id="open_close_lot" tabindex="-1" role="dialog" aria-labelledby="editRegister" aria-hidden="true">
+        <div class="modal-dialog modal-lg" tabindex="-1" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="title"> Reactius - Obrir/tancar lots -</h5>
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="close_modal('open_lot')"><span aria-hidden="true">&times;</span></button>
+            </div>
+            <div class="modal-body">
+                <form action="/search_lots_open_close" method="post">
+                    <div class="row">                                   
+                        <div class="col-lg-12 col-md-12 col-sm-12">       
+                            <div class="input-group mb-3">
+                                <span class="input-group-text" id="basic-addon1"><b>Ref. proveïdor, Subref. o Descripció :</b></span>
+                                <input type="text" class="form-control" id='reference' name="reference" list="datalist-codes3" aria-label="TTN" aria-describedby="basic-addon1" required>
+                                <datalist id="datalist-codes3">
+                                    {% for description in list_desciption_lots %}
+                                        {% if description.react_or_fungible == 'Reactiu' %}
+                                            {% if description.description_subreference == '' %}
+                                                <option value="{{description.description}}">{{description.catalog_reference}} - {{ description.description }}</option>
+                                            {% else %}
+                                                <option value="{{description.description_subreference}}">{{description.id_reactive}} - {{ description.description_subreference }}</option>
+                                            {% endif %}
+                                        {% endif %}
+                                    {% endfor %}
+                                </datalist>
+                            </div>
+                        </div> 
+                        <center><input type="submit" value="Cercar lot" class="btn btn-success btn-sm"/></center>
+                    </div>
+                </form>
+            </div>
+          </div>
+        </div>
+    </div>
 
     <script src="/static/js/bootstrap.js"></script>
 </body>                    

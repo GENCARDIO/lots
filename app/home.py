@@ -1,9 +1,11 @@
-from flask import render_template, request, redirect, session, flash
+from flask import render_template, request, redirect, session, flash, jsonify
 from app import app
-from app.utils import requires_auth, list_desciption_lots, list_cost_center
+from app.utils import requires_auth, list_desciption_lots, list_cost_center, to_dict
 from app.models import IP_HOME, session1, Lots, Stock_lots, Lot_consumptions
 import jwt
 import json
+from sqlalchemy import and_
+from datetime import datetime
 # from config import main_dir
 # import pandas as pd
 
@@ -211,6 +213,53 @@ def search_fungible():
                                list_cost_center=list_cost_center())
 
     return render_template('search_fungible.html', select_lots=select_lots)
+
+
+@app.route('/search_all_year', methods=['POST'])
+@requires_auth
+def search_all_year():
+    '''
+    S'HA DE MODIFICAR INFORMACIO ERRONEA
+        1 - Recollim la informació de l'ajax
+        2 - Busquem amb elcodi a les 3 columnes possibles
+        2.1 - Si no en té redirigim a home i mostrem un missatge per pantalla
+        2.2 - Si és que si agafem la informació que hem trobat i la enviem a l'html
+
+        :param str code_search_fungible: Identificador del fungible
+
+        :return: Retornem 3 llistes d'objectes a l'html corresponent
+        :rtype: render_template, list, list, list
+    '''
+    search_data_code = request.form['search_data_code']
+
+    date = datetime.now()
+    year = date.strftime("-%Y")
+
+    try:
+        if search_data_code == '':
+            return 'False_//_Es codi no pot estar buit.'
+        else:
+            select_lots = session1.query(Stock_lots).filter(and_(Stock_lots.cost_center_stock == search_data_code,
+                                                                 Stock_lots.reception_date.like(f'%{year}'))).all()
+            if not select_lots:
+                select_lots = session1.query(Stock_lots).filter(and_(Stock_lots.catalog_reference == search_data_code,
+                                                                     Stock_lots.reception_date.like(f'%{year}'))).all()
+            if not select_lots:
+                select_lots = session1.query(Stock_lots).filter(and_(Stock_lots.code_SAP == search_data_code,
+                                                                     Stock_lots.reception_date.like(f'%{year}'))).all()
+            if not select_lots:
+                search_data_code = search_data_code.replace('/', '-')
+                select_lots = session1.query(Stock_lots).filter(Stock_lots.reception_date == search_data_code).all()
+
+        if not select_lots:
+            return f"False_//_No s'ha trobat stock amb el codi {search_data_code}"
+        else:
+            list_info_stock_aux = [to_dict(lot) for lot in select_lots]
+            list_info_stock = json.dumps(list_info_stock_aux)
+    except Exception:
+        return "False_//_Error, no s'ha pout realitzr la cerca"
+
+    return f'True_//_{list_info_stock}'
 
 
 '''@app.route('/charge_excel')

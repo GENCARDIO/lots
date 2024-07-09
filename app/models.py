@@ -130,7 +130,6 @@ class Commands(Base):
     num_received = Column(Integer())
 
 
-
 class Cost_center(Base):
     __tablename__ = 'cost_center'
 
