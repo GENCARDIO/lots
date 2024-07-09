@@ -93,9 +93,10 @@ def create_excel(select_row):
         archivo = f"{main_dir_docs}/comandes_pendents.csv"
         csv = open(archivo, "w")
         # Inserir linies al csv
-        csv.write('Codi proveidor;Descripció;Codi SAP;Codi LOG;Unitats;Data creació;Usuari;CECO\n')
+        csv.write('Peticionari;Codi proveidor;Descripció;Codi SAP;Codi LOG;Unitats;Data creació;Usuari;CECO\n')
         for command, lot in select_row:
-            linia_csv = str(lot.catalog_reference) + ';'
+            linia_csv = str(command.user_create) + ';'
+            linia_csv += str(lot.catalog_reference) + ';'
             linia_csv += str(lot.description) + ';'
             linia_csv += str(lot.code_SAP) + ';'
             linia_csv += str(lot.code_LOG) + ';'
@@ -206,3 +207,8 @@ def create_excel_info_reception(list_info_excel):
         return True
     except Exception:
         return False
+
+
+def to_dict(obj):
+    """Convertir un objeto SQLAlchemy a un diccionario."""
+    return {c.name: getattr(obj, c.name) for c in obj.__table__.columns}

@@ -11,6 +11,9 @@
             <li class="nav-item">
                 <a class="navbar btn mr-1" style="color:white;padding:5px;" onclick="open_modal('open_history_lots')"><b><i class="fa-solid fa-book"></i>&nbsp;Historic lots</a></b>
             </li>
+            <li class="nav-item">
+                <a class="navbar btn mr-1" style="color:white;padding:5px;" onclick="open_modal('search_all_year')"><b><i class="fa-solid fa-database"></i>&nbsp;Dades</a></b>
+            </li>
     </div>
 
     <ul class="navbar-nav ml-auto">
@@ -26,39 +29,6 @@
     </ul>
 </nav>
 <div style="height: 45px;">
-</div>
-
-
-<div class="modal fade"  id="open_close_lot" tabindex="-1" role="dialog" aria-labelledby="editRegister" aria-hidden="true">
-    <div class="modal-dialog modal-lg" tabindex="-1" role="document">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="title"> Reactius - Obrir/tancar lots -</h5>
-          <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="close_modal('open_lot')"><span aria-hidden="true">&times;</span></button>
-        </div>
-        <div class="modal-body">
-            <form action="/search_lots_open_close" method="post">
-                <div class="row">                                   
-                    <div class="col-lg-12 col-md-12 col-sm-12">       
-                        <div class="input-group mb-3">
-                            <span class="input-group-text" id="basic-addon1"><b>Ref. proveïdor, Subref. o Descripció :</b></span>
-                            <input type="text" class="form-control" id='reference' name="reference" list="datalist-codes3" aria-label="TTN" aria-describedby="basic-addon1" required>
-                            <datalist id="datalist-codes3">
-                                {% for description in list_desciption_lots %}
-                                    <option value="{{description.description}}">{{ description.description }}</option>
-                                    {% if description.description_subreference != '' %}
-                                        <option value="{{description.description_subreference}}">{{description.reference_catalog}} - {{ description.description_subreference }}</option>
-                                    {% endif %}
-                                {% endfor %}
-                            </datalist>
-                        </div>
-                    </div> 
-                    <center><input type="submit" value="Cercar lot" class="btn btn-success btn-sm"/></center>
-                </div>
-            </form>
-        </div>
-      </div>
-    </div>
 </div>
 
 
@@ -275,6 +245,64 @@
       </div>
     </div>
 </div>
+
+
+<div class="modal fade"  id="search_all_year" tabindex="-1" role="dialog" aria-labelledby="editRegister" aria-hidden="true">
+    <div class="modal-dialog modal-lg" tabindex="-1" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="title"> Cercar dades:</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="close_modal('search_all_year')"><span aria-hidden="true">&times;</span></button>
+        </div>
+        <div class="modal-body">
+            <div class="row">                                   
+                <div class="col-lg-12 col-md-12 col-sm-12">       
+                    <div class="input-group mb-3">
+                        <span class="input-group-text" id="basic-addon1"><b>Introdueix CECO, ref. proveidor, SAP o data_recepció:</b></span>
+                        <input type="text" class="form-control" id='search_data_code' name="search_data_code" aria-label="TTN" aria-describedby="basic-addon1" required>
+                    </div>
+                </div>
+                <center><button type="button" class="btn btn-success btn-sm" onclick="search_all_year()">Cercar</button></center>
+            </div>
+        </div>
+      </div>
+    </div>
+</div>
+
+
+<div class="modal fade modal-custom"  id="modal_seach_all_year" tabindex="-1" role="dialog" aria-labelledby="editRegister" aria-hidden="true">
+    <div class="modal-dialog modal-xl" tabindex="-1" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="title"> Dades stock lots</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="close_modal('modal_seach_all_year')"><span aria-hidden="true">&times;</span></button>
+        </div>
+        <div class="modal-body">
+            <div class="row">                                   
+                <div class="col-lg-12 col-md-12 col-sm-12">       
+                    <table id="table_search_all_year" class="display" style="width: 100%;">
+                        <thead>
+                            <tr id="thcolor">
+                                <th style="min-width: 250px;">Descripció</th>
+                                <th>Proveïdor</th>
+                                <th>Ref. proveïdor</th>
+                                <th>Unitats Entr.</th>
+                                <th>Data arribada</th>
+                                <th>Num. Comanda</th>
+                                <th>Preu</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                    </table>
+                </div> 
+            </div>
+        </div>
+      </div>
+    </div>
+</div>
+
+
 <script>
     /**
      * Realitza una cerca de lots a la base de dades i mostra els resultats en una taula.
@@ -742,6 +770,80 @@
     }
 
 
+    function search_all_year(rol){
+        const search_data_code = document.getElementById('search_data_code').value
+
+        // Crear form data
+        var form_data = new FormData();
+        
+        form_data.append('search_data_code', search_data_code)
+
+        // Creeem l'objecte per l'ajax
+        var xhr = new XMLHttpRequest();
+        // 1er argument si es pots o get
+        // 2n argument url o ruta
+        // 3r argumemt true sempre
+        xhr.open('POST', '/search_all_year', true);
+        xhr.onload = function(){
+            var alert_type = "danger"
+            if (xhr.status === 200) {
+                var message = ''
+                var response = xhr.responseText;
+                split_response = response.split('_//_')
+                close_modal('search_all_year')
+                if (response.includes('False')){
+                    message = split_response[1]
+                } else {
+                    open_modal('modal_seach_all_year')
+                    var table = $('#table_search_all_year').DataTable();
+                    table.page.len(10).draw();
+                    table.clear().draw();
+
+                    var response_list = JSON.parse(split_response[1]);
+
+                    response_list.forEach(function(item) {
+                        var newRow = table.row.add([
+                            '<div class="text-center">' + item['description'] + '</div>',
+                            '<div class="text-center">' + item['manufacturer'] + '</div>',
+                            '<div class="text-center">' + item['catalog_reference'] + '</div>',
+                            '<div class="text-center">' + item['units_lot'] + '</div>',
+                            '<div class="text-center">' + item['reception_date'] + '</div>',
+                            '<div class="text-center">' + item['comand_number'] + '</div>',
+                            '<div class="text-center">' + item['import_unit_ics'] + '</div>',
+                        ]).draw(true).node(); // Dibuja la tabla sin volver a ordenar ni filtrar
+
+                        // Asigna un ID a la fila
+                        newRow.id = item['id_sample'];
+
+                        // Inserta la nueva fila en la primera posición
+                        $(table.row(newRow).node()).insertBefore($('#table_search_all_year tbody tr:first'));
+                    });
+                }
+            }
+            else { message = `Error, No s'ha pogut realitzar l'operació.` }
+            
+            if (message !== ''){
+                var flashContainer = document.querySelector(".d-flex.justify-content-center .row");
+                // Eliminar la alerta anterior, si existe
+                if (flashContainer.children.length > 0) {
+                    flashContainer.removeChild(flashContainer.children[0]); }
+                var newFlash = document.createElement("div");
+                newFlash.className = "alert alert-" + alert_type + " alert-dismissible fade show ml-3";
+                newFlash.role = "alert";
+                newFlash.innerHTML = "<span>" + message + "</span>" + 
+                                    '<button type="button" class="close" data-dismiss="alert" aria-label="Close">' +
+                                    '<span aria-hidden="true">&times;</span>' +
+                                    '</button>';
+                flashContainer.appendChild(newFlash);
+                flashContainer.style.paddingTop = "20px";
+            }
+        }
+
+        xhr.send(form_data)
+    }
+
+
+
     // para hacer una accion siempre que se cierre el modal
     // $('#modal_edit_lot').on('hidden.bs.modal', function () {
     //     open_modal('info_lots_bd')
@@ -763,4 +865,17 @@
         } );
     } );
 
+
+    $(document).ready(function() {
+        var table = $('#table_search_all_year').DataTable({
+            order: [0, 'desc'],
+            autoWidth: true,
+            pageLength: 10 // Default page length
+        });
+        table.columns.adjust().draw();
+    });
+
+    $('#modal_seach_all_year').on('hidden.bs.modal', function () {
+        $('body').css('overflow', 'auto'); // Restablecer el desplazamiento del cuerpo
+    });
 </script>

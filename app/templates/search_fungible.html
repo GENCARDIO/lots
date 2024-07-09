@@ -36,6 +36,7 @@
                             <th style="min-width: 70px;  max-width: 120px;">Codi SAP</th>
                             <th style="min-width: 70px;  max-width: 120px;">Codi LOG</th>
                             <th style="max-width: 300px;">Descripció</th>
+                            <th style="min-width: 70px;  max-width: 120px;">CECO</th>
                             <th style="min-width: 70px;  max-width: 120px;">Unitats rebudes</th>
                             <th style="min-width: 70px;  max-width: 120px;">Nº Comanda</th>
                         </tr>
@@ -54,6 +55,7 @@
                                 {% else %}
                                     <td>{{lot.description_subreference}}</td>
                                 {% endif %}
+                                <td>{{lot.cost_center_stock}}</td>
                                 <td>{{lot.units_lot}}</td>
                                 <td>{{lot.comand_number}}</td>
                                 </td>
