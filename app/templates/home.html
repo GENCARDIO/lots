@@ -1056,7 +1056,8 @@
         const file_certificate = file_certificate_input.files[0];
 
         var list_lots = []
-        var unit_total_command = 0
+        // var unit_total_command = 0
+        var dict_units_command = {}
         
         for (var x = 0; x < unit_lots; x++){
             for (var i = 0; i < list_info_lots.length; i++){
@@ -1071,13 +1072,36 @@
                     return }
 
                 var total_units_lot = parseInt(units_lot, 10) * parseInt(units_format, 10);
-                if (i == 0) {
-                    var unit_total_command = parseInt(unit_total_command) + parseInt(total_units_lot)
-                }
+                // var unit_total_command_aux = parseInt(unit_total_command) + parseInt(total_units_lot)
+                // if (i == 0) {
+                //     var unit_total_command = parseInt(unit_total_command) + parseInt(total_units_lot)
+                // }
 
                 if (lot !== '' && expiry_date !== '' && internal_lot !== ''){
                     const json_info_lot = document.getElementById(`json_info_lot${x}_${i}`).value
                     var dict_info_lot = JSON.parse(json_info_lot);
+                    console.log(dict_info_lot)
+                    
+                    // Guarda les unitats totals de cada article si és un subproducte es fixe amb id_reactiu i sino es un
+                    // subproducte el conta com a generic, així al final sabem quin es el nombre total mes gran d'un article.
+                    var id_reactive = dict_info_lot['id_reactive']
+                    console.log(id_reactive)
+                    if (id_reactive == ''){
+                        if (dict_units_command.hasOwnProperty('units_commmand')) {
+                            if (total_units_lot > dict_units_command['units_commmand']){
+                                dict_units_command['units_commmand'] = total_units_lot
+                            }
+                        } else {
+                            dict_units_command['units_commmand'] = total_units_lot;
+                        }
+                    } else {
+                        if (dict_units_command.hasOwnProperty(id_reactive)) {
+                            dict_units_command[id_reactive] += total_units_lot;
+                        } else {
+                            dict_units_command[id_reactive] = total_units_lot;
+                        }
+                    }
+
                     dict_info_lot.reception_date = date_recepcion_lot
                     dict_info_lot.lot = lot
                     dict_info_lot.date_expiry = expiry_date 
@@ -1103,6 +1127,8 @@
                 list_lots.push(dict_info_lot)}
         }
         var jsonData = JSON.stringify(list_lots);
+        
+        var unit_total_command = Math.max(...Object.values(dict_units_command));
 
         form_data.append('list_lots', jsonData)
         form_data.append('file_delivery_note', file_delivery_note)

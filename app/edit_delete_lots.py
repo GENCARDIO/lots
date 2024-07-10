@@ -112,9 +112,9 @@ def edit_lot():
                 save_log(dict_save_info)
                 change_confirmed = True
 
-            if select_lot.catalog_reference != code_sap:
+            if select_lot.code_SAP != code_sap:
                 info_change = {"field": 'code_SAP', "old_info": select_lot.code_SAP, "new_info": code_sap}
-                select_lot.catalog_reference = code_sap
+                select_lot.code_SAP = code_sap
                 dict_save_info['info'] = json.dumps(info_change)
                 save_log(dict_save_info)
                 change_confirmed = True
@@ -126,9 +126,9 @@ def edit_lot():
                 save_log(dict_save_info)
                 change_confirmed = True
 
-            if select_lot.active != str(active):
-                info_change = {"field": 'active', "old_info": select_lot.active, "new_info": active}
-                select_lot.active = active
+            if str(select_lot.active) != str(active):
+                info_change = {"field": 'active', "old_info": str(select_lot.active), "new_info": active}
+                select_lot.active = int(active)
                 dict_save_info['info'] = json.dumps(info_change)
                 save_log(dict_save_info)
                 change_confirmed = True

@@ -288,6 +288,7 @@
                                 <th>Ref. proveïdor</th>
                                 <th>Unitats Entr.</th>
                                 <th>Data arribada</th>
+                                <th>CECO</th>
                                 <th>Num. Comanda</th>
                                 <th>Preu</th>
                             </tr>
@@ -808,6 +809,7 @@
                             '<div class="text-center">' + item['catalog_reference'] + '</div>',
                             '<div class="text-center">' + item['units_lot'] + '</div>',
                             '<div class="text-center">' + item['reception_date'] + '</div>',
+                            '<div class="text-center">' + item['cost_center_stock'] + '</div>',
                             '<div class="text-center">' + item['comand_number'] + '</div>',
                             '<div class="text-center">' + item['import_unit_ics'] + '</div>',
                         ]).draw(true).node(); // Dibuja la tabla sin volver a ordenar ni filtrar
