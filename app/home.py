@@ -179,15 +179,19 @@ def history_lots():
 @requires_auth
 def search_fungible():
     '''
-        1 - Recollim la informació de l'ajax
-        2 - Busquem amb elcodi a les 3 columnes possibles
-        2.1 - Si no en té redirigim a home i mostrem un missatge per pantalla
-        2.2 - Si és que si agafem la informació que hem trobat i la enviem a l'html
+        Realitza una cerca de lots fungibles basant-se en un codi introduït pel usuari.
 
-        :param str code_search_fungible: Identificador del fungible
+        Aquesta funció utilitza el codi introduït per buscar lots fungibles en la base de dades. Primer cerca per la descripció 
+        del lot, després cerca per la referència del catàleg, el codi SAP i el codi LOG si no es troben resultats inicials. 
+        Si no es troben lots que coincideixin amb el codi, mostra un missatge d'advertència. Si ocorre un error durant la cerca, 
+        mostra un missatge d'error.
 
-        :return: Retornem 3 llistes d'objectes a l'html corresponent
-        :rtype: render_template, list, list, list
+        :param request: L'objecte de sol·licitud que conté el codi de cerca introduït pel usuari.
+        :type request: flask.Request
+
+        :return: Renderitza la plantilla `search_fungible.html` amb els lots seleccionats si la cerca té èxit, 
+                o la plantilla `home.html` amb missatges d'advertència o error si no es troben lots o ocorre un error.
+        :rtype: flask.Response
     '''
     code_search_fungible = request.form['code_search_fungible']
 
@@ -219,16 +223,20 @@ def search_fungible():
 @requires_auth
 def search_all_year():
     '''
-    S'HA DE MODIFICAR INFORMACIO ERRONEA
-        1 - Recollim la informació de l'ajax
-        2 - Busquem amb elcodi a les 3 columnes possibles
-        2.1 - Si no en té redirigim a home i mostrem un missatge per pantalla
-        2.2 - Si és que si agafem la informació que hem trobat i la enviem a l'html
+        Realitza una cerca de lots basant-se en un codi de cerca i la data de recepció de l'any actual.
 
-        :param str code_search_fungible: Identificador del fungible
+        Aquesta funció busca lots en la base de dades utilitzant el codi de cerca proporcionat i l'any actual com a criteris.
+        Primer busca per centre de cost, després per referència del catàleg, codi SAP, i finalment per la data de recepció
+        si no es troben resultats. Si no es troben lots amb el codi introduït, retorna un missatge indicant que no s'ha trobat
+        stock. Si ocorre un error durant la cerca, retorna un missatge d'error.
 
-        :return: Retornem 3 llistes d'objectes a l'html corresponent
-        :rtype: render_template, list, list, list
+        :param request: L'objecte de sol·licitud que conté el codi de cerca introduït pel usuari.
+        :type request: flask.Request
+
+        :return: Una cadena amb el resultat de la cerca. Si la cerca és exitosa, retorna `True_//_{list_info_stock}` amb
+                la informació del stock en format JSON. Si no es troben lots o ocorre un error, retorna un missatge d'error
+                amb el prefix `False_//_`.
+        :rtype: str
     '''
     search_data_code = request.form['search_data_code']
 
