@@ -249,6 +249,23 @@
         }
     
         
+        /**
+         * Mostra el modal per modificar les dades d'un lot reactiu.
+         * 
+         * Aquesta funció obre un modal per modificar les dades d'un lot reactiu. Actualitza els camps del modal amb
+         * les dades actuals del lot i les dades passades com a paràmetres. La funció també omple els camps de registre
+         * amb la informació proporcionada per a posterior actualització.
+         * 
+         * @param {string} id_lot - L'identificador del lot que es vol modificar.
+         * @param {string} lot - El número del lot que es vol modificar.
+         * @param {string} date_expiry - La data de caducitat del lot que es vol modificar.
+         * 
+         * @returns {void} No retorna cap valor. Modifica el contingut del modal i obre el modal de modificació.
+         * 
+         * @descriptor La funció recull les dades actuals del lot mitjançant el seu ID i les omple als camps del modal
+         * per a la seva modificació. També actualitza els camps de registre amb la informació proporcionada. Finalment,
+         * obre el modal per permetre a l'usuari fer les modificacions.
+         */
         function show_modify_reactive(id_lot, lot, date_expiry){
             const date_expiry_modify = document.getElementById(`${id_lot}_date_expiry`).innerText
             const lot_reactive_modify = document.getElementById(`${id_lot}_lot`).innerText
@@ -263,6 +280,34 @@
         }
 
 
+        /**
+         * Modifica les dades d'un lot reactiu.
+         * 
+         * Aquesta funció gestiona la modificació de la data de caducitat i el número de lot d'un ítem reactiu. 
+         * Valida que els camps no estiguin buits i que hi hagi canvis abans d'enviar les dades al servidor mitjançant 
+         * una sol·licitud AJAX. Després, actualitza la interfície d'usuari segons la resposta del servidor i mostra 
+         * un missatge d'alerta corresponent.
+         * 
+         * @returns {void} No retorna cap valor. Actualitza la interfície d'usuari i mostra un missatge d'alerta 
+         * segons la resposta del servidor.
+         * 
+         * @description
+         * - Obtén els valors de la data de caducitat, número de lot, i ID del lot des del formulari.
+         * - Realitza validacions per assegurar-se que els camps no estiguin buits i que es realitzin canvis.
+         * - Si els camps estan buits o no hi ha canvis, mostra una alerta i atura l'execució.
+         * - Crea un objecte `FormData` amb els valors dels camps i envia una sol·licitud `POST` al servidor al 
+         * endpoint `/modify_reactive`.
+         * - En funció de la resposta del servidor:
+         *   - Si la resposta conté `'False'`, mostra un missatge d'error.
+         *   - Si la resposta conté `'True'`, actualitza la interfície d'usuari amb les noves dades i mostra un 
+         *     missatge d'èxit.
+         *   - Si hi ha errors inesperats, mostra un missatge d'error general.
+         * - Tanca el modal de modificació i actualitza la interfície amb les dades modificades.
+         * 
+         * @example
+         * // Suponiendo que el modal tiene los campos correspondientes y se ha hecho clic en el botón de guardar
+         * edit_reactive();
+         */
         function edit_reactive(){
             const date_expiry_modify = document.getElementById('date_expiry_modify').value
             const log_date_expiry = document.getElementById('log_date_expiry').value
@@ -333,6 +378,7 @@
 
             xhr.send(form_data)
         }
+   
     </script>
 
     <style>

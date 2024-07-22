@@ -220,6 +220,22 @@
         }
 
 
+        /**
+         * Obre el modal per a la eliminació de documents amb els valors especificats.
+         * 
+         * Aquesta funció estableix els valors per als camps `group_insert` i `lot_id` en els elements 
+         * del formulari amb els IDs `group_insert_delete` i `lot_id_delete` respectivament. També desmarca 
+         * les caselles de verificació amb els IDs `inlineCheckbox1` i `inlineCheckbox2`. Finalment, obre 
+         * el modal amb l'ID `modal_delete_documents`.
+         * 
+         * @param {string} group_insert - El valor que es vol establir en el camp `group_insert_delete`.
+         * @param {string} lot_id - El valor que es vol establir en el camp `lot_id_delete`.
+         * 
+         * @returns {void} No retorna cap valor. Modifica els valors dels camps del formulari i obre el modal.
+         * 
+         * @descriptor La funció actualitza els camps del formulari amb els valors proporcionats, desmarca 
+         * les caselles de verificació i obre un modal per a la confirmació de l'eliminació de documents.
+         */
         function open_delete_documents(group_insert, lot_id){
             document.getElementById('group_insert_delete').value = group_insert;
             document.getElementById('lot_id_delete').value = lot_id;
@@ -229,6 +245,20 @@
         }
 
 
+        /**
+         * Elimina documents seleccionats segons les opcions escollides.
+         * 
+         * Aquesta funció recull les dades del formulari per eliminar documents associats amb un grup d'inserció i
+         * un identificador de lot específic. Envia aquestes dades a través d'una petició AJAX per eliminar els documents
+         * seleccionats (nota de lliurament i/o certificat). Actualitza la interfície d'usuari per reflectir l'estat actual
+         * dels documents i mostra una alerta basada en el resultat de l'operació.
+         * 
+         * @returns {void} No retorna cap valor. Modifica la interfície d'usuari i gestiona la resposta de l'operació d'eliminació.
+         * 
+         * @descriptor La funció crea un objecte `FormData` amb les dades dels documents a eliminar, envia una petició AJAX
+         * per eliminar els documents, i actualitza l'interface amb el resultat, mostrant una alerta i actualitzant els botons
+         * segons si els documents han estat eliminats amb èxit o no.
+         */
         function delete_documents(){
             // Crear form data
             var form_data = new FormData();
@@ -313,7 +343,6 @@
 
             xhr.send(form_data)
         }
-
 
     </script>
     <style>

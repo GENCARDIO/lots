@@ -771,6 +771,23 @@
     }
 
 
+    /**
+     * Realitza una cerca de dades per a tot l'any i actualitza la taula de resultats.
+     * 
+     * Aquesta funció recull el codi de cerca del formulari, crea un objecte FormData amb aquest valor 
+     * i envia una sol·licitud AJAX al servidor per obtenir les dades. Un cop rebuda la resposta, 
+     * actualitza la taula amb les dades obtingudes o mostra un missatge d'error si l'operació falla.
+     * 
+     * @param {string} rol - El rol actual de l'usuari, que pot ser utilitzat per determinar els permisos 
+     *                      o accions específiques dins de la funció (actualment no s'utilitza a la funció).
+     * 
+     * @returns {void} No retorna cap valor. Actualitza la taula de resultats amb les dades obtingudes 
+     *                  del servidor o mostra un missatge d'error si la cerca falla.
+     * 
+     * @descriptor La funció recull el codi de cerca, el envia al servidor per obtenir les dades i, 
+     * si l'operació és exitosa, actualitza la taula amb les dades obtingudes. Si hi ha un error, 
+     * mostra un missatge d'error a l'usuari.
+     */
     function search_all_year(rol){
         const search_data_code = document.getElementById('search_data_code').value
 
@@ -843,7 +860,6 @@
 
         xhr.send(form_data)
     }
-
 
 
     // para hacer una accion siempre que se cierre el modal

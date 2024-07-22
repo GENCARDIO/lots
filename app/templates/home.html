@@ -1591,6 +1591,23 @@
     }
 
 
+    /**
+     * Mostra o oculta els elements amb la classe `divs_reatives` basant-se en el tipus de reactiu especificat.
+     * 
+     * Aquesta funció ajusta la visibilitat dels elements de la pàgina web amb la classe `divs_reatives` segons 
+     * el valor del paràmetre `type_reactive`. Si el valor és "Fungible", els elements es ocultaran. Si el valor 
+     * és qualsevol altre cosa, els elements es mostraran.
+     * 
+     * @param {string} type_reactive - El tipus de reactiu que determina la visibilitat dels elements. 
+     *                                 Si és "Fungible", els elements seran ocultats; si és qualsevol altre valor, 
+     *                                 els elements seran mostrats.
+     * 
+     * @returns {void} No retorna cap valor. Modifica la visibilitat dels elements seleccionats.
+     * 
+     * @descriptor La funció ajusta la visibilitat de tots els elements amb la classe `divs_reatives` 
+     * en funció del valor del paràmetre `type_reactive`. Utilitza `display: none` per ocultar els elements 
+     * i `display: block` per mostrar-los.
+     */
     function show_reactive(type_reactive){
         // Seleccionem tots els element amb la clase divs_reatives"
         var divsReatives = document.querySelectorAll('.divs_reatives');
@@ -1608,6 +1625,23 @@
     }
 
 
+    /**
+     * Mostra o oculta un div segons l'opció seleccionada.
+     * 
+     * Aquesta funció ajusta la visibilitat del div amb l'ID `div_ceco_manual` basant-se en el valor del paràmetre 
+     * `option`. Si l'opció és "Intoduïr manualment", el div es mostrarà i el camp de text `cost_center_name` 
+     * serà esborrat. En cas contrari, el div serà ocultat.
+     * 
+     * @param {string} option - L'opció que determina si el div ha de ser mostrat o ocultat. 
+     *                          Si és "Intoduïr manualment", el div serà mostrat; qualsevol altra opció farà que 
+     *                          el div sigui ocultat.
+     * 
+     * @returns {void} No retorna cap valor. Modifica la visibilitat del div i el valor del camp de text.
+     * 
+     * @descriptor La funció utilitza el valor del paràmetre `option` per decidir si mostrar o ocultar el div 
+     * amb l'ID `div_ceco_manual`. Si l'opció és "Intoduïr manualment", el div serà mostrat i el camp de text 
+     * `cost_center_name` serà esborrat. Si no és així, el div serà ocultat.
+     */
     function show_hide_div_ceco(option){
         if (option === "Intoduïr manualment"){
             document.getElementById('cost_center_name').value = '';

@@ -178,11 +178,14 @@ def delete_command():
 @requires_auth
 def command_success():
     '''
-        NO ES CORRECTA S'HA DE FER
+        Obté una llista de comandes tancades i les retorna en format JSON.
 
+        Aquesta funció realitza una consulta a la base de dades per obtenir les comandes tancades associades a lots. 
+        Si no es troben comandes, retorna un missatge d'error. Si es troben, crea una llista de diccionaris amb la informació 
+        rellevant de cada comanda i lot, i retorna aquesta informació en format JSON.
 
-        :return: json amb un True o un False i si es False una paraula amb el motiu.
-        :rtype: json
+        :return: Un missatge que indica si l'operació ha estat exitosa i, en cas afirmatiu, la informació en format JSON.
+        :rtype: str
     '''
     select_command = session1.query(Commands, Lots).join(Lots, Commands.id_lot == Lots.key)\
                                                    .filter(Commands.user_close != '').all()
