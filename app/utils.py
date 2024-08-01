@@ -164,7 +164,7 @@ def send_mail(list_info_excel):
 
                     <p>Benvolgut/da,</p>
 
-                    <p>L'informem que s'han rebut el productes associats a la teva tècnica analítica. T'adjuntem un excel amb la informació.:</p>
+                    <p>L'informem que s'han rebut els productes associats a la teva tècnica analítica. T'adjuntem un excel amb la informació.:</p>
 
                     <p><i>Per a qualsevol dubte, podeu contactar-nos a udmmp.tic.girona.ics@gencat.cat, asimon.girona.ics@gencat.cat, aperezp.girona.ics@gencat.cat.</i></p>
 
