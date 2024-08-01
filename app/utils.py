@@ -4,8 +4,11 @@ from app.models import Logs, session1, Lots, Cost_center
 from functools import wraps
 from flask import session, redirect
 from app.models import IP_HOME
-from config import main_dir_docs
-from email.message import EmailMessage
+from config import main_dir_docs, main_dir
+# from email.message import EmailMessage
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.mime.image import MIMEImage
 import smtplib
 
 
@@ -127,42 +130,109 @@ def send_mail(list_info_excel):
     try:
         create_excel_info_reception(list_info_excel)
 
-        message = "S'han rebut productes associats a la teva tècnica analítica. T'adjunto un excel amb la informació."
-
         subject = 'UDMMP | Recepció de productes'
-
-        em = EmailMessage()
         email_sender = "udmmp.girona.ics@gencat.cat"
-        em["From"] = email_sender
+        image_path = f'{main_dir}/logo.png'
+
+        # Crear el mensaje multipart
+        msg = MIMEMultipart()
+        msg['From'] = email_sender
+        msg['Subject'] = subject
 
         if list_info_excel[0]['analytical_technique'] == 'NGS':
             emails = ['monicacoll.girona.ics@gencat.cat', 'llopez@gencardio.com', 'mcorona.girona.ics@gencat.cat', 'mmoliner@idibgi.org', 'msoriano@idibgi.org', 'mpinsach.girona.ics@gencat.cat', 'aperezs.girona.ics@gencat.cat', 'asimon.girona.ics@gencat.cat']
-            em["To"] = ', '.join(emails)
+            msg["To"] = ', '.join(emails)
         elif list_info_excel[0]['analytical_technique'] == 'Genotipat2':
             emails = ['nneto.girona.ics@gencat.cat', 'mpuigmule.girona.ics@gencat.cat', 'mmoliner@idibgi.org']
-            em["To"] = ', '.join(emails)
+            msg["To"] = ', '.join(emails)
         elif list_info_excel[0]['analytical_technique'] == 'Sanger2':
             emails = ['ferran.pico@gencardio.com', 'aardila@idibgi.org', 'aperezs.girona.ics@gencat.cat']
-            em["To"] = ', '.join(emails)
+            msg["To"] = ', '.join(emails)
         elif list_info_excel[0]['analytical_technique'] == 'Extracció2':
             emails = ['abatchelli.girona.ics@gencat.cat', 'igomez.girona.ics@gencat.cat']
-            em["To"] = ', '.join(emails)
+            msg["To"] = ', '.join(emails)
         else:
             # emails = ['asimon.girona.ics@gencat.cat', 'asimon@gencardio.com']
-            # em["To"] = ', '.join(emails)
+            # msg["To"] = ', '.join(emails)
             return
 
-        em["Subject"] = subject
-        em.set_content(message)
+        # Adjuntar el contenido del mensaje en formato HTML
+        html = f"""
+            <html>
+                <body>
+                    <p>=-=-=- No respongueu a aquest missatge, és un correu només d'informació =-=-=-=</p>
 
+                    <p>Benvolgut/da,</p>
+
+                    <p>L'informem que s'han rebut el productes associats a la teva tècnica analítica. T'adjuntem un excel amb la informació.:</p>
+
+                    <p><i>Per a qualsevol dubte, podeu contactar-nos a udmmp.tic.girona.ics@gencat.cat, asimon.girona.ics@gencat.cat, aperezp.girona.ics@gencat.cat.</i></p>
+
+                    <p>Moltes gràcies.</p>
+
+                    <div style="text-align: left;">
+                        <img src="cid:image1" style="width:250px; height:auto; display:block; margin:0;">
+                    </div>
+
+                    <p>--</p>
+                    <p>UDMMP | Unitat de Diagnóstic Molecular i Medicina Personalitzada<br>
+                    Institut Català de la Salut | Generalitat de Catalunya<br>
+                    Hospital Santa Caterina. Parc Hospitalari Martí i Julià<br>
+                    C/Dr. Castany s/n | 17190 Salt | Tel. 972189023 | Ext. 9929</p>
+                </body>
+            </html>
+        """
+        msg.attach(MIMEText(html, 'html'))
+
+        # Adjuntar la imagen
+        with open(image_path, 'rb') as img:
+            mime_image = MIMEImage(img.read())
+            mime_image.add_header('Content-ID', '<image1>')
+            mime_image.add_header('Content-Disposition', 'inline', filename=image_path)
+            msg.attach(mime_image)
+
+        # Adjuntar el archivo
         with open(f"{main_dir_docs}/recepcio_stock.csv", 'rb') as file:
             file_data = file.read()
             file_name = 'recepcio_stock.csv'
-        em.add_attachment(file_data, maintype='application', subtype='octet-stream', filename=file_name)
+        msg.add_attachment(file_data, maintype='application', subtype='octet-stream', filename=file_name)
+
+        # message = "S'han rebut productes associats a la teva tècnica analítica. T'adjunto un excel amb la informació."
+
+        # subject = 'UDMMP | Recepció de productes'
+
+        # em = EmailMessage()
+        # email_sender = "udmmp.girona.ics@gencat.cat"
+        # em["From"] = email_sender
+
+        # if list_info_excel[0]['analytical_technique'] == 'NGS':
+        #     emails = ['monicacoll.girona.ics@gencat.cat', 'llopez@gencardio.com', 'mcorona.girona.ics@gencat.cat', 'mmoliner@idibgi.org', 'msoriano@idibgi.org', 'mpinsach.girona.ics@gencat.cat', 'aperezs.girona.ics@gencat.cat', 'asimon.girona.ics@gencat.cat']
+        #     em["To"] = ', '.join(emails)
+        # elif list_info_excel[0]['analytical_technique'] == 'Genotipat2':
+        #     emails = ['nneto.girona.ics@gencat.cat', 'mpuigmule.girona.ics@gencat.cat', 'mmoliner@idibgi.org']
+        #     em["To"] = ', '.join(emails)
+        # elif list_info_excel[0]['analytical_technique'] == 'Sanger2':
+        #     emails = ['ferran.pico@gencardio.com', 'aardila@idibgi.org', 'aperezs.girona.ics@gencat.cat']
+        #     em["To"] = ', '.join(emails)
+        # elif list_info_excel[0]['analytical_technique'] == 'Extracció2':
+        #     emails = ['abatchelli.girona.ics@gencat.cat', 'igomez.girona.ics@gencat.cat']
+        #     em["To"] = ', '.join(emails)
+        # else:
+        #     # emails = ['asimon.girona.ics@gencat.cat', 'asimon@gencardio.com']
+        #     # em["To"] = ', '.join(emails)
+        #     return
+
+        # em["Subject"] = subject
+        # em.set_content(message)
+
+        # with open(f"{main_dir_docs}/recepcio_stock.csv", 'rb') as file:
+        #     file_data = file.read()
+        #     file_name = 'recepcio_stock.csv'
+        # em.add_attachment(file_data, maintype='application', subtype='octet-stream', filename=file_name)
 
         with smtplib.SMTP("172.16.2.137", 25) as smtp:
-            smtp.sendmail(email_sender, emails, em.as_string())
-            smtp.send_message(em)
+            smtp.sendmail(email_sender, emails, msg.as_string())
+            smtp.send_message(msg)
     except Exception:
         return
     return
