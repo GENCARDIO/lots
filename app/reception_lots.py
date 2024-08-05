@@ -2,7 +2,7 @@ from flask import request, session
 from app import app
 from app.utils import instant_date, requires_auth, save_log, send_mail
 from app.models import session1, Lots, Stock_lots, Commands
-from sqlalchemy import func, Integer
+from sqlalchemy import func, Integer, and_
 from sqlalchemy.sql import cast
 from werkzeug.utils import secure_filename
 import os
@@ -255,6 +255,19 @@ def add_stock_lot():
                     units_lots_reactive = 1
                     unit_lot_value = lots['units_lot']
                     temperature_value = ''
+
+                    # Com que és un fungible posaresm la resta de fungibles a 0
+                    select_lots_ref = session1.query(Stock_lots).filter(
+                        and_(
+                            Stock_lots.catalog_reference == lots['catalog_reference'],
+                            Stock_lots.spent == 0,
+                            Stock_lots.react_or_fungible == 'Fungible'
+                        )
+                    ).all()
+
+                    for select_lots_r in select_lots_ref:
+                        select_lots_r.units_lot = 0
+                        select_lots_r.spent = 1
                 else:
                     units_lots_reactive = int(lots['units_lot'])
                     unit_lot_value = 1

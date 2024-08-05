@@ -9,6 +9,8 @@ from config import main_dir_docs, main_dir
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.image import MIMEImage
+from email.mime.base import MIMEBase
+from email import encoders
 import smtplib
 
 
@@ -193,9 +195,11 @@ def send_mail(list_info_excel):
 
         # Adjuntar el archivo
         with open(f"{main_dir_docs}/recepcio_stock.csv", 'rb') as file:
-            file_data = file.read()
-            file_name = 'recepcio_stock.csv'
-        msg.add_attachment(file_data, maintype='application', subtype='octet-stream', filename=file_name)
+            mime_base = MIMEBase('application', 'octet-stream')
+            mime_base.set_payload(file.read())
+            encoders.encode_base64(mime_base)
+            mime_base.add_header('Content-Disposition', f'attachment; filename=recepcio_stock.csv')
+            msg.attach(mime_base)
 
         # message = "S'han rebut productes associats a la teva tècnica analítica. T'adjunto un excel amb la informació."
 
@@ -231,7 +235,7 @@ def send_mail(list_info_excel):
         # em.add_attachment(file_data, maintype='application', subtype='octet-stream', filename=file_name)
 
         with smtplib.SMTP("172.16.2.137", 25) as smtp:
-            smtp.sendmail(email_sender, emails, msg.as_string())
+            # smtp.sendmail(email_sender, emails, msg.as_string())
             smtp.send_message(msg)
     except Exception:
         return
