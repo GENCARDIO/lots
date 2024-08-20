@@ -33,7 +33,7 @@ def search_lots():
                 session1.query(func.min(Stock_lots.id)).filter(
                     func.lower(Stock_lots.catalog_reference) == search_code.lower(),
                     Stock_lots.spent == 0
-                ).group_by(Stock_lots.lot)
+                ).group_by(Stock_lots.lot, Stock_lots.reception_date)
             )
         ).all()
         if not select_lot:
@@ -42,7 +42,7 @@ def search_lots():
                     session1.query(func.min(Stock_lots.id)).filter(
                         func.lower(Stock_lots.description) == search_code.lower(),
                         Stock_lots.spent == 0
-                    ).group_by(Stock_lots.lot)
+                    ).group_by(Stock_lots.lot, Stock_lots.reception_date)
                 )
             ).all()
     else:
@@ -52,7 +52,7 @@ def search_lots():
                     func.lower(Stock_lots.catalog_reference) == search_code.lower(),
                     func.lower(Stock_lots.code_panel) == code_panel.lower(),
                     Stock_lots.spent == 0
-                ).group_by(Stock_lots.lot)
+                ).group_by(Stock_lots.lot, Stock_lots.reception_date)
             )
         ).all()
         if not select_lot:
@@ -62,7 +62,7 @@ def search_lots():
                         func.lower(Stock_lots.description) == search_code.lower(),
                         func.lower(Stock_lots.code_panel) == code_panel.lower(),
                         Stock_lots.spent == 0
-                    ).group_by(Stock_lots.lot)
+                    ).group_by(Stock_lots.lot, Stock_lots.reception_date)
                 )
             ).all()
     if not select_lot:
@@ -71,7 +71,7 @@ def search_lots():
                                list_cost_center=list_cost_center())
 
     return render_template('search_lot.html', select_lot=select_lot, lot=select_lot[0],
-                           list_desciption_lots=list_desciption_lots())
+                           list_desciption_lots=list_desciption_lots(), show_second_bar='True')
 
 
 @app.route("/download_docs", methods=["POST"])
@@ -116,9 +116,14 @@ def upload_docs():
     dir_name = request.form.get("dir_name")
     group_insert = request.form.get("group_insert")
 
-    select_lots = session1.query(Stock_lots).filter_by(group_insert=group_insert).all()
-    if not select_lots:
-        return 'False'
+    if dir_name == 'certificate':
+        select_lots = session1.query(Stock_lots).filter_by(id=group_insert).first()
+        if select_lots is None:
+            return 'False'
+    else:
+        select_lots = session1.query(Stock_lots).filter_by(group_insert=group_insert).all()
+        if not select_lots:
+            return 'False'
 
     try:
         f = request.files["file"]
@@ -146,19 +151,25 @@ def upload_docs():
     except Exception:
         return "False"
 
-    id_lots = ''
-    for lots in select_lots:
-        id_lots += f"{lots.id};"
-        if dir_name == 'delivery_note':
-            lots.delivery_note = new_filename
-            lots.type_doc_delivery = type_doc
-        elif dir_name == 'certificate':
-            lots.certificate = new_filename
-            lots.type_doc_certificate = type_doc
-    session1.commit()
-    if id_lots[-1] == ';':
-        id_lots = id_lots[:-1]
-    return f'True///{id_lots}///{new_filename}///{type_doc}'
+    if dir_name == 'certificate':
+        select_lots.certificate = new_filename
+        select_lots.type_doc_certificate = type_doc
+        session1.commit()
+        return f'True///{select_lots.id}///{new_filename}///{type_doc}'
+    else:
+        id_lots = ''
+        for lots in select_lots:
+            id_lots += f"{lots.id};"
+            if dir_name == 'delivery_note':
+                lots.delivery_note = new_filename
+                lots.type_doc_delivery = type_doc
+            elif dir_name == 'certificate':
+                lots.certificate = new_filename
+                lots.type_doc_certificate = type_doc
+        session1.commit()
+        if id_lots[-1] == ';':
+            id_lots = id_lots[:-1]
+        return f'True///{id_lots}///{new_filename}///{type_doc}'
 
 
 @app.route('/create_qc', methods=['POST'])
@@ -356,16 +367,22 @@ def delete_documents():
     group_insert_delete = request.form.get("group_insert_delete")
     delivery_note = request.form.get("delivery_note")
     certificate = request.form.get("certificate")
+    lot_id_delete = request.form.get("lot_id_delete")
 
     try:
-        select_stock_lot = session1.query(Stock_lots).filter(Stock_lots.group_insert == group_insert_delete).all()
-        for stock_lot in select_stock_lot:
-            if delivery_note == 'true':
+        if delivery_note == 'true':
+            select_stock_lot = session1.query(Stock_lots).filter(Stock_lots.group_insert == group_insert_delete).all()
+            for stock_lot in select_stock_lot:
+                # if delivery_note == 'true':
                 stock_lot.delivery_note = ''
                 stock_lot.type_doc_delivery_note = ''
-            if certificate == 'true':
+
+        if certificate == 'true':
+            select_stock_lot = session1.query(Stock_lots).filter(Stock_lots.id == lot_id_delete).first()
+            if select_stock_lot is not None:
                 stock_lot.certificate = ''
                 stock_lot.type_doc_certificate = ''
+
         session1.commit()
     except Exception:
         return "False_No s'ha pogut eliminar el document a la BD"

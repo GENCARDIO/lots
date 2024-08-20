@@ -282,6 +282,14 @@ def add_stock_lot():
                     else:
                         internal_lot_value = f"{lots['internal_lot']}_{number_unit_lot}/{lots['units_lot']}"
 
+                    select_lot_certificate = session1.query(Stock_lots).filter_by(catalog_reference=lots['catalog_reference'], lot=lots['lot'], id_reactive=lots['id_reactive']).first()
+                    if select_lot_certificate is None:
+                        filename_certificate = ''
+                        type_doc_certificate = ''
+                    else:
+                        filename_certificate = select_lot_certificate.certificate
+                        type_doc_certificate = select_lot_certificate.type_doc_certificate
+
                     insert_lot = Stock_lots(id_lot=lots['key'],
                                             catalog_reference=lots['catalog_reference'],
                                             manufacturer=lots['manufacturer'],

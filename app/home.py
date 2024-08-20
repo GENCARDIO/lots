@@ -270,6 +270,30 @@ def search_all_year():
     return f'True_//_{list_info_stock}'
 
 
+@app.route('/search_all_lots', methods=['POST'])
+@requires_auth
+def search_all_lots():
+    '''
+        1 - Recollim la informació de l'html
+        2 - Busquem a la BD amb la informació que ens han facilitat
+        2.1 - Si no es troba coincidència retornem un missatge d'error a l'html
+        2.2 - Si es troba coincidència retornarem el que hem trobat a l'html.
+
+        :param str search_code: Codi a buscar.
+
+        :return: La informació dels lots trobada i un int que és l'id de lot.
+        :rtype: render_template, object, int
+    '''
+    select_lot = session1.query(Stock_lots).group_by(Stock_lots.lot, Stock_lots.reception_date).all()
+
+    if not select_lot:
+        flash(f"Error, no hem trobat informació a la BD", "warning")
+        return render_template('home.html', list_desciption_lots=list_desciption_lots(),
+                               list_cost_center=list_cost_center())
+
+    return render_template('search_lot.html', select_lot=select_lot, show_second_bar='')
+
+
 '''@app.route('/charge_excel')
 def charge_excel():
     try:

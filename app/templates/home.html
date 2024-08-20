@@ -1686,9 +1686,9 @@
                                 <div class="card-body">
                                     <h5 class="card-title"><b>1 - Comandes / Registra Art.</b></h5>
                                     <p class="card-text" style="font-size: 14px;">Inserir comanda nova, veure les pendents, poder eliminar-les i inserir productes nous</p>
-                                    <button type="button" onclick="open_modal('search_command')" class="btn btn-outline-primary btn-sm">Inserir <i class="fa-solid fa-file-import"></i></button>
+                                    <button type="button" onclick="open_modal('search_command')" class="btn btn-outline-primary btn-sm">Inserir <i class="fa-solid fa-file-circle-plus"></i></button>
                                     <form action="/search_commands" style="display: inline;">
-                                        <button type="submit" class="btn btn-outline-success btn-sm">Consultar <i class="fa-solid fa-clipboard-list"></i></button>
+                                        <button type="submit" class="btn btn-outline-success btn-sm">Consultar <i class="fa-solid fa-magnifying-glass"></i></button>
                                     </form>
                                 </div>
                             </div>
@@ -1715,7 +1715,10 @@
                                 <div class="card-body">
                                     <h5 class="card-title"><b>3 - Documents reactius</b></h5>
                                     <p class="card-text" style="font-size: 14px;">Descarregar-te un pdf amb els QC o introduir l'albarà i el certificat.</p>
-                                    <button type="button" onclick="open_modal('search_lot')" class="btn btn-outline-primary btn-sm">Documents <i class="fa-solid fa-clipboard-list"></i></button>
+                                    <button type="button" onclick="open_modal('search_lot')" class="btn btn-outline-primary btn-sm">Documents <i class="fa-solid fa-magnifying-glass"></i></button>
+                                    <form action="/search_all_lots" method="post" style="display: inline;">
+                                        <button type="submit" class="btn btn-outline-success btn-sm">Tots els Docs. <i class="fa-solid fa-book"></i></button>
+                                    </form>
                                 </div>
                             </div>
                         </div>
