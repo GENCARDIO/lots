@@ -1,6 +1,6 @@
 from flask import request, session, render_template, flash, send_file
 from app import app
-from app.utils import instant_date, requires_auth, create_excel, list_desciption_lots, list_cost_center
+from app.utils import instant_date, requires_auth, create_excel, save_log, to_dict
 from app.models import session1, Lots, Commands, Cost_center, Stock_lots
 from sqlalchemy import func
 from config import main_dir_docs
@@ -73,6 +73,7 @@ def add_command():
     units_command = request.form.get("units_command")
     cost_center = request.form.get("cost_center")
     new_cost_center = request.form.get("new_cost_center")
+    observations_command = request.form.get("observations_command")
 
     if new_cost_center == 'true':
         select_COCE = session1.query(Cost_center).filter(func.lower(Cost_center.name) == cost_center.lower()).first()
@@ -95,7 +96,8 @@ def add_command():
                                   cost_center=cost_center,
                                   received=0,
                                   num_received=0,
-                                  code_command='')
+                                  code_command='',
+                                  observations=observations_command)
         session1.add(insert_command)
 
         select_stock_lot = session1.query(Stock_lots).filter_by(id_lot=key_lot, spent=0, react_or_fungible='Fungible').all()
@@ -114,7 +116,10 @@ def add_command():
 @requires_auth
 def search_commands():
     '''
-        Buscarem a la BD totes les comandas que tenim pendents, les orden per ordre d'arribada i les enviarem a l'html
+        Buscarem a la BD totes les comandas que tenim pendents, les orden per ordre d'arribada.
+        Mirem si les hi ha comandes tramitades pendents que encara estan esperant rebre el producte,
+        si en tenim alguna d'aquesta les marcarem en vermell ja que no les podrem tramitar fins que
+        no haguem rebut la comanda totalmetn, despres enviarem totla la info a l'html
 
         :return: Llista d'objectes de les comanda i els lots corresponents
         :rtype: list objects
@@ -122,6 +127,15 @@ def search_commands():
     select_commands = session1.query(Commands, Lots).join(Lots, Commands.id_lot == Lots.key)\
                                                     .filter(Commands.date_close == '')\
                                                     .order_by(Commands.id.desc()).all()
+
+    for comands, lots in select_commands:
+        select_commands_dup = session1.query(Commands).filter(Commands.id_lot == comands.id_lot)\
+                                                      .filter(Commands.user_close != '')\
+                                                      .filter(Commands.received == 0).first()
+        if select_commands_dup is not None:
+            comands.bloqued_recived = 'True'
+        else:
+            comands.bloqued_recived = 'False'
     # if not select_commands:
     #     flash("No hi han comandes pendents de tramitar", "warning")
     #     return render_template('home.html', list_desciption_lots=list_desciption_lots(),
@@ -145,7 +159,7 @@ def delete_command():
     '''
     str_ids_commands = request.form.get("list_ids_commands")
     list_ids_commands = str_ids_commands.split(',')
-
+    
     date = instant_date()
 
     date_now = datetime.now()
@@ -234,3 +248,153 @@ def download_excel():
     else:
         path = f"{main_dir_docs}/comandes_pendents.csv"
         return send_file(path, as_attachment=True)
+
+
+@app.route('/order_tracking', methods=['POST'])
+@requires_auth
+def order_tracking():
+    '''
+        Obté una llista de comandes tancades que encara no s'hagin rebut i les retorna en format JSON.
+
+        Aquesta funció realitza una consulta a la base de dades per obtenir les comandes tancades que no haguem rebut.
+        Si no es troben comandes, retorna un missatge d'error. Si es troben, crea una llista de diccionaris amb la
+        informació  rellevant de cada comanda i lot, i retorna aquesta informació en format JSON.
+
+        :return: True i les dades en format JSON o False i un missatge d'error
+        :rtype: str
+    '''
+    select_command = session1.query(Commands, Lots).join(Lots, Commands.id_lot == Lots.key)\
+                                                   .filter(Commands.user_close != '')\
+                                                   .filter(Commands.received == '0').all()
+
+    if not select_command:
+        return "False_//_No hi ha cap comanda tramitada pendent de rebre."
+
+    list_commands = []
+    for command, lot in select_command:
+        dict_commands = {'id': command.id,
+                         'id_lot': command.id_lot,
+                         'catalog_reference': lot.catalog_reference,
+                         'description': lot.description,
+                         'code_command': command.code_command,
+                         #  'id_reactive': lot.id_reactive,
+                         #  'description_subreference': lot.description_subreference,
+                         'code_SAP': lot.code_SAP,
+                         'code_LOG': lot.code_LOG,
+                         'units': command.units,
+                         # 'date_create': command.date_create,
+                         # 'user_create': command.user_create,
+                         'date_close': command.date_close,
+                         'user_close': command.user_close,
+                         'cost_center': command.cost_center,
+                         'observations': command.observations}
+
+        list_commands.append(dict_commands)
+
+        json_info_commands = json.dumps(list_commands)
+
+    return f'True_//_{json_info_commands}'
+
+
+@app.route('/modify_order_tracking', methods=['POST'])
+@requires_auth
+def modify_order_tracking():
+    '''
+        Modifiquem les dades de la comanda.
+
+        Modifiquem les dades de la comanda que facin falta segons el que ens ha passat l'usuari, també es guardarà un 
+        log de tot el que es faci.
+
+        :param str id_command: Identificador únic del la comanda
+        :param str unit_command: Unitats de la comanda
+        :param str observations_command: Observacion fetes per l'usuari
+
+        :function: save_log(dict)
+
+        :return: True o False, un missatge d'error i True o false depenen del que s'haji modificat
+        :rtype: str
+    '''
+    id_command = request.form.get("id")
+    unit_command = request.form.get("units")
+    observations_command = request.form.get("observations")
+    change_unit = False
+    change_obs = False
+    change_delete = False
+
+    date = instant_date()
+    dict_save_info = {'id_lot': id_command,
+                      'type': 'edit_command',
+                      'user': session['acronim'],
+                      'id_user': session['idClient'],
+                      'date': date}
+
+    select_command = session1.query(Commands).filter_by(id=id_command).first()
+    if not select_command:
+        return "False_//_No s'ha trobat la comanda a la BD_//_none_//_none_//_none"
+
+    if select_command.observations != observations_command and observations_command != 'null':
+        info_change = {"field": 'observations', "old_info": select_command.observations, "new_info": observations_command}
+        dict_save_info['info'] = json.dumps(info_change)
+        save_log(dict_save_info)
+
+        select_command.observations = observations_command
+        change_obs = True
+
+    if select_command.units != int(unit_command):
+        info_change = {"field": 'units', "old_info": select_command.units, "new_info": unit_command}
+        dict_save_info['info'] = json.dumps(info_change)
+        save_log(dict_save_info)
+
+        select_command.units = int(unit_command)
+        change_unit = True
+
+        if int(unit_command) <= select_command.num_received:
+            info_change = {"field": 'units', "old_info": select_command.units, "new_info": unit_command}
+            dict_save_info['info'] = json.dumps(info_change)
+            save_log(dict_save_info)
+            select_command.received = 1
+            change_delete = True
+
+    if change_unit or change_obs:
+        session1.commit()
+
+    return f'True_//_Canvi realitzat correctament_//_{change_obs}_//_{change_unit}_//_{change_delete}'
+
+
+@app.route('/delete_order_tracking', methods=['POST'])
+@requires_auth
+def delete_order_tracking():
+    '''
+        Eliminem la comanda i guaradem un log de l'acció
+
+        :param str id_command: Identificador únic del la comanda
+
+        :function: save_log(dict)
+
+        :return: True o False i un missatge de confirmació per l'usauri
+        :rtype: str
+    '''
+    id_command = request.form.get("id")
+
+    date = instant_date()
+    dict_save_info = {'id_lot': id_command,
+                      'type': 'delete_command',
+                      'user': session['acronim'],
+                      'id_user': session['idClient'],
+                      'date': date}
+
+    select_command = session1.query(Commands).filter_by(id=id_command).first()
+    if not select_command:
+        return "False_//_Errr, No s'ha trobat la comanda a la BD"
+
+    try:
+        dict_command = to_dict(select_command)
+        dict_save_info['info'] = json.dumps(dict_command)
+        save_log(dict_save_info)
+
+        session1.delete(select_command)
+        session1.commit()
+    except Exception:
+        return "False_//_Error, No hem pogut eliminar la comanda de la BD"
+
+    return 'True_//_Comanda eliminada correctament'

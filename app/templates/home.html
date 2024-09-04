@@ -1504,6 +1504,7 @@
         const units_command = document.getElementById("units_command").value
         const cost_center = document.getElementById("cost_center").value
         const cost_center_name = document.getElementById("cost_center_name").value
+        const observations_command = document.getElementById("observations_command").value
         let cost_center_final = ''
         let new_cost_center = false
 
@@ -1543,6 +1544,7 @@
         form_data.append('units_command', units_command)
         form_data.append('cost_center', cost_center_final)
         form_data.append('new_cost_center', new_cost_center)
+        form_data.append('observations_command', observations_command)
 
         $('#add_command').modal('hide');
 
@@ -1687,9 +1689,11 @@
                                     <h5 class="card-title"><b>1 - Comandes / Registra Art.</b></h5>
                                     <p class="card-text" style="font-size: 14px;">Inserir comanda nova, veure les pendents, poder eliminar-les i inserir productes nous</p>
                                     <button type="button" onclick="open_modal('search_command')" class="btn btn-outline-primary btn-sm">Inserir <i class="fa-solid fa-file-circle-plus"></i></button>
-                                    <form action="/search_commands" style="display: inline;">
-                                        <button type="submit" class="btn btn-outline-success btn-sm">Consultar <i class="fa-solid fa-magnifying-glass"></i></button>
-                                    </form>
+                                    {% if session['rol'] == 'admin' %}
+                                        <form action="/search_commands" style="display: inline;">
+                                            <button type="submit" class="btn btn-outline-success btn-sm">Consultar <i class="fa-solid fa-magnifying-glass"></i></button>
+                                        </form>
+                                    {% endif %}
                                 </div>
                             </div>
                         </div>
@@ -2166,6 +2170,12 @@
                         <div class="input-group mb-3">
                             <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>Descripció:</b></span>
                             <input type="text" class="form-control" id="description_command" aria-label="TTN" style="background-color: white;" readonly>
+                        </div>
+                    </div>
+                    <div class="col-lg-12 col-md-12 col-sm-12">
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>Observacions:</b></span>
+                            <input type="text" class="form-control" id="observations_command" aria-label="TTN" style="background-color: white;">
                         </div>
                     </div>
                     <input type="hidden" id="key_lot_command" value=""/>

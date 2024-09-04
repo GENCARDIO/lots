@@ -14,6 +14,9 @@
             <li class="nav-item">
                 <a class="navbar btn mr-1" style="color:white;padding:5px;" onclick="open_modal('search_all_year')"><b><i class="fa-solid fa-database"></i>&nbsp;Dades</a></b>
             </li>
+            <li class="nav-item">
+                <a class="navbar btn mr-1" style="color:white;padding:5px;" onclick="look_spend_money()"><b><i class="fa-solid fa-dollar-sign"></i>&nbsp;Indicadors</a></b>
+            </li>
     </div>
 
     <ul class="navbar-nav ml-auto">
@@ -304,6 +307,35 @@
 </div>
 
 
+<div class="modal fade"  id="modal_spend_money" tabindex="-1" role="dialog" aria-labelledby="editRegister" aria-hidden="true">
+    <div class="modal-dialog" tabindex="-1" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="title"> Gasto en € per CECO</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="close_modal('modal_spend_money')"><span aria-hidden="true">&times;</span></button>
+        </div>
+        <div class="modal-body">
+            <div class="row">                                   
+                <div class="col-lg-12 col-md-12 col-sm-12">       
+                    <table id="table_spend_money" class="display" style="width: 100%;">
+                        <thead>
+                            <tr id="thcolor">
+                                <th>CECO</th>
+                                <th>IDIBGI</th>
+                                <th>ICS.</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                    </table>
+                </div> 
+            </div>
+        </div>
+      </div>
+    </div>
+</div>
+
+
 <script>
     /**
      * Realitza una cerca de lots a la base de dades i mostra els resultats en una taula.
@@ -498,7 +530,8 @@
             document.getElementById("code_loc_command").value = ''
             document.getElementById("description_command").value = ''
             document.getElementById("key_lot_command").value = ''
-            document.getElementById("units_command").value = '0'}
+            document.getElementById("units_command").value = '0'
+            document.getElementById("observations_command").value = ''}
         else if (modal_id == 'modal_edit_lot'){
             $('#info_lots_bd').modal('hide');
         }
@@ -514,6 +547,7 @@
      function close_modal(modal_id){
         $(`#${modal_id}`).modal('hide');
         if (modal_id === "modal_edit_lot"){ open_modal('info_lots_bd') }
+        else if (modal_id === "modal_edit_order_tracking"){ open_modal('modal_order_tracking') }
     }
 
 
@@ -837,6 +871,83 @@
                         // Inserta la nueva fila en la primera posición
                         $(table.row(newRow).node()).insertBefore($('#table_search_all_year tbody tr:first'));
                     });
+                }
+            }
+            else { message = `Error, No s'ha pogut realitzar l'operació.` }
+            
+            if (message !== ''){
+                var flashContainer = document.querySelector(".d-flex.justify-content-center .row");
+                // Eliminar la alerta anterior, si existe
+                if (flashContainer.children.length > 0) {
+                    flashContainer.removeChild(flashContainer.children[0]); }
+                var newFlash = document.createElement("div");
+                newFlash.className = "alert alert-" + alert_type + " alert-dismissible fade show ml-3";
+                newFlash.role = "alert";
+                newFlash.innerHTML = "<span>" + message + "</span>" + 
+                                    '<button type="button" class="close" data-dismiss="alert" aria-label="Close">' +
+                                    '<span aria-hidden="true">&times;</span>' +
+                                    '</button>';
+                flashContainer.appendChild(newFlash);
+                flashContainer.style.paddingTop = "20px";
+            }
+        }
+
+        xhr.send(form_data)
+    }
+
+
+    function look_spend_money(){
+        // Crear form data
+        var form_data = new FormData();
+        
+        // Creeem l'objecte per l'ajax
+        var xhr = new XMLHttpRequest();
+        // 1er argument si es pots o get
+        // 2n argument url o ruta
+        // 3r argumemt true sempre
+        xhr.open('POST', '/look_spend_money', true);
+        xhr.onload = function(){
+            var alert_type = "danger"
+            if (xhr.status === 200) {
+                var message = ''
+                var response = xhr.responseText;
+                split_response = response.split('_//_')
+                if (response.includes('False')){
+                    message = split_response[1]
+                } else {
+                    open_modal('modal_spend_money')
+                    var table = $('#table_spend_money').DataTable();
+                    table.page.len(10).draw();
+                    table.clear().draw();
+
+                    var response_dict = JSON.parse(split_response[1]);
+
+                    Object.keys(response_dict).forEach(function(key) {
+                        var newRow = [
+                            '<div class="text-center">' + key + '</div>',
+                            '<div class="text-center">' + response_dict[key][0] + '</div>',
+                            '<div class="text-center">' + response_dict[key][1] + '</div>',
+                        ];
+                        table.row.add(newRow).draw(false);
+                    });
+                    // response_list.forEach(function(item) {
+                    //     var newRow = table.row.add([
+                    //         '<div class="text-center">' + item['description'] + '</div>',
+                    //         '<div class="text-center">' + item['manufacturer'] + '</div>',
+                    //         '<div class="text-center">' + item['catalog_reference'] + '</div>',
+                    //         '<div class="text-center">' + item['units_lot'] + '</div>',
+                    //         '<div class="text-center">' + item['reception_date'] + '</div>',
+                    //         '<div class="text-center">' + item['cost_center_stock'] + '</div>',
+                    //         '<div class="text-center">' + item['comand_number'] + '</div>',
+                    //         '<div class="text-center">' + item['import_unit_ics'] + '</div>',
+                    //     ]).draw(true).node(); // Dibuja la tabla sin volver a ordenar ni filtrar
+
+                    //     // Asigna un ID a la fila
+                    //     newRow.id = item['id_sample'];
+
+                    //     // Inserta la nueva fila en la primera posición
+                    //     $(table.row(newRow).node()).insertBefore($('#table_search_all_year tbody tr:first'));
+                    // });
                 }
             }
             else { message = `Error, No s'ha pogut realitzar l'operació.` }

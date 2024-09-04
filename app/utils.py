@@ -42,6 +42,17 @@ def instant_date():
     return format_date
 
 
+def year_now():
+    '''
+        Agafem l'any actual i el retornem en YYYY
+
+        :return: Any actual en el format YYYY
+        :rtype: string
+    '''
+    year = datetime.now().year
+    return year
+
+
 def save_log(dict_info_lot):
     '''
         1 - Afegim a la BD de Logs una linia amb la info que ens donen
