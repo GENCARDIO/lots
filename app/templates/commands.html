@@ -6,6 +6,43 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     {% include 'Header/header.html' %}
     <script>
+
+        // Les seguents funcions fan que si al tocar un tr de la taula order tracking sobri un modal per poder editar.
+        document.addEventListener("DOMContentLoaded", function() {
+        const tbody = document.querySelector("#table_order_tracking tbody");
+
+
+        // Delegación de eventos para abrir el modal al hacer clic en las filas con la clase "open-modal"
+        tbody.addEventListener("click", function(event) {
+            const tr = event.target.closest(".open-modal");
+            if (tr) {
+                const info_row = tr.getAttribute("data-target");
+                const split_row = info_row.split('_//_');
+
+                document.getElementById('id_command_order_tracking').value = split_row[0];
+                document.getElementById('units_order_tracking').value = split_row[1];
+                document.getElementById('observations_order_tracking').value = split_row[2];
+                document.getElementById('ref_prov_order_tracking').value = split_row[3];
+
+                $('#modal_order_tracking').modal('hide');  
+                $('#modal_edit_order_tracking').modal({
+                    keyboard: false
+                }).modal('show');
+            }
+        });
+
+
+        const modals = document.querySelectorAll(".modal");
+            modals.forEach(modal => {
+                modal.addEventListener("click", function(event) {
+                    if (event.target === this) {
+                        this.style.display = "none";
+                    }
+                });
+            });
+        });
+
+
         /**
          * Eliminar la comanda tant a la BD com a l'html.
          * 
@@ -43,7 +80,7 @@
                 if (xhr.status === 200) {
                     var response = xhr.responseText;
                     if (response === 'False'){
-                        message = "No hem rebut resposta del servidor."
+                        message = "Error, No hem rebut resposta del servidor."
                         alert_type = 'danger'}
                     else if (response === 'True'){
                         // Eliminar la fila
@@ -171,6 +208,462 @@
             document.forms["down_excel"].submit();
         }
 
+
+        /**
+        * Enviem una sol·licitud per ajax perquè ens retorni tota la informació de les comandes tramitades que estan pendents de recepció.
+        *
+        * @returns {void} No retorna cap valor.
+        *
+        * @descriptor Aquesta funció envia una sol·licitud AJAX al servidor per consultar les comandes tramitades que estan pendente de recepció.
+        * Si ens retorna la informació la transformem en una taula de diccionaris i les inserim a la taula a l'html
+        * Si ens retorna error mostrarem un missatge d'informació amb el resultat.
+         */
+         function order_tracking(){
+            alert_type = ''
+            message = ''
+            // Crear form data
+            var form_data = new FormData();
+
+            // Creeem l'objecte per l'ajax
+            var xhr = new XMLHttpRequest();
+            // 1er argument si es pots o get
+            // 2n argument url o ruta
+            // 3r argumemt true sempre
+            xhr.open('POST', '/order_tracking', true);
+            xhr.onload = function(){
+                show_message = true
+                if (xhr.status === 200) {
+                    var response = xhr.responseText;
+                    var split_response = response.split('_//_')
+                    if (split_response[0] === 'False'){
+                        message = split_response[1]
+                        alert_type = 'danger'}
+                    else if (split_response[0] === 'True'){
+                        $('#modal_order_tracking').modal('show');
+
+                        var list_lots = JSON.parse(split_response[1]);
+
+                        var table = $('#table_order_tracking').DataTable();
+                        table.clear().draw();
+
+                        for (var i = 0; i < list_lots.length; i++) {
+                            var new_row_data = [];
+                            // Crea un nuevo elemento td para cada valor en la lista
+                            for (var key in list_lots[i]) {
+                                if (list_lots[i].hasOwnProperty(key)) {
+                                    if (key !== 'id' && key !== 'id_lot') {
+                                        new_row_data.push(list_lots[i][key])}
+                                }
+                            }
+                            var new_row = table.row.add(new_row_data).draw(false).node();
+                            $(new_row).attr('id', list_lots[i].id) // Usa 'id' o 'id_lot' según corresponda
+                                      .addClass('open-modal')   // Añade la clase que desees
+                                      .attr('data-target', `${list_lots[i].id}_//_${list_lots[i].units}_//_${list_lots[i].observations}_//_${list_lots[i].catalog_reference}`);
+                        }
+                        // Aplicar estilos CSS para centrar el contenido de las primeras cuatro columnas
+                        for (var j = 0; j < 10; j++) {
+                            if (j !== 1) {
+                                table.column(j).nodes().to$().addClass('text-center');}
+                        }
+                    } else {
+                        message = `Error inesperat. Si persisteix l'error contacta amb un administrador`
+                        alert_type = 'danger'
+                    }
+                }
+                else {
+                    message = `Error, No s'ha pogut realitzar l'operació. Si persisteix l'error contacta amb un administrador`
+                    alert_type = 'danger' }
+                
+                if (message !== ''){
+                    var flashContainer = document.querySelector(".d-flex.justify-content-center .row");
+                    // Eliminar la alerta anterior, si existe
+                    if (flashContainer.children.length > 0) {
+                        flashContainer.removeChild(flashContainer.children[0]); }
+                    var newFlash = document.createElement("div");
+                    newFlash.className = "alert alert-" + alert_type + " alert-dismissible fade show ml-3";
+                    newFlash.role = "alert";
+                    newFlash.innerHTML = "<span>" + message + "</span>" + 
+                                        '<button type="button" class="close" data-dismiss="alert" aria-label="Close">' +
+                                        '<span aria-hidden="true">&times;</span>' +
+                                        '</button>';
+                    flashContainer.appendChild(newFlash);
+                    flashContainer.style.paddingTop = "20px";}
+            }
+
+            xhr.send(form_data)
+        }
+
+
+        /**
+        * Enviem una sol·licitud per AJAX per modificar les dades d'una comanda específica.
+        *
+        * @returns {void} No retorna cap valor.
+        *
+        * @descriptor Aquesta funció recull les dades d'entrada de la comanda que s'està modificant (id, unitats i observacions) i les envia al servidor
+        * mitjançant una sol·licitud AJAX amb la intenció d'actualitzar la comanda a la base de dades.
+        * En funció de la resposta del servidor, la funció actualitza la fila corresponent a la comanda a la taula HTML i mostra missatges de confirmació o error.
+        *
+        * - Si la resposta del servidor indica que la modificació ha estat exitosa, la funció actualitza els valors de les unitats i/o observacions a la taula i
+        * canvia el color de fons de la fila per indicar que hi ha hagut un canvi.
+        * - Si les unitats modificades indiquen que la comanda està completada, la funció mostra un missatge confirmant aquest estat.
+        * - Si no hi ha cap canvi, es mostra una alerta informant l'usuari que no s'han modificat dades.
+        * - En cas d'error, es mostra un missatge d'alerta amb informació per contactar amb un administrador si el problema persisteix.
+        *
+        * La funció també gestiona l'aparició i tancament de modals i alertes dins l'aplicació.
+        */
+        function modify_order_tracking(){
+            id = document.getElementById('id_command_order_tracking').value;
+            units = document.getElementById('units_order_tracking').value;
+            observations = document.getElementById('observations_order_tracking').value;
+            ref_prov = document.getElementById('ref_prov_order_tracking').value;
+
+            if(units <= 0){
+                alert('No està permès posar 0 o nombres negatius')
+                return
+            }
+
+            // Crear form data
+            var form_data = new FormData();
+
+            form_data.append('id', id)
+            form_data.append('units', units)
+            form_data.append('observations', observations)
+
+            // Creeem l'objecte per l'ajax
+            var xhr = new XMLHttpRequest();
+            // 1er argument si es pots o get
+            // 2n argument url o ruta
+            // 3r argumemt true sempre
+            xhr.open('POST', '/modify_order_tracking', true);
+            xhr.onload = function(){
+                show_message = true
+                alert_type = ''
+                $('#modal_edit_order_tracking').modal('hide');
+                if (xhr.status === 200) {
+                    var response = xhr.responseText;
+                    var split_response = response.split('_//_')
+                    message = split_response[1]
+                    if (split_response[0] === 'False'){ alert_type = 'danger' }
+                    else if (split_response[0] === 'True'){
+                        show_message = false
+                        var row = document.getElementById(id);
+                        if (row) {
+                            // Obtener todas las celdas <td> de la fila
+                            var cells = row.getElementsByTagName('td');
+                            if (split_response[3] === 'True'){ 
+                                cells[5].textContent = units;
+                                row.style.backgroundColor = 'yellow';
+                            }
+                            if (split_response[2] === 'True'){
+                                cells[9].textContent = observations; 
+                                row.style.backgroundColor = 'yellow';
+                            }
+
+                            if (split_response[3] === 'False' && split_response[2] === 'False'){ alert("No has modificat cap dada.")} 
+                            row.setAttribute('data-target', `${id}_//_${units}_//_${observations}_//_${ref_prov}`);
+
+                            if (split_response[4] === 'True'){
+                                show_message = true
+                                alert_type = 'success'
+                                message = "S'han canviat les unitats de la comanda, la comanda queda completada."
+
+
+                                // Farem la comprobació de si hi ha una altre comadna amb el mateix referencia proveidor
+                                var table_order_tracking = document.getElementById("table_order_tracking");
+                                var match_count = 0;
+
+                                var tbody = table_order_tracking.getElementsByTagName("tbody")[0];
+                                var rows = tbody.getElementsByTagName("tr");
+                                for (var i = 0; i < rows.length; i++) {
+                                    var first_cell_text = rows[i].cells[0].textContent.trim(); // Obtener el texto del primer td en la fila actual
+                                    
+                                    if (first_cell_text === ref_prov) {
+                                        match_count++; // Incrementar el contador si hay coincidencia
+                                    }
+                                }
+
+                                // Si el contador és mès petit que 2 mirarem si hi ha alguan comanda bloquejada amb el mateix ref_prov i el desbloquejarem
+                                if (match_count < 2) {
+                                    var table = document.getElementById('example');
+                                    for (var i = 0, row; row = table.rows[i]; i++) {
+                                        // Obtener la celda 0 de la fila actual
+                                        var cellText = row.cells[1].textContent || row.cells[1].innerText;
+
+                                        // Comparar el contenido de la celda con ref_prov
+                                        if (cellText === ref_prov) {
+                                            // Cambiar el color de fondo de la fila
+                                            row.style.backgroundColor = ''; // Cambia a cualquier color que prefieras
+                                            var row_id = row.id;
+                                            
+                                            var checkbox = document.getElementById(`${row_id}_box`);
+                                            checkbox.checked = true;
+                                            checkbox.disabled = false;
+
+                                            document.getElementById(`${row_id}_btn_del`).disabled = false;
+                                            
+                                            // var button_edit= document.getElementById(`${row_id}_btn_edit`);
+                                            // button_edit.setAttribute("onclick", `edit_command('${id}', '${units}', '${observations}')`);
+
+                                            // // Añadir en la celda 9
+                                            // row.cells[0].innerHTML = `<div class="form-check d-flex align-items-center">
+                                            //     <input class="form-check-input" type="checkbox" value="${row_id}" id="flexCheckDefault" name="selection_multiple" style="margin-top: 8px;" checked>
+                                            //     <button type="button" class="btn btn-link btn-sm" onclick="delete_command('${row_id}')"><i class="fa-solid fa-check-to-slot"></i> Tramitar</button>
+                                            //     <button type="button" class="btn btn-success btn-sm" onclick="edit_command('${row_id}')"><i class="fa-solid fa-check-to-slot"></i> Editar</button>
+                                            // </div>`;
+
+                                            // Salir del bucle si solo necesitas encontrar una coincidencia
+                                            // break;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        message = `Error inesperat. Si persisteix l'error contacta amb un administrador`
+                        alert_type = 'danger'
+                    }
+                }
+                else {
+                    message = `Error, No s'ha pogut realitzar l'operació. Si persisteix l'error contacta amb un administrador`
+                    alert_type = 'danger' }
+                
+                if (show_message){
+                    $('#modal_order_tracking').modal('hide');
+                    var flashContainer = document.querySelector(".d-flex.justify-content-center .row");
+                    // Eliminar la alerta anterior, si existe
+                    if (flashContainer.children.length > 0) {
+                        flashContainer.removeChild(flashContainer.children[0]); }
+                    var newFlash = document.createElement("div");
+                    newFlash.className = "alert alert-" + alert_type + " alert-dismissible fade show ml-3";
+                    newFlash.role = "alert";
+                    newFlash.innerHTML = "<span>" + message + "</span>" + 
+                                        '<button type="button" class="close" data-dismiss="alert" aria-label="Close">' +
+                                        '<span aria-hidden="true">&times;</span>' +
+                                        '</button>';
+                    flashContainer.appendChild(newFlash);
+                    flashContainer.style.paddingTop = "20px";}
+                else {
+                    $('#modal_order_tracking').modal('show');
+                }
+            }
+
+            xhr.send(form_data)
+
+        }
+
+
+        /**
+        * Envia una solicitud AJAX para eliminar una comanda específica basada en el ID proporcionado.
+        *
+        * @function delete_order_tracking
+        * @returns {void} No retorna cap valor.
+        *
+        * @descriptor Aquesta funció obté l'ID de la comanda de l'element HTML corresponent i l'envia al servidor mitjançant una sol·licitud AJAX POST.
+        * Si l'eliminació és exitosa, es mostrarà un missatge de confirmació. Si falla, es mostrarà un missatge d'error.
+        *
+        * Detalls de la funció:
+        * - Es crea un objecte `FormData` per incloure l'ID de la comanda que es vol eliminar.
+        * - Es configura un objecte `XMLHttpRequest` per enviar una sol·licitud POST a l'endpoint `/delete_order_tracking`.
+        * - Quan la sol·licitud es completa, es processa la resposta per determinar si l'operació va ser exitosa o si es va produir un error.
+        * - Es mostra un missatge a l'usuari informant del resultat de l'operació.
+        * - L'element `modal_edit_order_tracking` es tanca automàticament després d'enviar la sol·licitud.
+        * - Si hi ha un missatge anterior a la pàgina, aquest es reemplaça pel nou missatge.
+        */
+        function delete_order_tracking(){
+            id = document.getElementById('id_command_order_tracking').value;
+            ref_prov = document.getElementById('ref_prov_order_tracking').value;
+
+            // Crear form data
+            var form_data = new FormData();
+
+            form_data.append('id', id)
+
+            // Creeem l'objecte per l'ajax
+            var xhr = new XMLHttpRequest();
+            // 1er argument si es pots o get
+            // 2n argument url o ruta
+            // 3r argumemt true sempre
+            xhr.open('POST', '/delete_order_tracking', true);
+            xhr.onload = function(){
+                show_message = true
+                alert_type = ''
+                $('#modal_edit_order_tracking').modal('hide');
+                if (xhr.status === 200) {
+                    var response = xhr.responseText;
+                    var split_response = response.split('_//_')
+                    message = split_response[1]
+                    if (split_response[0] === 'False'){ alert_type = 'danger' }
+                    else if (split_response[0] === 'True'){
+                        alert_type = 'success'
+
+                        // Farem la comprobació de si hi ha una altre comadna amb el mateix referencia proveidor
+                        var table_order_tracking = document.getElementById("table_order_tracking");
+                        var match_count = 0;
+
+                        var tbody = table_order_tracking.getElementsByTagName("tbody")[0];
+                        var rows = tbody.getElementsByTagName("tr");
+                        for (var i = 0; i < rows.length; i++) {
+                            var first_cell_text = rows[i].cells[0].textContent.trim(); // Obtener el texto del primer td en la fila actual
+                            
+                            if (first_cell_text === ref_prov) {
+                                match_count++; // Incrementar el contador si hay coincidencia
+                            }
+                        }
+
+                        // Si el contador és mès petit que 2 mirarem si hi ha alguan comanda bloquejada amb el mateix ref_prov i el desbloquejarem
+                        if (match_count < 2) {
+                            var table = document.getElementById('example');
+                            for (var i = 0, row; row = table.rows[i]; i++) {
+                                // Obtener la celda 0 de la fila actual
+                                var cellText = row.cells[1].textContent || row.cells[1].innerText;
+
+                                // Comparar el contenido de la celda con ref_prov
+                                if (cellText === ref_prov) {
+                                    // Cambiar el color de fondo de la fila
+                                    row.style.backgroundColor = ''; // Cambia a cualquier color que prefieras
+                                    var row_id = row.id;
+
+                                    var checkbox = document.getElementById(`${row_id}_box`);
+                                    checkbox.checked = true;
+                                    checkbox.disabled = false;
+
+                                    document.getElementById(`${row_id}_btn_del`).disabled = false;
+
+                                    // Salir del bucle si solo necesitas encontrar una coincidencia
+                                    // break;
+                                }
+                            }
+                        }
+
+                    }
+                    else {
+                        message = `Error inesperat. Si persisteix l'error contacta amb un administrador`
+                        alert_type = 'danger'
+                    }
+                }
+                else {
+                    message = `Error, No s'ha pogut realitzar l'operació. Si persisteix l'error contacta amb un administrador`
+                    alert_type = 'danger' }
+            
+                $('#modal_order_tracking').modal('hide');
+                var flashContainer = document.querySelector(".d-flex.justify-content-center .row");
+                // Eliminar la alerta anterior, si existe
+                if (flashContainer.children.length > 0) {
+                    flashContainer.removeChild(flashContainer.children[0]); }
+                var newFlash = document.createElement("div");
+                newFlash.className = "alert alert-" + alert_type + " alert-dismissible fade show ml-3";
+                newFlash.role = "alert";
+                newFlash.innerHTML = "<span>" + message + "</span>" + 
+                                    '<button type="button" class="close" data-dismiss="alert" aria-label="Close">' +
+                                    '<span aria-hidden="true">&times;</span>' +
+                                    '</button>';
+                flashContainer.appendChild(newFlash);
+                flashContainer.style.paddingTop = "20px";
+            }
+            xhr.send(form_data)
+        }
+    
+        
+        function open_edit_command(id, units, observations){
+            document.getElementById('units_edit_command').value = units
+            document.getElementById('observations_edit_command').value = observations
+            document.getElementById('id_edit_command').value = id
+            $('#modal_edit_command').modal('show');
+        }
+
+
+        function edit_command(){
+            id = document.getElementById('id_edit_command').value;
+            units = document.getElementById('units_edit_command').value;
+            observations = document.getElementById('observations_edit_command').value;
+
+            if(units <= 0){
+                alert('No està permès posar 0 o nombres negatius')
+                return
+            }
+
+            // Crear form data
+            var form_data = new FormData();
+
+            form_data.append('id', id)
+            form_data.append('units', units)
+            form_data.append('observations', observations)
+
+            // Creeem l'objecte per l'ajax
+            var xhr = new XMLHttpRequest();
+            // 1er argument si es pots o get
+            // 2n argument url o ruta
+            // 3r argumemt true sempre
+            xhr.open('POST', '/modify_order_tracking', true);
+            xhr.onload = function(){
+                show_message = true
+                alert_type = ''
+                $('#modal_edit_command').modal('hide');
+                if (xhr.status === 200) {
+                    var response = xhr.responseText;
+                    var split_response = response.split('_//_')
+                    message = split_response[1]
+                    if (split_response[0] === 'False'){ alert_type = 'danger' }
+                    else if (split_response[0] === 'True'){
+                        var row = document.getElementById(id);
+                        if (row) {
+                            // Obtener todas las celdas <td> de la fila
+                            var cells = row.getElementsByTagName('td');
+                            if (split_response[3] === 'True'){ 
+                                cells[5].textContent = units;
+                                row.style.backgroundColor = 'yellow';
+                            }
+                            if (split_response[2] === 'True'){
+                                cells[9].textContent = observations; 
+                                row.style.backgroundColor = 'yellow';
+                            }
+
+                            if (split_response[3] === 'False' && split_response[2] === 'False'){ 
+                                alert("No has modificat cap dada.")
+                                return
+                            } 
+
+                            var button_edit= document.getElementById(`${id}_btn_edit`);
+                            button_edit.setAttribute("onclick", `open_edit_command('${id}', '${units}', '${observations}')`);
+
+                            alert_type = 'success'
+                            message = "Els canvis s'han fet correctament"
+                        }
+                    } else {
+                        message = `Error inesperat. Si persisteix l'error contacta amb un administrador`
+                        alert_type = 'danger'
+                    }
+                }
+                else {
+                    message = `Error, No s'ha pogut realitzar l'operació. Si persisteix l'error contacta amb un administrador`
+                    alert_type = 'danger' }
+                
+                if (show_message){
+                    $('#modal_order_tracking').modal('hide');
+                    var flashContainer = document.querySelector(".d-flex.justify-content-center .row");
+                    // Eliminar la alerta anterior, si existe
+                    if (flashContainer.children.length > 0) {
+                        flashContainer.removeChild(flashContainer.children[0]); }
+                    var newFlash = document.createElement("div");
+                    newFlash.className = "alert alert-" + alert_type + " alert-dismissible fade show ml-3";
+                    newFlash.role = "alert";
+                    newFlash.innerHTML = "<span>" + message + "</span>" + 
+                                        '<button type="button" class="close" data-dismiss="alert" aria-label="Close">' +
+                                        '<span aria-hidden="true">&times;</span>' +
+                                        '</button>';
+                    flashContainer.appendChild(newFlash);
+                    flashContainer.style.paddingTop = "20px";}
+                else {
+                    $('#modal_order_tracking').modal('show');
+                }
+            }
+
+            xhr.send(form_data)
+
+        }
+
+
+
     </script>
 
     <style>
@@ -188,8 +681,9 @@
             <span>Comandes pendents</span>
         </h1>
         <div class="d-flex align-items-center">
-            <button type="button" class="btn btn-link btn-sm" onclick="commands_success()"><i class="fa-solid fa-check-to-slot"></i> Comandes tramitades</button>
-            <button type="button" class="btn btn-link btn-sm" onclick="download_excel()"><i class="fa-solid fa-check-to-slot"></i> Excel comandes</button>
+            <button type="button" class="btn btn-link btn-sm" onclick="order_tracking()"><i class="fa-solid fa-truck-arrow-right"></i> Seguiment Comandes</button>
+            <button type="button" class="btn btn-link btn-sm" onclick="commands_success()"><i class="fa-solid fa-table-list"></i> Comandes tramitades</button>
+            <button type="button" class="btn btn-link btn-sm" onclick="download_excel()"><i class="fa-solid fa-file-arrow-down"></i> Excel comandes</button>
             <form action="/download_excel" method="post" id="down_excel"></form>
         </div>
 
@@ -203,38 +697,47 @@
                 <table id="example" class="display">
                     <thead>
                         <tr id="thcolor">
+                            <th style="min-width: 150px; max-width: 165px;">Accions</th>
                             <th style="min-width: 70px;  max-width: 120px;">Ref. Proveïdor</th>
-                            <th style="max-width: 300px;">Descripció</th>
-                            <th style="min-width: 70px; max-width: 120px;">Codi SAP</th>
-                            <th style="min-width: 70px; max-width: 120px;">Codi LOG</th>
+                            <th style="max-width: 280px;">Descripció</th>
+                            <th style="min-width: 60px; max-width: 110px;">Codi SAP</th>
+                            <th style="min-width: 60px; max-width: 110px;">Codi LOG</th>
                             <th style="min-width: 40px; max-width: 60px;">Unitats</th>
-                            <th style="min-width: 70px; max-width: 120px;">Data</th>
-                            <th style="min-width: 60px; max-width: 80px;">Usuari</th>
-                            <th style="min-width: 60px; max-width: 80px;">CECO</th>
-                            <th style="min-width: 60px; max-width: 80px;">Accions</th>
+                            <th style="min-width: 60px; max-width: 110px;">Data</th>
+                            <th style="min-width: 40px; max-width: 60px;">Usuari</th>
+                            <th style="min-width: 50px; max-width: 70px;">CECO</th>
+                            <th style="min-width: 100px; max-width: 230px;">Observacions</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for command, lot in select_commands %}
-                            <tr id="{{command.id}}">
+                            {% if command.bloqued_recived == 'False' %}
+                                <tr id="{{command.id}}">
+                            {% else %}
+                                <tr id="{{command.id}}" style="background-color: rgb(221, 127, 127);"> 
+                            {% endif %}
+                                <td>
+                                    <div class="form-check d-flex align-items-center">
+                                        {% if command.bloqued_recived == 'False' %} 
+                                            <input class="form-check-input" type="checkbox" value="{{command.id}}" id="{{command.id}}_box" name="selection_multiple" checked>
+                                            <button type="button" class="btn btn-link btn-sm" id="{{command.id}}_btn_del" onclick="delete_command(`{{command.id}}`)">Tramitar</button>
+                                        {% else %}
+                                            <input class="form-check-input" type="checkbox" value="{{command.id}}" id="{{command.id}}_box" name="selection_multiple" disabled>
+                                            <button type="button" class="btn btn-link btn-sm" id="{{command.id}}_btn_del" onclick="delete_command(`{{command.id}}`)" disabled>Tramitar</button>
+                                        {% endif %} 
+                                        <button type="button" class="btn btn-success btn-sm" id="{{command.id}}_btn_edit" onclick="open_edit_command(`{{command.id}}`,`{{command.units}}`, `{{command.observations}}`)"><i class="fa-solid fa-pen-to-square"></i> Editar</button>
+                                    </div>
+                                </td>
                                 <td>{{lot.catalog_reference}}</td>
-                                {% if lot.description_subreference == '' %}
-                                    <td>{{lot.description}}</td>
-                                {% else %}
-                                    <td>{{lot.description_subreference}}</td>
-                                {% endif %}
+                                <td>{{lot.description}}</td>
                                 <td>{{lot.code_SAP}}</td>
                                 <td>{{lot.code_LOG}}</td>
                                 <td>{{command.units}}</td>
                                 <td>{{command.date_create}}</td>
                                 <td>{{command.user_create}}</td>
                                 <td>{{command.cost_center}}</td>
-                                <td>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" value="{{command.id}}" id="flexCheckDefault" name="selection_multiple" style="margin-top: 8px;" checked>
-                                        <button type="button" class="btn btn-link btn-sm" onclick="delete_command(`{{command.id}}`)"><i class="fa-solid fa-check-to-slot"></i> Tramitar</button>
-                                    </div>    
-                                </td>
+                                <td>{{command.observations}}</td>
+
                             </tr>
                         {% endfor %}
                     </tbody>
@@ -351,6 +854,117 @@
         </div>
     </div>
     
+    
+    <div class="modal fade modal-custom95"  id="modal_order_tracking" tabindex="-1" role="dialog" aria-labelledby="editRegister" aria-hidden="true">
+        <div class="modal-dialog modal-xl" tabindex="-1" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="title"> Seguiment Comandes</h5>
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="close_modal('modal_order_tracking')"><span aria-hidden="true">&times;</span></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">                                   
+                    <div class="col-lg-12 col-md-12 col-sm-12">       
+                        <table id="table_order_tracking" class="display" style="width: 100%;">
+                            <thead>
+                                <tr id="thcolor">
+                                    <th style="width: 100px;">Ref. Proveïdor</th>
+                                    <th style="width: 350px;">Descripció</th>
+                                    <!-- <th style="width: 100px;" name="th_subreference">Id Suref.</th>
+                                    <th style="width: 350px;" name="th_subreference">Descripció Subref.</th> -->
+                                    <th style="width: 80px;">Codi Comanda</th>
+                                    <th style="width: 80px;">Codi SAP</th>
+                                    <th style="width: 80px;">Codi LOG</th>
+                                    <th style="width: 80px;">Unitats</th>
+                                    <!-- <th style="width: 80px;">Data creació</th>
+                                    <th style="width: 80px;">Usuari</th> -->
+                                    <th style="width: 80px;">Data Tramitació</th>
+                                    <th style="width: 80px;">Usuari</th>
+                                    <th style="width: 80px;">CECO</th>
+                                    <th style="width: 80px;">Observacions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table>
+                    </div> 
+                </div>
+            </div>
+          </div>
+        </div>
+    </div>
+    
+
+    <div class="modal fade"  id="modal_edit_order_tracking" tabindex="-1" role="dialog" aria-labelledby="editRegister" aria-hidden="true">
+        <div class="modal-dialog modal-lg" tabindex="-1" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="title"> Modificar Comanda</h5>
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="close_modal('modal_edit_order_tracking')"><span aria-hidden="true">&times;</span></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">                                   
+                    <div class="col-lg-12 col-md-12 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 145px;"><b>Unitats a rebre :</b></span>
+                            <input type="number" class="form-control" id='units_order_tracking' name='units_order_tracking' aria-label="TTN" aria-describedby="basic-addon1" min="1">
+                        </div>
+                    </div>    
+                    <div class="col-lg-12 col-md-12 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 145px;"><b>Observacions :</b></span>
+                            <textarea class="form-control" id='observations_order_tracking' name='observations_order_tracking' aria-label="TTN" aria-describedby="basic-addon1" rows="3"></textarea>
+                        </div>
+                    </div>   
+                    <div class="col-lg-12 col-md-12 col-sm-12 text-center">       
+                        <input type="hidden" id="id_command_order_tracking" value=""/>
+                        <input type="hidden" id="ref_prov_order_tracking" value=""/>
+                        <div class="d-inline-block">
+                            <button type="button" class="btn btn-outline-success btn-sm" onclick="modify_order_tracking()" style="margin-right: 10px;"><i class="fa-solid fa-share-from-square"></i> Modificar</button>
+                            <button type="button" class="btn btn-outline-danger btn-sm" onclick="delete_order_tracking()"><i class="fa-solid fa-trash-alt"></i> Eliminar</button>
+                        </div>
+                    </div>      
+                </div>
+            </div>
+          </div>
+        </div>
+    </div>
+
+
+    <div class="modal fade"  id="modal_edit_command" tabindex="-1" role="dialog" aria-labelledby="editRegister" aria-hidden="true">
+        <div class="modal-dialog modal-lg" tabindex="-1" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="title"> Modificar Comanda</h5>
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="close_modal('modal_edit_command')"><span aria-hidden="true">&times;</span></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">                                   
+                    <div class="col-lg-12 col-md-12 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 145px;"><b>Unitats :</b></span>
+                            <input type="number" class="form-control" id='units_edit_command' name='units_edit_command' aria-label="TTN" aria-describedby="basic-addon1" min="1">
+                        </div>
+                    </div>    
+                    <div class="col-lg-12 col-md-12 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 145px;"><b>Observacions :</b></span>
+                            <textarea class="form-control" id='observations_edit_command' name='observations_edit_command' aria-label="TTN" aria-describedby="basic-addon1" rows="3"></textarea>
+                        </div>
+                    </div>   
+                    <div class="col-lg-12 col-md-12 col-sm-12 text-center">       
+                        <input type="hidden" id="id_edit_command" value=""/>
+                        <div class="d-inline-block">
+                            <button type="button" class="btn btn-outline-success btn-sm" onclick="edit_command()" style="margin-right: 10px;"><i class="fa-solid fa-share-from-square"></i> Modificar</button>
+                            <!-- <button type="button" class="btn btn-outline-danger btn-sm" onclick="delete_order_tracking()"><i class="fa-solid fa-trash-alt"></i> Eliminar</button> -->
+                        </div>
+                    </div>      
+                </div>
+            </div>
+          </div>
+        </div>
+    </div>
+
 
     <script>
         $(document).ready(function() {
@@ -408,7 +1022,7 @@
                 ]
             } );
         } );
-    </script>
+   </script>
 
     <script src="/static/js/bootstrap.js"></script>
 </body>

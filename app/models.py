@@ -128,6 +128,7 @@ class Commands(Base):
     cost_center = Column(String())
     received = Column(Integer())
     num_received = Column(Integer())
+    observations = Column(String())
 
 
 class Cost_center(Base):
