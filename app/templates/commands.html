@@ -563,7 +563,24 @@
             xhr.send(form_data)
         }
     
-        
+    
+        /**
+        * Obre una finestra modal per editar una comanda específica amb els valors actuals.
+        *
+        * @function open_edit_command
+        * @param {string} id - L'ID de la comanda que es vol editar.
+        * @param {number} units - El nombre d'unitats actual de la comanda.
+        * @param {string} observations - Les observacions actuals associades a la comanda.
+        * @returns {void} No retorna cap valor.
+        *
+        * @descriptor Aquesta funció omple els camps del formulari dins d'una finestra modal amb els valors de la comanda seleccionada per a la seva edició. A continuació, mostra la finestra modal per permetre a l'usuari fer modificacions.
+        *
+        * Detalls de la funció:
+        * - Assigna el valor del nombre d'unitats al camp d'entrada amb l'identificador `units_edit_command`.
+        * - Assigna el valor de les observacions al camp d'entrada amb l'identificador `observations_edit_command`.
+        * - Assigna l'ID de la comanda al camp d'entrada ocult amb l'identificador `id_edit_command`.
+        * - Mostra la finestra modal `modal_edit_command` per permetre a l'usuari modificar els valors de la comanda.
+        */
         function open_edit_command(id, units, observations){
             document.getElementById('units_edit_command').value = units
             document.getElementById('observations_edit_command').value = observations
@@ -572,6 +589,30 @@
         }
 
 
+        /**
+        * Envia una sol·licitud AJAX per editar una comanda específica amb els valors actualitzats.
+        *
+        * @function edit_command
+        * @returns {void} No retorna cap valor.
+        *
+        * @descriptor Aquesta funció obté els valors actualitzats de la comanda, com ara el nombre d'unitats i
+        * les observacions, des dels elements HTML corresponents. Després, envia aquests valors al servidor
+        * mitjançant una sol·licitud AJAX POST per modificar la comanda.
+        *
+        * Detalls de la funció:
+        * - Primer, obté l'ID de la comanda, les unitats i les observacions dels camps d'entrada HTML amb els 
+        *   identificadors `id_edit_command`, `units_edit_command`, i `observations_edit_command`.
+        * - Si el nombre d'unitats és menor o igual a 0, es mostra un missatge d'alerta i la funció es deté.
+        * - Es crea un objecte `FormData` per incloure l'ID de la comanda, les unitats i les observacions.
+        * - Es configura un objecte `XMLHttpRequest` per enviar una sol·licitud POST a l'endpoint `/modify_order_tracking`.
+        * - Quan la sol·licitud es completa, es processa la resposta:
+        *   - Si l'operació és exitosa, s'actualitzen les cel·les corresponents a les unitats i observacions de
+        *     la fila de la taula amb els nous valors, i es canvia el color de fons de la fila a groc per indicar que s'ha modificat.
+        *   - S'actualitza el botó d'edició amb els nous valors per a una edició futura.
+        *   - Si cap dada ha estat modificada, es mostra un missatge d'alerta.
+        * - Si hi ha un error inesperat o l'operació falla, es mostra un missatge d'error a l'usuari.
+        * - Si l'operació és exitosa, es mostra un missatge de confirmació a l'usuari.
+        */
         function edit_command(){
             id = document.getElementById('id_edit_command').value;
             units = document.getElementById('units_edit_command').value;
@@ -661,9 +702,6 @@
             xhr.send(form_data)
 
         }
-
-
-
     </script>
 
     <style>

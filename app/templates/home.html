@@ -237,6 +237,7 @@
                         
                         var miDiv = document.getElementById('div_info_lot');
                         list_info_lots = JSON.parse(split_response[1]);
+                        list_commands = JSON.parse(split_response[2]);
 
                         document.getElementsByName("title_add_lots")[0].textContent = `Afegeix article : ${list_info_lots[0]['catalog_reference']}`;
 
@@ -244,12 +245,35 @@
                         
                         document.getElementById("info_command").style.display = 'none';
 
+                        var select = document.getElementById('select_substract_lot');
+                        // Limpiamos todas las opciones existentes del <select>
+                        select.innerHTML = '';
+                        document.getElementById('div_substract_lot').style.display = 'none';
+                        document.getElementById('div_substract_lot_hr').style.display = 'none';
+
                         if (list_info_lots[0]['command_pending'] != ''){
                             document.getElementById("info_command").style.display = 'block';
                             document.getElementById("text_info_command").innerHTML = "<b><i>" + list_info_lots[0]['command_pending'] + "</i></b>";
                             document.getElementById('id_command').value = list_info_lots[0]['id_command']
                             document.getElementById('user_add_command').value = list_info_lots[0]['user_add_command']
                             document.getElementById('cost_center_stock').value = list_info_lots[0]['ceco_command']
+
+                            if(list_commands.length > 1){
+                                document.getElementById('div_substract_lot').style.display = 'block';
+                                document.getElementById('div_substract_lot_hr').style.display = 'block';
+
+                                list_commands.forEach(function(row) {
+                                    // Creamos un nuevo elemento <option>
+                                    var option = document.createElement('option');
+                                    
+                                    // Establecemos el valor y el texto del elemento <option>
+                                    option.value = row[0];  // El primer valor de la fila como valor de la opción
+                                    option.textContent = row[1] + ' - ' + row[2];  // Combinación del segundo y tercer valor de la fila como texto de la opción
+                                    
+                                    // Añadimos la opción al <select>
+                                    select.appendChild(option);
+                                });
+                            }
                         }
 
                         var HTML = `
@@ -1038,6 +1062,16 @@
         const id_command = document.getElementById('id_command').value
         const user_add_command = document.getElementById('user_add_command').value      
 
+        // Obtener el elemento <select>
+        var select_element = document.getElementById('select_substract_lot');
+        var id_substract_command = 'none';
+
+        // Verificar si el <select> tiene opciones
+        if (select_element.options.length > 0) {
+            // Obtener el valor de la opción seleccionada
+            var id_substract_command = select_element.value;
+        }
+
         if (transport_conditions === '' || packaging === '' || inspected_by === '' || date_inspected === '' || state === '' || comand_number === '' || revised_by === '' || date_revised === '' || cost_center_stock === ''){
             alert("No pots deixar camps buits, revisa els camps de recepció de procute i QC recepció.")
             return }
@@ -1080,17 +1114,16 @@
                 if (lot !== '' && expiry_date !== '' && internal_lot !== ''){
                     const json_info_lot = document.getElementById(`json_info_lot${x}_${i}`).value
                     var dict_info_lot = JSON.parse(json_info_lot);
-                    console.log(dict_info_lot)
-                    
-                    // Guarda les unitats totals de cada article si és un subproducte es fixe amb id_reactiu i sino es un
-                    // subproducte el conta com a generic, així al final sabem quin es el nombre total mes gran d'un article.
                     var id_reactive = dict_info_lot['id_reactive']
-                    console.log(id_reactive)
+                    // 1 - si id_rectiu esta buit vol dir que es un article sense subreferncies, mirarem si el diccionar te 
+                    //     units_command i si no la te la crearem amb total_units_lot com a value, si ja esta creat vol dir
+                    //     que es un article el qual ha arribat amb mes d'un lot i haurem de sumar les unitats per saber el
+                    //     total que ens ha arribat.
+                    // 2 - Si id_reactiu no esta buit vol dir que es un article amb subprodutes, aqui farem servir l'id de
+                    //     reatiu com a key i sumarem tots els valors, per saber el total de cada id_reactiu
                     if (id_reactive == ''){
                         if (dict_units_command.hasOwnProperty('units_commmand')) {
-                            if (total_units_lot > dict_units_command['units_commmand']){
-                                dict_units_command['units_commmand'] = total_units_lot
-                            }
+                            dict_units_command['units_commmand'] += total_units_lot;
                         } else {
                             dict_units_command['units_commmand'] = total_units_lot;
                         }
@@ -1127,13 +1160,14 @@
                 list_lots.push(dict_info_lot)}
         }
         var jsonData = JSON.stringify(list_lots);
-        
+
         var unit_total_command = Math.max(...Object.values(dict_units_command));
 
         form_data.append('list_lots', jsonData)
         form_data.append('file_delivery_note', file_delivery_note)
         form_data.append('file_certificate', file_certificate)
         form_data.append('unit_total_command', unit_total_command)
+        form_data.append('id_substract_command', id_substract_command)
 
         $('#add_lot_info').modal('hide');
 
@@ -1896,6 +1930,16 @@
                     </div>
                 </div>
                 <div class="row" id="product_reception">
+                    <div class="col-lg-12 col-md-12 col-sm-12" id="div_substract_lot" style="display: none;">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 145px;"><b>Lot a restar:</b></span>
+                            <select class="form-select" id="select_substract_lot">
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-lg-12 col-md-12 col-sm-12" id="div_substract_lot_hr" style="display: none; margin-top: -15px;">       
+                        <hr>
+                    </div>
                     <div class="col-lg-6 col-md-12 col-sm-12">       
                         <div class="input-group mb-3">
                             <span class="input-group-text" id="basic-addon1" style="width: 145px;"><b>Lots diferents:</b></span>
