@@ -43,14 +43,16 @@ def search_add_lot():
             id_command = ''
             ceco_command = ''
             user_add_command = ''
+            list_commands = []
             select_command = session1.query(Commands).filter(Commands.id_lot == select_lot[0].key).filter(Commands.received == 0).filter(Commands.code_command != '').all()
             if select_command:
                 for command in select_command:
                     units_command = int(command.units) - int(command.num_received)
-                    command_pending += f"La comanda {command.code_command} esta esperant {units_command} unitat/s."
+                    command_pending += f"La comanda {command.code_command} esta esperant {units_command} unitat/s.<br>"
                     id_command = f'{command.id};'
                     ceco_command = command.cost_center
                     user_add_command = command.user_create
+                    list_commands.append([command.id, command.user_create, command.code_command])
                 if id_command[-1] == ';':
                     id_command = id_command[:-1]
 
@@ -82,7 +84,8 @@ def search_add_lot():
                              'user_add_command': user_add_command}
                 list_lots.append(dict_lots)
             json_data = json.dumps(list_lots)
-            return f'True_//_{json_data}'
+            list_commands_json = json.dumps(list_commands) 
+            return f'True_//_{json_data}_//_{list_commands_json}'
     except Exception:
         return 'False_//_False'
 
@@ -171,6 +174,8 @@ def add_stock_lot():
     '''
     unit_total_command = request.form.get("unit_total_command")
     list_lots_json = request.form.get("list_lots")
+    id_substract_command = request.form.get("id_substract_command")
+
     date = instant_date()
 
     max_number_group_insert = session1.query(func.max(Stock_lots.group_insert)).scalar()
@@ -355,8 +360,13 @@ def add_stock_lot():
             session1.rollback()
             return 'False_error'
 
-    split_id_command = list_lots[0]['id_command'].split(';')
-    select_command = session1.query(Commands).filter(Commands.id == split_id_command[0]).first()
+    # Si id_substract_command es none voldra dir que nomes hi ha un lot a descontar i haurem de buscar el id de la comanda normalment,
+    # si hi ha mes d'un lot l'usuari ja haura seleccionat de quin es i ja tindrem aquest pas fet.
+    if id_substract_command == 'none':
+        split_id_command = list_lots[0]['id_command'].split(';')
+        id_substract_command = split_id_command[0]
+
+    select_command = session1.query(Commands).filter(Commands.id == id_substract_command).first()
     if select_command:
         # total_received = int(select_command.num_received) + int(list_lots[0]['units_lot'])
         total_received = int(select_command.num_received) + int(unit_total_command)
