@@ -23,7 +23,7 @@ def search_add_command():
     '''
     code_search = request.form.get("code_search")
     code_panel = request.form.get("code_panel")
-    
+
     select_lot = session1.query(Lots).filter(func.lower(Lots.catalog_reference) == code_search.lower()).filter(Lots.active == 1).first()
     if not select_lot:
         select_lot = session1.query(Lots).filter(func.lower(Lots.description) == code_search.lower()).filter(Lots.active == 1).first()
@@ -130,6 +130,7 @@ def search_commands():
 
     for comands, lots in select_commands:
         select_commands_dup = session1.query(Commands).filter(Commands.id_lot == comands.id_lot)\
+                                                      .filter(Commands.cost_center == comands.cost_center)\
                                                       .filter(Commands.user_close != '')\
                                                       .filter(Commands.received == 0).first()
         if select_commands_dup is not None:
@@ -159,7 +160,7 @@ def delete_command():
     '''
     str_ids_commands = request.form.get("list_ids_commands")
     list_ids_commands = str_ids_commands.split(',')
-    
+
     date = instant_date()
 
     date_now = datetime.now()
@@ -374,7 +375,7 @@ def delete_order_tracking():
         :return: True o False i un missatge de confirmació per l'usauri
         :rtype: str
     '''
-    id_command = request.form.get("id")
+    id_command = request.form.get("id_command")
 
     date = instant_date()
     dict_save_info = {'id_lot': id_command,
@@ -385,7 +386,7 @@ def delete_order_tracking():
 
     select_command = session1.query(Commands).filter_by(id=id_command).first()
     if not select_command:
-        return "False_//_Errr, No s'ha trobat la comanda a la BD"
+        return "False_//_Error, No s'ha trobat la comanda a la BD"
 
     try:
         dict_command = to_dict(select_command)

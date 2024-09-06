@@ -217,6 +217,18 @@
                         <input type="text" class="form-control" id='supplier_edit' aria-label="TTN" aria-describedby="basic-addon1">
                     </div>
                 </div>
+                <div class="col-lg-6 col-md-12 col-sm-12">       
+                    <div class="input-group mb-3">
+                        <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Import ICS :</b></span>
+                        <input type="text" class="form-control" id='import_unit_ics_edit' aria-label="TTN" aria-describedby="basic-addon1">
+                    </div>
+                </div>
+                <div class="col-lg-6 col-md-12 col-sm-12">       
+                    <div class="input-group mb-3">
+                        <span class="input-group-text" id="basic-addon1" style="width: 155px;"><b>Import Idibgi :</b></span>
+                        <input type="text" class="form-control" id='import_unit_idibgi_edit' aria-label="TTN" aria-describedby="basic-addon1">
+                    </div>
+                </div>
                 <input type="hidden" id="id_lot_edit"/>
                 <center></centere><button type="button" class="btn btn-primary btn-sm" onclick="edit_lot()"><i class="fa-solid fa-circle-plus"></i> Editar </button></center>
             </div>
@@ -574,6 +586,8 @@
         document.getElementById('code_panel_edit').value = list_info_article[13];
         document.getElementById('location_edit').value = list_info_article[14];
         document.getElementById('supplier_edit').value = list_info_article[15];
+        document.getElementById('import_unit_ics_edit').value = list_info_article[18];
+        document.getElementById('import_unit_idibgi_edit').value = list_info_article[19];
 
         if (list_info_article[11] === ''){ document.getElementById('div_desc_subref').style.display = 'none'}
         else { document.getElementById('div_desc_subref').style.display = 'block'}
@@ -655,6 +669,8 @@
         let code_panel = document.getElementById('code_panel_edit').value
         let location = document.getElementById('location_edit').value
         let supplier = document.getElementById('supplier_edit').value
+        let import_unit_ics = document.getElementById('import_unit_ics_edit').value
+        let import_unit_idibgi = document.getElementById('import_unit_idibgi_edit').value
 
         // Crear form data
         var form_data = new FormData();
@@ -674,6 +690,8 @@
         form_data.append('code_panel', code_panel)
         form_data.append('location', location)
         form_data.append('supplier', supplier)
+        form_data.append('import_unit_ics', import_unit_ics)
+        form_data.append('import_unit_idibgi', import_unit_idibgi)
 
         // Creeem l'objecte per l'ajax
         var xhr = new XMLHttpRequest();

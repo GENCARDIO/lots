@@ -52,7 +52,7 @@ def search_add_lot():
                     id_command = f'{command.id};'
                     ceco_command = command.cost_center
                     user_add_command = command.user_create
-                    list_commands.append([command.id, command.user_create, command.code_command])
+                    list_commands.append([command.id, command.user_create, command.code_command, command.cost_center])
                 if id_command[-1] == ';':
                     id_command = id_command[:-1]
 

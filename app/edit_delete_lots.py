@@ -62,6 +62,8 @@ def edit_lot():
     code_panel = request.form.get("code_panel")
     location = request.form.get("location")
     supplier = request.form.get("supplier")
+    import_unit_ics = request.form.get("import_unit_ics")
+    import_unit_idibgi = request.form.get("import_unit_idibgi")
 
     select_lot = session1.query(Lots).filter(Lots.key == id_lot).first()
 
@@ -70,6 +72,8 @@ def edit_lot():
             return "False_//_No hem trobat l'article a la BD"
         else:
             change_confirmed = False
+            change_confirmed_price = False
+
             date = instant_date()
             dict_save_info = {'id_lot': id_lot,
                               'type': 'edit',
@@ -175,61 +179,76 @@ def edit_lot():
                 save_log(dict_save_info)
                 change_confirmed = True
 
-            if not change_confirmed:
-                return "False_//_No has fet cap canvi respecte l'original."
-
-            # Si es fan canvis al lot s'han de reflexa a l'stock.
-            select_stock_lot = session1.query(Stock_lots).filter(Stock_lots.id_lot == id_lot).all()
-            if len(select_stock_lot) > 0:
-                id_stock_lots_change = ''
-                for lot_stock in select_stock_lot:
-                    id_stock_lots_change += f'{lot_stock.id}; '
-                    if lot_stock.catalog_reference != reference_catalog:
-                        lot_stock.catalog_reference = reference_catalog
-
-                    if lot_stock.manufacturer != manufacturer:
-                        lot_stock.manufacturer = manufacturer
-
-                    if lot_stock.description != description:
-                        lot_stock.description = description
-
-                    if lot_stock.analytical_technique != analytical_technique:
-                        lot_stock.analytical_technique = analytical_technique
-
-                    if lot_stock.id_reactive != id_reactive:
-                        lot_stock.id_reactive = id_reactive
-
-                    if lot_stock.code_SAP != code_sap:
-                        lot_stock.code_SAP = code_sap
-
-                    if lot_stock.code_LOG != code_log:
-                        lot_stock.code_LOG = code_log
-
-                    if lot_stock.temp_conservation != temp_conservation:
-                        lot_stock.temp_conservation = temp_conservation
-
-                    if lot_stock.description_subreference != description_subref:
-                        lot_stock.description_subreference = description_subref
-
-                    if lot_stock.react_or_fungible != react_or_fungible:
-                        lot_stock.react_or_fungible = react_or_fungible
-
-                    if lot_stock.code_panel != code_panel:
-                        lot_stock.code_panel = code_panel
-
-                    if lot_stock.location != location:
-                        lot_stock.location = location
-
-                    if lot_stock.supplier != supplier:
-                        lot_stock.supplier = supplier
-
-                if len(id_stock_lots_change) > 2:
-                    id_stock_lots_change = id_stock_lots_change[:-2]
-
-                info_change = {"field": 'BD stock_lots', "old_info": 'ids que s han modidifica per el canvi a lots', "new_info": id_stock_lots_change}
-                dict_save_info['id_lot'] = '0'
+            if select_lot.import_unit_ics != import_unit_ics:
+                info_change = {"field": 'import_unit_ics', "old_info": select_lot.import_unit_ics, "new_info": import_unit_ics}
+                select_lot.import_unit_ics = import_unit_ics
                 dict_save_info['info'] = json.dumps(info_change)
                 save_log(dict_save_info)
+                change_confirmed_price = True
+
+            if select_lot.import_unit_idibgi != import_unit_idibgi:
+                info_change = {"field": 'import_unit_idibgi', "old_info": select_lot.import_unit_idibgi, "new_info": import_unit_idibgi}
+                select_lot.import_unit_idibgi = import_unit_idibgi
+                dict_save_info['info'] = json.dumps(info_change)
+                save_log(dict_save_info)
+                change_confirmed_price = True
+
+            if not change_confirmed and not change_confirmed_price:
+                return "False_//_No has fet cap canvi respecte l'original."
+
+            # Si es fan canvis al lot s'han de reflexa a l'stock, exceptuan import ics i idibgi que no s'ha de fer.
+            if change_confirmed:
+                select_stock_lot = session1.query(Stock_lots).filter(Stock_lots.id_lot == id_lot).all()
+                if len(select_stock_lot) > 0:
+                    id_stock_lots_change = ''
+                    for lot_stock in select_stock_lot:
+                        id_stock_lots_change += f'{lot_stock.id}; '
+                        if lot_stock.catalog_reference != reference_catalog:
+                            lot_stock.catalog_reference = reference_catalog
+
+                        if lot_stock.manufacturer != manufacturer:
+                            lot_stock.manufacturer = manufacturer
+
+                        if lot_stock.description != description:
+                            lot_stock.description = description
+
+                        if lot_stock.analytical_technique != analytical_technique:
+                            lot_stock.analytical_technique = analytical_technique
+
+                        if lot_stock.id_reactive != id_reactive:
+                            lot_stock.id_reactive = id_reactive
+
+                        if lot_stock.code_SAP != code_sap:
+                            lot_stock.code_SAP = code_sap
+
+                        if lot_stock.code_LOG != code_log:
+                            lot_stock.code_LOG = code_log
+
+                        if lot_stock.temp_conservation != temp_conservation:
+                            lot_stock.temp_conservation = temp_conservation
+
+                        if lot_stock.description_subreference != description_subref:
+                            lot_stock.description_subreference = description_subref
+
+                        if lot_stock.react_or_fungible != react_or_fungible:
+                            lot_stock.react_or_fungible = react_or_fungible
+
+                        if lot_stock.code_panel != code_panel:
+                            lot_stock.code_panel = code_panel
+
+                        if lot_stock.location != location:
+                            lot_stock.location = location
+
+                        if lot_stock.supplier != supplier:
+                            lot_stock.supplier = supplier
+
+                    if len(id_stock_lots_change) > 2:
+                        id_stock_lots_change = id_stock_lots_change[:-2]
+
+                    info_change = {"field": 'BD stock_lots', "old_info": 'ids que s han modidifica per el canvi a lots', "new_info": id_stock_lots_change}
+                    dict_save_info['id_lot'] = '0'
+                    dict_save_info['info'] = json.dumps(info_change)
+                    save_log(dict_save_info)
 
             session1.commit()
 
