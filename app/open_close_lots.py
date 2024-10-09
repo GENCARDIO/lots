@@ -35,6 +35,10 @@ def search_lots_open_close():
         Stock_lots.react_or_fungible == 'Reactiu'
     ).all()
 
+    for stock_lot, lot_consumption in select_lot:
+        # Imprime atributos específicos de Stock_lots
+        print(f"ID: {stock_lot.id}, Reference: {stock_lot.catalog_reference}, Description: {stock_lot.description}")
+    
     if not select_lot:
         flash(f"No s'ha trobat cap coincidencia amb el codi entrat --> {reference}", "warning")
         return render_template('home.html', list_desciption_lots=list_desciption_lots(),
