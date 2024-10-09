@@ -408,11 +408,19 @@
                                 <th style="min-width: 70px;  max-width: 120px;">Subreferència</th>
                             {% endif %}
                             <th style="max-width: 300px;">Descripció</th>
-                            <th style="min-width: 70px;  max-width: 120px;">Lot</th>
+                            {% if 'Oligos' in select_lot[0][0].description or 'Coriels' in select_lot[0][0].description %}
+                                <th style="min-width: 80px;  max-width: 120px;">Num. Comanda</th>
+                            {% else %}
+                                <th style="min-width: 70px;  max-width: 120px;">Lot</th>
+                            {% endif %}
                             <th style="min-width: 70px;  max-width: 120px;">Lot intern</th>
                             <!-- <th style="min-width: 70px;  max-width: 120px;">Unitats</th> -->
                             <!-- <th style="min-width: 70px;  max-width: 120px;">Data arribada</th> -->
-                            <th style="min-width: 70px;  max-width: 120px;">Caducitat</th>
+                            {% if 'Oligos' in select_lot[0][0].description or 'Coriels' in select_lot[0][0].description %}
+                                <th style="min-width: 80px;  max-width: 120px;">Observacions</th>
+                            {% else %}
+                                <th style="min-width: 70px;  max-width: 120px;">Caducitat</th>
+                            {% endif %}
                             <th style="min-width: 70px;  max-width: 120px;">CECO</th>
                             <th style="min-width: 130px;  max-width: 210px;">Accions</th>
                         </tr>
@@ -429,11 +437,19 @@
                                 {% else %}
                                     <td>{{lot.description_subreference}}</td>
                                 {% endif %}
-                                <td id="{{lot.id}}_lot">{{lot.lot}}</td>
+                                {% if 'Oligos' in lot.description or 'Coriel' in lot.description %}
+                                    <td>{{lot.comand_number}}</td> 
+                                {% else %}
+                                    <td id="{{lot.id}}_lot">{{lot.lot}}</td>
+                                {% endif %}
                                 <td>{{lot.internal_lot}}</td>
                                 <!-- <td>{{lot.units_lot}}</td> -->
                                 <!-- <td>{{lot.reception_date}}</td> -->
-                                <td id="{{lot.id}}_date_expiry">{{lot.date_expiry}}</td>
+                                {% if 'Oligos' in lot.description or 'Coriel' in lot.description %}
+                                    <td>{{lot.observations_inspection}}</td>
+                                {% else %}
+                                    <td id="{{lot.id}}_date_expiry">{{lot.date_expiry}}</td>
+                                {% endif %}
                                 <td>{{lot.cost_center_stock}}</td>
                                 <td>
                                     <div style=" display: inline;">

@@ -312,17 +312,18 @@
                                 <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts">
                                     <div class="input-group mb-3">
                                         <span class="input-group-text" id="basic-addon1" style="width: 148px;"><b>Lot :</b></span>
-                                        <input type="text" class="form-control" id="lot0_${i}" aria-label="TTN">
+                                        <input type="text" class="form-control" id="lot0_${i}" aria-label="TTN" value="">
                                     </div>
                                 </div>
                                 <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts">  
                                     <div class='input-group mb-3'>
                                         <span class='input-group-text' id='basic-addon1' style='width: 148px;'><b>Data caducitat :</b></span>
-                                        <input type="text" class="form-control" id="expiry_date0_${i}" aria-label="TTN" aria-describedby="basic-addon1" oninput="replae_slash_with_hyphen(this); filter_characters(this)">
+                                        <input type="text" class="form-control" id="expiry_date0_${i}" aria-label="TTN" aria-describedby="basic-addon1" oninput="replae_slash_with_hyphen(this); filter_characters(this)" value="">
                                     </div>
                                 </div>
                                 `;
                             if (list_info_lots[i]['react_or_fungible'] == 'Fungible'){
+                                var nuevoHTML_context = nuevoHTML_context.replace('value=""', 'value="NA"').replace('value=""', 'value="NA"');
                                 var nuevoHTML_context = `${nuevoHTML_context}
                                 <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts" style="display: none">
                                     <div class="input-group mb-3">
@@ -361,6 +362,9 @@
                                 <input type='hidden' id='json_info_lot0_${i}' value='${dict_lots}' name="divs_subproducts">
                                 `;}
                             else {
+                                if (list_info_lots[i]['description'].includes("Coriels") || list_info_lots[i]['description'].includes("Oligos")) {
+                                    var nuevoHTML_context = nuevoHTML_context.replace('value=""', 'value="NA"').replace('value=""', 'value="NA"');
+                                }
                                 var nuevoHTML_context = `${nuevoHTML_context}
                                 <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts">
                                     <div class="input-group mb-3">
@@ -753,17 +757,18 @@
                     <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts">
                         <div class="input-group mb-3">
                             <span class="input-group-text" id="basic-addon1" style="width: 145px;"><b>Lot :</b></span>
-                            <input type="text" class="form-control" id="lot${x}_${i}" aria-label="TTN">
+                            <input type="text" class="form-control" id="lot${x}_${i}" aria-label="TTN" value="">
                         </div>
                     </div>
                     <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts">  
                         <div class='input-group mb-3'>
                             <span class='input-group-text' id='basic-addon1' style='width: 145px;'><b>Data caducitat :</b></span>
-                            <input type='text' class='form-control' id='expiry_date${x}_${i}' aria-label='TTN' aria-describedby='basic-addon1' oninput="replae_slash_with_hyphen(this); filter_characters(this)">
+                            <input type='text' class='form-control' id='expiry_date${x}_${i}' aria-label='TTN' aria-describedby='basic-addon1' oninput="replae_slash_with_hyphen(this); filter_characters(this)" value="">
                         </div>
                     </div>
                     `
                     if (list_info_lots[i]['react_or_fungible'] == 'Fungible'){
+                        var nuevoHTML_context = nuevoHTML_context.replace('value=""', 'value="NA"').replace('value=""', 'value="NA"');
                         var nuevoHTML_context = `${nuevoHTML_context}
                             <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts" style="display: none;">
                                 <div class="input-group mb-3">
@@ -801,6 +806,9 @@
                             </div>
                             <input type='hidden' id='json_info_lot${x}_${i}' value='${dict_lots}' name="divs_subproducts">`;}
                     else {
+                        if (list_info_lots[i]['description'].includes("Coriels") || list_info_lots[i]['description'].includes("Oligos")) {
+                            var nuevoHTML_context = nuevoHTML_context.replace('value=""', 'value="NA"').replace('value=""', 'value="NA"');
+                        }
                         var nuevoHTML_context = `${nuevoHTML_context}
                             <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts">
                                 <div class="input-group mb-3">
