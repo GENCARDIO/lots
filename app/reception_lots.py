@@ -105,7 +105,6 @@ def register_new_lot():
         :return: json amb un True o un False i si es False una paraula amb el motiu.
         :rtype: json
     '''
-    print("arriba aquiiii")
     reference_catalog = request.form.get("reference_catalog")
     list_lots_json = request.form.get("list_lots")
 

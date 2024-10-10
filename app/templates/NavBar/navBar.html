@@ -17,6 +17,11 @@
             <li class="nav-item">
                 <a class="navbar btn mr-1" style="color:white;padding:5px;" onclick="look_spend_money()"><b><i class="fa-solid fa-dollar-sign"></i>&nbsp;Indicadors</a></b>
             </li>
+            {% if session['rol'] == 'admin' %}
+                <li class="nav-item">
+                    <a class="navbar btn mr-1" style="color:white;padding:5px;" onclick="open_modal('open_update_price')"><b><i class="fa-solid fa-money-check-dollar"></i>&nbsp;Preus</a></b>
+                </li>
+            {% endif %}
     </div>
 
     <ul class="navbar-nav ml-auto">
@@ -546,6 +551,8 @@
             document.getElementById("observations_command").value = ''}
         else if (modal_id == 'modal_edit_lot'){
             $('#info_lots_bd').modal('hide');
+        } else if (modal_id == 'open_update_price'){
+            document.getElementById('file').value = ''
         }
         $(`#${modal_id}`).modal('show');
     }
