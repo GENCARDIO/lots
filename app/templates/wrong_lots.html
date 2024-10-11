@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    {% include 'Header/header.html' %}
+    <script>
+        /**
+         * Mostrar el modal per obrir o tancar un lot.
+         * 
+         * Aquesta funció envia una sol·licitud AJAX al servidor per obrir o tancar un lot
+         * específic, i després mostra una alerta amb el resultat de l'operació. També actualitza
+         * la taula de lots si s'ha tancat un lot i aquest s'ha esgotat completament. Arribant a eliminar
+         * totes les lines que estiguin associades ja que si un lot es tanca la resta de lots associat,
+         * també s'han de tancar.
+         * 
+         * @param {string} id_lot L'identificador únic del lot a obrir o tancar.
+         * @param {string} action L'acció a realitzar: "open" per obrir o "close" per tancar el lot.
+         * @returns {void} No retorna cap valor.
+         * 
+         * @descriptor Aquesta funció executa una operació asíncrona per enviar una sol·licitud
+         * al servidor per obrir o tancar un lot, mostrant alertes d'èxit o error en funció de la
+         * resposta rebuda. També actualitza la taula de lots si s'ha tancat un lot i aquest s'ha
+         * esgotat completament. Si s'esgota completament eliminarem la linia i totes les linies que
+         * estigun associades a ella.
+         */
+        function delete_wrong_lot(id_lot){
+            // Crear form data
+            var form_data = new FormData();
+
+            form_data.append('id_lot', id_lot)
+
+            // Creeem l'objecte per l'ajax
+            var xhr = new XMLHttpRequest();
+            // 1er argument si es pots o get
+            // 2n argument url o ruta
+            // 3r argumemt true sempre
+            xhr.open('POST', '/delete_wrong_lot', true);
+            xhr.onload = function(){
+                if (xhr.status === 200) {
+                    var response = xhr.responseText;
+                    split_response = response.split('_//_')
+                    if (split_response[0] === 'False'){
+                        var message = split_response[1]
+                        alert_type = 'danger'}
+                    else if (split_response[0] === 'True'){
+                        alert_type = 'success'
+                        var message = "Lot eliminat de la llista correctament."
+                        var table = $('#example').DataTable();
+                        var tr = table.row(`#${id_lot}`).node();
+                        if (tr) {  table.row(tr).remove().draw(false);}
+                    } else {
+                        var message = `Error inesperat. Si persisteix l'error contacta amb un administrador`
+                        alert_type = 'danger'
+                    }
+                }
+                else {
+                    message = `Error, No s'ha pogut realitzar l'operació. Si persisteix l'error contacta amb un administrador`
+                    alert_type = 'danger' }
+
+                var flashContainer = document.querySelector(".d-flex.justify-content-center .row");
+                // Eliminar la alerta anterior, si existe
+                if (flashContainer.children.length > 0) {
+                    flashContainer.removeChild(flashContainer.children[0]); }
+                var newFlash = document.createElement("div");
+                newFlash.className = "alert alert-" + alert_type + " alert-dismissible fade show ml-3";
+                newFlash.role = "alert";
+                newFlash.innerHTML = "<span>" + message + "</span>" + 
+                                    '<button type="button" class="close" data-dismiss="alert" aria-label="Close">' +
+                                    '<span aria-hidden="true">&times;</span>' +
+                                    '</button>';
+                flashContainer.appendChild(newFlash);
+                flashContainer.style.paddingTop = "20px";
+            }
+
+            xhr.send(form_data)
+        }
+    </script>
+
+    <style>
+        #example thead input[type="text"] {
+            max-width: 100%; /* Ajusta este valor según tus necesidades */
+        }
+    </style>
+</head>
+<body>
+    {% include 'NavBar/navBar.html' %}
+    <br>
+    <div class="jumbotron bg-grey text-black jomboton-imgae shadow d-flex justify-content-between align-items-center" style="width: 90%; height: 80px; margin: 0 auto; padding-top: 0px; padding-bottom: 0px;">
+        <h1 class="mb-0">
+            <span style="color: darkblue;">( 4.2 ) </span> - 
+            <span>Lots en Quarentena/Rebutjats</span>
+        </h1>
+    </div>
+    <div class="d-flex justify-content-center pt-3 mt-3 rounded">
+        <div class="container-fluid rounded table-responsive" style="width: 90%; text-align: center; margin-top: -30px">
+            {% include 'ErrorFlash/errorFlash.html' %} 
+            <div id="table1" name="table1">
+                <table id="example" class="display">
+                    <thead>
+                        <tr id="thcolor">
+                            <th>Ref. Proveïdor</th>
+                            <th>Descripció</th>
+                            <th>Lot intern</th>
+                            <th>Observacions</th>
+                            <th>Estat</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for stock_lot in select_lot %}
+                            <tr id="{{stock_lot.id}}">
+                                <td>{{stock_lot.catalog_reference}}</td>
+                                {% if stock_lot.description_subreference == '' %}
+                                    <td>{{stock_lot.description}}</td>
+                                {% else %}
+                                    <td>{{stock_lot.description_subreference}}</td>
+                                {% endif %}
+                                <td>{{stock_lot.internal_lot}}</td>
+                                <td>{{stock_lot.observations_inspection}}</td>
+                                <td>{{stock_lot.state}}</td>
+                                <td>
+                                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="delete_wrong_lot(`{{stock_lot.id}}`)"><i class="fa-solid fa-trash"></i> Eliminar</button>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <br>
+        </div>
+    </div>
+
+    <script>
+        $(document).ready(function() {
+            // Setup - add a text input to each footer cell
+            $('#example thead tr').clone(true).appendTo( '#example thead' );
+            $('#example thead tr:eq(1) th').each( function (i) {
+                var title = $(this).text();
+                if (title !== ''){
+                    if (title === 'Técnic') {
+                        $(this).html('');
+                    } else {
+                        $(this).html( '<input type="text" placeholder=""/>' );
+                
+                        $( 'input', this ).on( 'keyup change', function () {
+                            if ( table.column(i).search() !== this.value ) {
+                                table
+                                    .column(i)
+                                    .search( this.value )
+                                    .draw();
+                            }
+                        } );
+                    }
+                }
+            } );
+        
+            var table = $('#example').DataTable( {
+                orderCellsTop: true,
+                fixedHeader: true,
+                columnDefs: [
+                    {
+                        targets: 0, // Índice de la columna con las fechas
+                        type: 'numeric', // Usar orden numérico personalizado
+                        render: function(data, type, row) {
+                            // Transformar la fecha en formato DD/MM/YYYY a un número YYYYMMDD para ordenar
+                            if (type === 'sort') {
+                                var parts = data.split('/');
+                                return parseInt(parts[2] + parts[1] + parts[0]);
+                            }
+                            return data; // Mantener el formato original para mostrar
+                        },
+                    },
+                ],
+                order: [[0, 'desc']],
+            } );
+
+            // Adjust column widths to content
+            table.columns.adjust().draw();
+        } );
+
+        $(document).ready(function() {
+            var table = $('#table_history_lots').DataTable( {
+                order: [ 0, 'desc' ],
+                columnDefs: [
+                    { width: '25%', targets: [0, 1, 2, 3] } // Establece el ancho de todas las columnas al 25%
+                ]
+            } );
+        } );
+    </script>
+
+    <script src="/static/js/bootstrap.js"></script>
+</body>
+</html>
