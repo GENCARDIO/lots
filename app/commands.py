@@ -1,12 +1,12 @@
 from flask import request, session, render_template, flash, send_file
 from app import app
-from app.utils import instant_date, requires_auth, create_excel, save_log, to_dict
+from app.utils import instant_date, requires_auth, create_excel, save_log, to_dict, year_now, list_desciption_lots, list_cost_center
 from app.models import session1, Lots, Commands, Cost_center, Stock_lots
 from sqlalchemy import func
 from config import main_dir_docs
 import json
 from datetime import datetime
-
+import pandas as pd
 
 @app.route('/search_add_command', methods=['POST'])
 @requires_auth
@@ -195,15 +195,16 @@ def command_success():
     '''
         Obté una llista de comandes tancades i les retorna en format JSON.
 
-        Aquesta funció realitza una consulta a la base de dades per obtenir les comandes tancades associades a lots. 
-        Si no es troben comandes, retorna un missatge d'error. Si es troben, crea una llista de diccionaris amb la informació 
-        rellevant de cada comanda i lot, i retorna aquesta informació en format JSON.
+        Aquesta funció realitza una consulta a la base de dades per obtenir les comandes tancades associades a lots.
+        Si no es troben comandes, retorna un missatge d'error. Si es troben, crea una llista de diccionaris amb la
+        informació rellevant de cada comanda i lot, i retorna aquesta informació en format JSON.
 
-        :return: Un missatge que indica si l'operació ha estat exitosa i, en cas afirmatiu, la informació en format JSON.
+        :return: Un missatge que indica si l'operació ha estat exitosa i, en cas afirmatiu, la info en format JSON.
         :rtype: str
     '''
     select_command = session1.query(Commands, Lots).join(Lots, Commands.id_lot == Lots.key)\
-                                                   .filter(Commands.user_close != '').all()
+                                                   .filter(Commands.user_close != '')\
+                                                   .filter(Commands.received == '1').all()
     if not select_command:
         return "False_//_No s'ha trobat cap comanda tramitada a l'historic"
 
@@ -399,3 +400,85 @@ def delete_order_tracking():
         return "False_//_Error, No hem pogut eliminar la comanda de la BD"
 
     return 'True_//_Comanda eliminada correctament'
+
+
+@app.route('/download_order_success', methods=['POST'])
+@requires_auth
+def download_order_success():
+    '''
+        1 - Agafem tota la informació de lots que tenim.
+        2 - Creem un excel i l'omplim amb l'informació del les comandes tramitades.
+        3 - Guardem el document.
+        4 - Posem en descarga l'arxiu que acabem de crear.
+
+        :return: L'arxiu que l'usuari es descarregar
+        :rtype: csv
+    '''
+    try:
+        year = year_now()
+        last_year = year - 1
+
+        select_command_year = session1.query(Commands, Lots).join(Lots, Commands.id_lot == Lots.key)\
+                                                            .filter(Commands.user_close != '')\
+                                                            .filter(Commands.date_close.like(f'%-{year}'))\
+                                                            .filter(Commands.received == '1').all()
+
+        select_command_last_year = session1.query(Commands, Lots).join(Lots, Commands.id_lot == Lots.key)\
+                                                                .filter(Commands.user_close != '')\
+                                                                .filter(Commands.date_close.like(f'%-{last_year}'))\
+                                                                .filter(Commands.received == '1').all()
+
+        if not select_command_year and not select_command_last_year:
+            flash("Error, No s'han trobat comandes a la BD", "danger")
+            return render_template('home.html', list_desciption_lots=list_desciption_lots(),
+                                    list_cost_center=list_cost_center())
+
+        def create_dataframe(select_command):
+            # Crear un DataFrame con los datos
+            data = {
+                'Id': [],
+                'Id lot': [],
+                'Referencia Cataleg': [],
+                'Descripció': [],
+                'Id comanda': [],
+                'SAP': [],
+                'LOG': [],
+                'Unitats': [],
+                'Data tramitació': [],
+                'Usuari creació': [],
+                'Usuari tramitació': [],
+                'CECO': []
+            }
+
+            for command, lot in select_command:
+                data['Id'].append(command.id)
+                data['Id lot'].append(command.id_lot)
+                data['Referencia Cataleg'].append(lot.catalog_reference)
+                data['Descripció'].append(lot.description)
+                data['Id comanda'].append(command.code_command)
+                data['SAP'].append(lot.code_SAP)
+                data['LOG'].append(lot.code_LOG)
+                data['Unitats'].append(command.units)
+                data['Data tramitació'].append(command.date_close)
+                data['Usuari creació'].append(command.user_create)
+                data['Usuari tramitació'].append(command.user_close)
+                data['CECO'].append(command.cost_center)
+
+            return pd.DataFrame(data)
+
+        # Crear DataFrames per l'any actual i l'any passat
+        df_current_year = create_dataframe(select_command_year)
+        df_last_year = create_dataframe(select_command_last_year)
+
+        # Guardar el DataFrame en un archivo Excel
+        path = f"{main_dir_docs}/Comandes_tramitades.xlsx"
+
+        with pd.ExcelWriter(path, engine='openpyxl') as writer:
+            df_current_year.to_excel(writer, sheet_name=f"Comandes_{year}", index=False)
+            df_last_year.to_excel(writer, sheet_name=f"Comandes_{last_year}", index=False)
+
+        return send_file(path, as_attachment=True)
+    except Exception:
+        flash("Error inesperat, contacteu amb un administrador", "danger")
+        return render_template('home.html', list_desciption_lots=list_desciption_lots(),
+                               list_cost_center=list_cost_center())

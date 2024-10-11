@@ -817,6 +817,15 @@
             }
             xhr.send(form_data)
         }
+    
+        /**
+        * Fa el submit de un form
+        */
+        function download_command_success(){
+            document.forms["down_excel_command"].submit();
+        }
+
+
     </script>
 
     <style>
@@ -972,10 +981,13 @@
     <div class="modal fade modal-custom"  id="modal_command_success" tabindex="-1" role="dialog" aria-labelledby="editRegister" aria-hidden="true">
         <div class="modal-dialog modal-xl" tabindex="-1" role="document">
           <div class="modal-content">
-            <div class="modal-header">
-              <h5 class="modal-title" id="title"> Comandes tramitades</h5>
-              <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="close_modal('modal_command_success')"><span aria-hidden="true">&times;</span></button>
-            </div>
+            <div class="modal-header d-flex justify-content-between align-items-center">
+                <h5 class="modal-title" id="title"> Comandes tramitades</h5>
+                <div>
+                    <button type="button" class="btn btn-link" onclick="download_command_success()"><i class="fa-solid fa-file-arrow-down"></i> Plantilla</button>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="close_modal('modal_command_success')"><span aria-hidden="true">&times;</span></button>
+                </div>
+            </div>     
             <div class="modal-body">
                 <div class="row">                                   
                     <div class="col-lg-12 col-md-12 col-sm-12">       
@@ -1005,6 +1017,8 @@
             </div>
           </div>
         </div>
+        <form action="/download_order_success" method="post" id="down_excel_command">
+        </form>
     </div>
     
     

@@ -1799,6 +1799,90 @@
         }
 
 
+    /**
+    * Enviem una sol·licitud per ajax perquè ens retorni tota la informació de les comandes tramitades que estan pendents de recepció.
+    *
+    * @returns {void} No retorna cap valor.
+    *
+    * @descriptor Aquesta funció envia una sol·licitud AJAX al servidor per consultar les comandes tramitades que estan pendente de recepció.
+    * Si ens retorna la informació la transformem en una taula de diccionaris i les inserim a la taula a l'html
+    * Si ens retorna error mostrarem un missatge d'informació amb el resultat.
+    */
+    function order_tracking_no_admin(){
+        alert_type = ''
+        message = ''
+        // Crear form data
+        var form_data = new FormData();
+
+        // Creeem l'objecte per l'ajax
+        var xhr = new XMLHttpRequest();
+        // 1er argument si es pots o get
+        // 2n argument url o ruta
+        // 3r argumemt true sempre
+        xhr.open('POST', '/order_tracking', true);
+        xhr.onload = function(){
+        show_message = true
+        if (xhr.status === 200) {
+            var response = xhr.responseText;
+            var split_response = response.split('_//_')
+            if (split_response[0] === 'False'){
+                message = split_response[1]
+                alert_type = 'danger'}
+            else if (split_response[0] === 'True'){
+                $('#modal_order_tracking_no_admin').modal('show');
+
+                var list_lots = JSON.parse(split_response[1]);
+
+                var table = $('#table_order_tracking_no_admin').DataTable();
+                table.clear().draw();
+
+                for (var i = 0; i < list_lots.length; i++) {
+                    var new_row_data = [];
+                    // Crea un nuevo elemento td para cada valor en la lista
+                    for (var key in list_lots[i]) {
+                        if (list_lots[i].hasOwnProperty(key)) {
+                            if (key !== 'id' && key !== 'id_lot') {
+                                new_row_data.push(list_lots[i][key])}
+                        }
+                    }
+                    var new_row = table.row.add(new_row_data).draw(false).node();
+                    $(new_row).attr('id', list_lots[i].id) // Usa 'id' o 'id_lot' según corresponda
+                                .addClass('open-modal')   // Añade la clase que desees
+                                .attr('data-target', `${list_lots[i].id}_//_${list_lots[i].units}_//_${list_lots[i].observations}_//_${list_lots[i].catalog_reference}_//_${list_lots[i].cost_center}`);
+                }
+                // Aplicar estilos CSS para centrar el contenido de las primeras cuatro columnas
+                for (var j = 0; j < 10; j++) {
+                    if (j !== 1) {
+                        table.column(j).nodes().to$().addClass('text-center');}
+                }
+            } else {
+                message = `Error inesperat. Si persisteix l'error contacta amb un administrador`
+                alert_type = 'danger'
+            }
+        }
+        else {
+            message = `Error, No s'ha pogut realitzar l'operació. Si persisteix l'error contacta amb un administrador`
+            alert_type = 'danger' }
+        
+        if (message !== ''){
+            var flashContainer = document.querySelector(".d-flex.justify-content-center .row");
+            // Eliminar la alerta anterior, si existe
+            if (flashContainer.children.length > 0) {
+                flashContainer.removeChild(flashContainer.children[0]); }
+            var newFlash = document.createElement("div");
+            newFlash.className = "alert alert-" + alert_type + " alert-dismissible fade show ml-3";
+            newFlash.role = "alert";
+            newFlash.innerHTML = "<span>" + message + "</span>" + 
+                                '<button type="button" class="close" data-dismiss="alert" aria-label="Close">' +
+                                '<span aria-hidden="true">&times;</span>' +
+                                '</button>';
+            flashContainer.appendChild(newFlash);
+            flashContainer.style.paddingTop = "20px";}
+        }
+
+        xhr.send(form_data)
+    }
+
 
 </script>
 <style>
@@ -1842,6 +1926,8 @@
                                         <form action="/search_commands" style="display: inline;">
                                             <button type="submit" class="btn btn-outline-success btn-sm">Consultar <i class="fa-solid fa-magnifying-glass"></i></button>
                                         </form>
+                                    {% else %}
+                                        <button class="btn btn-outline-success btn-sm" onclick="order_tracking_no_admin()">Seg. Comandes <i class="fa-solid fa-truck-arrow-right"></i></button>
                                     {% endif %}
                                 </div>
                             </div>
@@ -2414,6 +2500,7 @@
         </div>
     </div>
 
+
     <div class="modal fade"  id="open_update_price" tabindex="-1" role="dialog" aria-labelledby="editRegister" aria-hidden="true">
         <div class="modal-dialog modal-md" tabindex="-1" role="document">
           <div class="modal-content">
@@ -2443,6 +2530,45 @@
         </form>
     </div>
 
+
+    <div class="modal fade modal-custom95"  id="modal_order_tracking_no_admin" tabindex="-1" role="dialog" aria-labelledby="editRegister" aria-hidden="true">
+        <div class="modal-dialog modal-xl" tabindex="-1" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="title"> Seguiment Comandes</h5>
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="close_modal('modal_order_tracking_no_admin')"><span aria-hidden="true">&times;</span></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">                                   
+                    <div class="col-lg-12 col-md-12 col-sm-12">       
+                        <table id="table_order_tracking_no_admin" class="display" style="width: 100%;">
+                            <thead>
+                                <tr id="thcolor">
+                                    <th style="width: 100px;">Ref. Proveïdor</th>
+                                    <th style="width: 350px;">Descripció</th>
+                                    <!-- <th style="width: 100px;" name="th_subreference">Id Suref.</th>
+                                    <th style="width: 350px;" name="th_subreference">Descripció Subref.</th> -->
+                                    <th style="width: 80px;">Codi Comanda</th>
+                                    <th style="width: 80px;">Codi SAP</th>
+                                    <th style="width: 80px;">Codi LOG</th>
+                                    <th style="width: 80px;">Unitats</th>
+                                    <!-- <th style="width: 80px;">Data creació</th>
+                                    <th style="width: 80px;">Usuari</th> -->
+                                    <th style="width: 80px;">Data Tramitació</th>
+                                    <th style="width: 80px;">Usuari</th>
+                                    <th style="width: 80px;">CECO</th>
+                                    <th style="width: 80px;">Observacions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table>
+                    </div> 
+                </div>
+            </div>
+          </div>
+        </div>
+    </div>
     <script src="/static/js/bootstrap.js"></script>
 </body>                    
 </html>
