@@ -55,6 +55,8 @@ def search_add_lot():
                     list_commands.append([command.id, command.user_create, command.code_command, command.cost_center])
                 if id_command[-1] == ';':
                     id_command = id_command[:-1]
+            else:
+                return "False_//_No hi ha comanda feta d'aquest producte, si us plau contacta amb els administradors_//_warning"
 
             list_lots = []
             for lot in select_lot:
@@ -87,7 +89,7 @@ def search_add_lot():
             list_commands_json = json.dumps(list_commands) 
             return f'True_//_{json_data}_//_{list_commands_json}'
     except Exception:
-        return 'False_//_False'
+        return 'False_//_Error, La cerca del lot ha fallat_//_danger'
 
 
 @app.route('/register_new_lot', methods=['POST'])

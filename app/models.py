@@ -85,6 +85,7 @@ class Stock_lots(Base):
     units_format = Column(Integer())
     import_unit_ics = Column(String())
     import_unit_idibgi = Column(String())
+    wrong_lots = Column(Integer())
 
 
 class Logs(Base):

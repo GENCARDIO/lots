@@ -199,3 +199,52 @@ def history_lot():
         return "False_ No s'ha pogut accedir a la informació dels consums."
 
     return f'True_//_{json_data}'
+
+
+@app.route('/not_according', methods=['POST'])
+@requires_auth
+def not_according():
+    '''
+        1 - Fem la cerca per trobar els article que tinguem en quarentena o estiguien rebutjats
+
+        :return: Redirigim a la pàgina amb la informació que ens han requerit.
+        :rtype: render template
+    '''
+    select_lot = session1.query(Stock_lots).filter(or_(Stock_lots.state == 'Rebutjat',
+                                                       Stock_lots.state == 'Quarentena'))\
+                                           .filter(Stock_lots.wrong_lots == 0).all()
+
+    if not select_lot:
+        flash("No tenim cap article en Quarentena o Rebutjat", "warning")
+        return render_template('home.html', list_desciption_lots=list_desciption_lots(),
+                               list_cost_center=list_cost_center())
+
+    return render_template('wrong_lots.html', select_lot=select_lot, list_desciption_lots=list_desciption_lots())
+
+
+@app.route('/delete_wrong_lot', methods=['POST'])
+@requires_auth
+def delete_wrong_lot():
+    '''
+        1 - Recollim la informació de l'ajax
+        2 - Cerquem a la BD la informació que necesitem
+        2.1 - Si no en té retornem False més un missatge d'explicació per l'usuari.
+        2.2 - Si és que si accedim al cmap wrong lots i posem un 1
+        3 - Retornem un True 
+
+        :param str id_lot: Identificador unit del lot
+
+        :return: True o False amb un missatge.
+        :rtype: json
+    '''
+    id_lot = request.form.get("id_lot")
+    try:
+        select_lots = session1.query(Stock_lots).filter_by(id=id_lot).first()
+        if not select_lots:
+            return "False_//_No hem trobat el l'article."
+        select_lots.wrong_lots = 1
+        session1.commit()
+    except Exception:
+        return "False_//_No s'ha pogut accedir a la informació del l'article."
+
+    return 'True_//_True'

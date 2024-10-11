@@ -353,6 +353,35 @@
 </div>
 
 
+<div class="modal fade"  id="open_update_price" tabindex="-1" role="dialog" aria-labelledby="editRegister" aria-hidden="true">
+    <div class="modal-dialog modal-md" tabindex="-1" role="document">
+      <div class="modal-content">
+        <div class="modal-header d-flex justify-content-between align-items-center">
+            <h5 class="modal-title" id="title"> Actualitzar Preus</h5>
+            <div>
+                <button type="button" class="btn btn-link" id='_delivery_note' onclick="download_template()"><i class="fa-solid fa-file-arrow-down"></i> Plantilla</button>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="close_modal('open_update_price')"><span aria-hidden="true">&times;</span></button>
+            </div>
+        </div>      
+        <div class="modal-body">
+            <div class="row">                                   
+                <div class="col-lg-12 col-md-12 col-sm-12">       
+                    <div class="mb-3">
+                        <label for="formFile" class="form-label"><i>Carrega plantilla amb els canvis de preu</i></label>
+                        <div class="d-flex align-items-center">
+                            <input class="form-control me-2" type="file" id="file" name="file" style="flex: 1;">
+                            <button type="button" class="btn btn-primary" onclick="charge_doc_price()" style="margin-left: -10px;"><i class="fa-sharp fa-solid fa-file-arrow-up"></i> Carregar</button>
+                        </div>
+                    </div>                            
+                </div> 
+            </div>
+        </div>
+      </div>
+    </div>
+    <form action="/download_template_price" method="post" id="down_excel">
+    </form>
+</div>
+
 <script>
     /**
      * Realitza una cerca de lots a la base de dades i mostra els resultats en una taula.
@@ -996,6 +1025,111 @@
 
         xhr.send(form_data)
     }
+
+
+    /**
+     * Fa el submit de un form
+     */
+     function download_template(){
+        document.forms["down_excel"].submit();
+    }
+
+
+    /**
+     * Carga un archivo de precios y lo envía al servidor para procesar.
+     * 
+     * Esta función permite cargar un archivo .xlsx a través de un formulario y lo envía mediante una solicitud
+     * AJAX al servidor para su procesamiento. Realiza validaciones de formato y muestra un mensaje de alerta según el 
+     * resultado de la operación.
+     * 
+     * @returns {void} No retorna ningún valor. Controla la carga de un archivo y gestiona las respuestas del servidor.
+     * 
+     * @descriptor La función verifica si se ha seleccionado un archivo en el campo de entrada con el ID `file`, 
+     * luego valida si el archivo tiene una extensión válida .xlsx. Si todo es correcto, envía el archivo
+     * al servidor mediante una solicitud AJAX POST a la ruta `/upload_template_price`. 
+     * Dependiendo de la respuesta del servidor, se muestra un mensaje de éxito, advertencia o error.
+     * 
+     * La función gestiona también la interfaz de usuario, ocultando un modal y mostrando una alerta personalizada
+     * según el resultado del proceso de carga.
+     */
+    function charge_doc_price(){
+            // Crear form data
+            var form_data = new FormData();
+
+            // Carregar dades al form de l'html            
+            const file_input = document.getElementById('file')
+            const file = file_input.files[0];
+
+            if (!file){
+                alert("Selecciona un document, abans de clicar Carregar")
+                return
+            } else {
+                const fileName = file.name; // Obtiene el nombre del archivo
+                const fileExtension = fileName.split('.').pop().toLowerCase();
+
+                // Verifica si la extensión es válida
+                if (fileExtension !== 'xlsx') {
+                    alert(`Format no valid: .${fileExtension}`);
+                    return;
+                }
+            }
+            
+            form_data.append('file', file)
+
+            $('#open_update_price').modal('hide');
+
+            // Creeem l'objecte per l'ajax
+            var xhr = new XMLHttpRequest();
+            // 1er argument si es pots o get
+            // 2n argument url o ruta
+            // 3r argumemt true sempre
+            
+            xhr.open('POST', '/upload_template_price', true);
+            xhr.onload = function(){
+                if (xhr.status === 200) {
+                    var response = xhr.responseText;
+                    var split_response= response.split('_//_')
+                    if (split_response[0] === 'False'){
+                        alert_type = 'danger'
+                        message = split_response[1]}
+                    else if (split_response[0] === 'True'){
+                        if (split_response[2] === 'False'){
+                            message = "No hi ha canvis entre el document i la BD."
+                            alert_type = 'warning'}
+                        else if (split_response[1] === ''){
+                            message = "El document s'ha carregat correctament."
+                            alert_type = 'success'}
+                        else {
+                            message = `El document s'ha carregat però els seguent camps no s'han actualitzat.<br>${split_response[1]}.`
+                            alert_type = 'warning'
+                        }                        
+                    } else {
+                        message = `Error inesperat. Si persisteix l'error contacta amb un administrador`
+                        alert_type = 'danger'
+                    }
+                }
+                else {
+                    message = `Error, No s'ha pogut realitzar l'operació. Si persisteix l'error contacta amb un administrador`
+                    alert_type = 'danger' }
+
+                var flashContainer = document.querySelector(".d-flex.justify-content-center .row");
+                // Eliminar la alerta anterior, si existe
+                if (flashContainer.children.length > 0) {
+                    flashContainer.removeChild(flashContainer.children[0]); }
+
+                var newFlash = document.createElement("div");
+                newFlash.className = "alert alert-" + alert_type + " alert-dismissible fade show ml-3";
+                newFlash.role = "alert";
+                newFlash.innerHTML = "<span>" + message + "</span>" + 
+                                    '<button type="button" class="close" data-dismiss="alert" aria-label="Close">' +
+                                    '<span aria-hidden="true">&times;</span>' +
+                                    '</button>';
+                flashContainer.appendChild(newFlash);
+                flashContainer.style.paddingTop = "20px";
+            }
+
+            xhr.send(form_data)
+        }
 
 
     // para hacer una accion siempre que se cierre el modal
