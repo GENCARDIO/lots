@@ -22,6 +22,15 @@
                     <a class="navbar btn mr-1" style="color:white;padding:5px;" onclick="open_modal('open_update_price')"><b><i class="fa-solid fa-money-check-dollar"></i>&nbsp;Preus</a></b>
                 </li>
             {% endif %}
+            {% if session['rol'] == 'admin' and session['user'] == 'adria' %}
+                <li class="nav-item">
+                    <form action="/show_recover_data" id="show_recover">
+                        <a class="navbar btn mr-1" style="color:white;padding:5px;" onclick="document.getElementById('show_recover').submit(); return false;">
+                            <b><i class="fa-solid fa-rotate-left"></i>&nbsp;Recuperar articles</b>
+                        </a>
+                    </form>  
+                </li>
+            {% endif %}
     </div>
 
     <ul class="navbar-nav ml-auto">

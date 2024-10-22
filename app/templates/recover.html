@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    {% include 'Header/header.html' %}
+    <style>
+        #example thead input[type="text"] {
+            max-width: 100%; /* Ajusta este valor según tus necesidades */
+        }
+    </style>
+    <script>
+        function recover_data(id_log){
+            // Crear form data
+            var form_data = new FormData();
+            
+            form_data.append('id_log', id_log)
+
+            // Creeem l'objecte per l'ajax
+            var xhr = new XMLHttpRequest();
+            // 1er argument si es pots o get
+            // 2n argument url o ruta
+            // 3r argumemt true sempre
+            xhr.open('POST', '/recover_data', true);
+            xhr.onload = function(){
+                if (xhr.status === 200) {
+                    var response = xhr.responseText;
+                    split_response = response.split('_//_')
+                    message = split_response[1]
+                    if (response.includes('False')){
+                        alert_type = 'danger'}
+                    else if (response.includes('True')){
+                        alert_type = 'success'
+                        let fila = document.getElementById(id_log);
+                        // fondo groc
+                        fila.style.setProperty('background-color', 'yellow', 'important');
+                        for (let cell of fila.cells) {
+                            cell.style.setProperty('background-color', 'yellow', 'important');
+                        }
+                        // seleccionem la 1a fila
+                        let primeraColumna = fila.cells[0];
+                        // eliminem el boto
+                        let boton = primeraColumna.querySelector('button');
+                        if (boton) {
+                            primeraColumna.removeChild(boton);
+                        }
+                        // seleccionem la 3a fila
+                        let terceraColumna = fila.cells[2];
+                        // modifiquem el valor de la fila
+                        terceraColumna.textContent = "delete_recovered";
+                    } else {
+                        message = `Error inesperat. Si persisteix l'error contacta amb un administrador`
+                        alert_type = 'danger'
+                    }
+                }
+                else {
+                    message = `Error, No s'ha pogut realitzar l'operació. Si persisteix l'error contacta amb un administrador`
+                    alert_type = 'danger' }
+                
+                var flashContainer = document.querySelector(".d-flex.justify-content-center .row");
+                // Eliminar la alerta anterior, si existe
+                if (flashContainer.children.length > 0) {
+                    flashContainer.removeChild(flashContainer.children[0]); }
+                var newFlash = document.createElement("div");
+                newFlash.className = "alert alert-" + alert_type + " alert-dismissible fade show ml-3";
+                newFlash.role = "alert";
+                newFlash.innerHTML = "<span>" + message + "</span>" + 
+                                    '<button type="button" class="close" data-dismiss="alert" aria-label="Close">' +
+                                    '<span aria-hidden="true">&times;</span>' +
+                                    '</button>';
+                flashContainer.appendChild(newFlash);
+                flashContainer.style.paddingTop = "20px";
+            }
+
+            xhr.send(form_data)
+        }
+    </script>
+</head>
+<body>
+    <br>
+    {% include 'NavBar/navBar.html' %}
+    <div class="jumbotron bg-grey text-black jomboton-imgae shadow d-flex justify-content-between align-items-center" style="width: 90%; height: 80px; margin: 0 auto; padding-top: 0px; padding-bottom: 0px;">
+        <h1 class="mb-0">
+            <span style="color: darkblue;">( 5 ) </span> - 
+            <span>Recuperar Eliminats</span>
+        </h1>
+    </div>
+    {% include 'ErrorFlash/errorFlash.html' %} 
+    
+    <div class="d-flex justify-content-center pt-3 mt-3 rounded">
+        <div class="container-fluid rounded table-responsive" style="width: 90%; text-align: center; margin-top: -30px;">
+            <div id="table1" name="table1">
+                <table id="example" class="display">
+                    <thead>
+                        <tr id="thcolor">
+                            <th style="width: 80px;">Accions</th>
+                            <th>Id lot</th>
+                            <th>Tipus</th>
+                            <th>Usuari</th>
+                            <th>Data</th>
+                            <th>Informació</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for log in select_log %}
+                            <tr id="{{log.id}}">
+                                {% if log.type == 'delete' %}
+                                    <td>
+                                        <button type="button" class="btn btn-link btn-sm" onclick="recover_data(`{{log.id}}`)">Recuperar <i class="fa-solid fa-rotate-left"></i></button></td>
+                                {% else %}
+                                    <td></td>
+                                {% endif %}
+                                <td>{{log.id_lot}}</td>
+                                <td>{{log.type}}</td>
+                                <td>{{log.user}}</td>
+                                <td>{{log.date}}</td>
+                                <td>{{log.info}}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <br>
+        </div>
+    </div>
+
+    <script>
+        $(document).ready(function() {
+            // Setup - add a text input to each footer cell
+            $('#example thead tr').clone(true).appendTo( '#example thead' );
+            $('#example thead tr:eq(1) th').each( function (i) {
+                var title = $(this).text();
+                if (title !== '' && title !== 'Accions'){
+                    $(this).html( '<input type="text" placeholder=""/>' );
+            
+                    $( 'input', this ).on( 'keyup change', function () {
+                        if ( table.column(i).search() !== this.value ) {
+                            table
+                                .column(i)
+                                .search( this.value )
+                                .draw();
+                        }
+                    } );
+                } else {
+                    $(this).html( '' );
+                }
+            } );
+        
+            var table = $('#example').DataTable( {
+                orderCellsTop: true,
+                fixedHeader: true,
+                columnDefs: [
+                    {
+                        targets: 4, // Índice de la columna con las fechas
+                        type: 'numeric', // Usar orden numérico personalizado
+                        render: function(data, type, row) {
+                            // Transformar la fecha en formato DD/MM/YYYY a un número YYYYMMDD para ordenar
+                            if (type === 'sort') {
+                                var parts = data.split('-');
+                                return parseInt(parts[2] + parts[1] + parts[0]);
+                            }
+                            return data; // Mantener el formato original para mostrar
+                        },
+                    },
+                ],
+                order: [[4, 'desc']],
+            } );
+
+            // Adjust column widths to content
+            // table.columns.adjust().draw();
+        } );
+    </script>
+    
+    <script src="/static/js/bootstrap.js"></script>
+</body>
+</html>
