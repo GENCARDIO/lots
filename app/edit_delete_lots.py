@@ -1,7 +1,7 @@
-from flask import request, session
+from flask import request, session, render_template, flash
 from app import app
-from app.utils import instant_date, requires_auth, save_log
-from app.models import session1, Lots, Stock_lots
+from app.utils import instant_date, requires_auth, save_log, list_desciption_lots, list_cost_center
+from app.models import session1, Lots, Stock_lots, Logs
 import json
 
 
@@ -331,7 +331,11 @@ def delete_lot():
                                      "react_or_fungible": lot.react_or_fungible,
                                      "code_panel": lot.code_panel,
                                      "location": lot.location,
-                                     "supplier": lot.supplier}
+                                     "supplier": lot.supplier,
+                                     "purchase_format": lot.purchase_format,
+                                     "units_format": lot.units_format,
+                                     "import_unit_ics": lot.import_unit_ics,
+                                     "import_unit_idibgi": lot.import_unit_idibgi}
 
                     dict_save_info = {'id_lot': id_lot,
                                       'type': 'delete',
@@ -363,7 +367,11 @@ def delete_lot():
                                  "react_or_fungible": select_lot.react_or_fungible,
                                  "code_panel": select_lot.code_panel,
                                  "location": select_lot.location,
-                                 "supplier": select_lot.supplier}
+                                 "supplier": select_lot.supplier,
+                                 "purchase_format": select_lot.purchase_format,
+                                 "units_format": select_lot.units_format,
+                                 "import_unit_ics": select_lot.import_unit_ics,
+                                 "import_unit_idibgi": select_lot.import_unit_idibgi}
 
                 dict_save_info = {'id_lot': id_lot,
                                   'type': 'delete',
@@ -524,3 +532,66 @@ def modify_reactive():
             return "True_//_Els canvis s'han realitzat correctament"
     except Exception:
         return "False_//_Error a l'inserir l'article a la BD"
+
+
+@app.route('/show_recover_data')
+@requires_auth
+def show_recover_data():
+    '''
+        Redirigeix al home de recover
+    '''
+    select_log = session1.query(Logs).all()
+    if not select_log:
+        flash("No hi ha articles que és puguin recuperar")
+        return render_template('home.html', list_desciption_lots=list_desciption_lots(),
+                               list_cost_center=list_cost_center())
+
+    return render_template('recover.html', select_log=select_log)
+
+
+@app.route('/recover_data', methods=['POST'])
+@requires_auth
+def recover_data():
+    id_log = request.form.get("id_log")
+
+    select_log = session1.query(Logs).filter(Logs.id == id_log).first()
+    if select_log is None:
+        return "False_//_No hi ha cap cap log amb id introduit"
+    else:
+        if select_log.type == 'delete':
+            try:
+                info_dict = json.loads(select_log.info)
+                select_lot = session1.query(Lots).filter(Lots.key == select_log.id_lot).first()
+                if select_lot is None:
+                    id_lot = info_dict['key']
+                else:
+                    id_lot = None
+
+                insert_lot = Lots(key=id_lot,
+                                  analytical_technique=info_dict['analytical_technique'],
+                                  catalog_reference=info_dict['catalog_reference'],
+                                  code_LOG=info_dict['code_LOG'],
+                                  code_SAP=info_dict['code_SAP'],
+                                  code_panel=info_dict['code_panel'],
+                                  description=info_dict['description'],
+                                  description_subreference=info_dict['description_subreference'],
+                                  id_reactive=info_dict['id_reactive'],
+                                  location=info_dict['location'],
+                                  active=info_dict['active'],
+                                  manufacturer=info_dict['manufacturer'],
+                                  react_or_fungible=info_dict['react_or_fungible'],
+                                  reference_units=info_dict['reference_units'],
+                                  supplier=info_dict['supplier'],
+                                  temp_conservation=info_dict['temp_conservation'],
+                                  purchase_format=info_dict['purchase_format'],
+                                  units_format=info_dict['units_format'],
+                                  import_unit_ics=info_dict['import_unit_ics'],
+                                  import_unit_idibgi=info_dict['import_unit_idibgi'])
+                session1.add(insert_lot)
+                select_log.type = "delete_recovered"
+                session1.commit()
+            except Exception:
+                return "False_//_Error, no s'ha pogut recuperar l'article"
+            return "True_//_El articulo se ha recuperado correctamente"
+        else:
+            return "False_//_Error, con el id introducido no hay nada que recuperar"

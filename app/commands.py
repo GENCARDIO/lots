@@ -304,7 +304,7 @@ def modify_order_tracking():
     '''
         Modifiquem les dades de la comanda.
 
-        Modifiquem les dades de la comanda que facin falta segons el que ens ha passat l'usuari, també es guardarà un 
+        Modifiquem les dades de la comanda que facin falta segons el que ens ha passat l'usuari, també es guardarà un
         log de tot el que es faci.
 
         :param str id_command: Identificador únic del la comanda
@@ -447,7 +447,8 @@ def download_order_success():
                 'Data tramitació': [],
                 'Usuari creació': [],
                 'Usuari tramitació': [],
-                'CECO': []
+                'CECO': [],
+                'Preu ICS': []
             }
 
             for command, lot in select_command:
@@ -463,6 +464,7 @@ def download_order_success():
                 data['Usuari creació'].append(command.user_create)
                 data['Usuari tramitació'].append(command.user_close)
                 data['CECO'].append(command.cost_center)
+                data['Preu ICS'].append(lot.import_unit_ics)
 
             return pd.DataFrame(data)
 
