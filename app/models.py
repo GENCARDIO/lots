@@ -40,6 +40,11 @@ class Lots(Base):
     units_format = Column(Integer())
     import_unit_ics = Column(String())
     import_unit_idibgi = Column(String())
+    local_management = Column(String())
+    plataform_command_preferent = Column(String())
+    maximum_amount = Column(Integer())
+    purchase_format_supplier = Column(String())
+    units_format_supplier = Column(Integer())
 
 
 class Stock_lots(Base):
@@ -86,6 +91,11 @@ class Stock_lots(Base):
     import_unit_ics = Column(String())
     import_unit_idibgi = Column(String())
     wrong_lots = Column(Integer())
+    local_management = Column(String())
+    plataform_command_preferent = Column(String())
+    maximum_amount = Column(Integer())
+    purchase_format_supplier = Column(String())
+    units_format_supplier = Column(Integer())
 
 
 class Logs(Base):

@@ -37,13 +37,19 @@ def search_add_command():
         if not select_lot:
             return 'True_//_new'
         else:
+            if select_lot.purchase_format_supplier == '-' or select_lot.purchase_format == select_lot.purchase_format_supplier:
+                purchase_format_value = select_lot.purchase_format
+            else:
+                purchase_format_value = select_lot.purchase_format_supplier
+
             dict_lots = {'key': select_lot.key,
                          'catalog_reference': select_lot.catalog_reference,
                          'description': select_lot.description,
                          'description_subreference': select_lot.description_subreference,
                          'id_reactive': select_lot.id_reactive,
                          'code_SAP': select_lot.code_SAP,
-                         'code_LOG': select_lot.code_LOG}
+                         'code_LOG': select_lot.code_LOG,
+                         'purchase_format': purchase_format_value}
             json_data = json.dumps(dict_lots)
             return f'True_//_{json_data}'
     except Exception:
@@ -289,7 +295,9 @@ def order_tracking():
                          'date_close': command.date_close,
                          'user_close': command.user_close,
                          'cost_center': command.cost_center,
-                         'observations': command.observations}
+                         'local_management': lot.local_management,
+                         'observations': command.observations,
+                         'plataform_command_preferent': lot.plataform_command_preferent}
 
         list_commands.append(dict_commands)
 
@@ -478,6 +486,79 @@ def download_order_success():
         with pd.ExcelWriter(path, engine='openpyxl') as writer:
             df_current_year.to_excel(writer, sheet_name=f"Comandes_{year}", index=False)
             df_last_year.to_excel(writer, sheet_name=f"Comandes_{last_year}", index=False)
+
+        return send_file(path, as_attachment=True)
+    except Exception:
+        flash("Error inesperat, contacteu amb un administrador", "danger")
+        return render_template('home.html', list_desciption_lots=list_desciption_lots(),
+                               list_cost_center=list_cost_center())
+
+
+@app.route('/download_follow_commands', methods=['POST'])
+@requires_auth
+def download_follow_commands():
+    '''
+        1 - Agafem tota la informació de lots que tenim.
+        2 - Creem un excel i l'omplim amb l'informació del les comandes tramitades.
+        3 - Guardem el document.
+        4 - Posem en descarga l'arxiu que acabem de crear.
+
+        :return: L'arxiu que l'usuari es descarregar
+        :rtype: csv
+    '''
+    try:
+        select_command = session1.query(Commands, Lots).join(Lots, Commands.id_lot == Lots.key)\
+                                                    .filter(Commands.user_close != '')\
+                                                    .filter(Commands.received == '0').all()
+
+        if not select_command:
+            flash("Error, No s'han trobat comandes en seguiment a la BD", "danger")
+            return render_template('home.html', list_desciption_lots=list_desciption_lots(),
+                                    list_cost_center=list_cost_center())
+
+        def create_dataframe(select_command):
+            # Crear un DataFrame con los datos
+            data = {
+                'Id': [],
+                'Id lot': [],
+                'Referencia Cataleg': [],
+                'Descripció': [],
+                'Id comanda': [],
+                'SAP': [],
+                'LOG': [],
+                'Unitats': [],
+                'Data tramitació': [],
+                'Usuari creació': [],
+                'Usuari tramitació': [],
+                'CECO': [],
+                'Preu ICS': []
+            }
+
+            for command, lot in select_command:
+                data['Id'].append(command.id)
+                data['Id lot'].append(command.id_lot)
+                data['Referencia Cataleg'].append(lot.catalog_reference)
+                data['Descripció'].append(lot.description)
+                data['Id comanda'].append(command.code_command)
+                data['SAP'].append(lot.code_SAP)
+                data['LOG'].append(lot.code_LOG)
+                data['Unitats'].append(command.units)
+                data['Data tramitació'].append(command.date_close)
+                data['Usuari creació'].append(command.user_create)
+                data['Usuari tramitació'].append(command.user_close)
+                data['CECO'].append(command.cost_center)
+                data['Preu ICS'].append(lot.import_unit_ics)
+
+            return pd.DataFrame(data)
+
+        # Crear DataFrames per l'any actual
+        df_current_year = create_dataframe(select_command)
+
+        # Guardar el DataFrame en un archivo Excel
+        path = f"{main_dir_docs}/Seguiment_comandes.xlsx"
+
+        with pd.ExcelWriter(path, engine='openpyxl') as writer:
+            df_current_year.to_excel(writer, sheet_name="Seguiment_comanes", index=False)
 
         return send_file(path, as_attachment=True)
     except Exception:

@@ -288,7 +288,7 @@
                             // Crea un nuevo elemento td para cada valor en la lista
                             for (var key in list_lots[i]) {
                                 if (list_lots[i].hasOwnProperty(key)) {
-                                    if (key !== 'id' && key !== 'id_lot') {
+                                    if (key !== 'id' && key !== 'id_lot' && key !== 'plataform_command_preferent') {
                                         new_row_data.push(list_lots[i][key])}
                                 }
                             }
@@ -824,7 +824,13 @@
         function download_command_success(){
             document.forms["down_excel_command"].submit();
         }
-
+    
+        /**
+        * Fa el submit de un form
+        */
+        function download_follow_commands(){
+            document.forms["down_excel_follow_commands"].submit();
+        }  
 
     </script>
 
@@ -869,6 +875,7 @@
                             <th style="min-width: 40px; max-width: 60px;">Usuari</th>
                             <th style="min-width: 50px; max-width: 70px;">CECO</th>
                             <th style="min-width: 100px; max-width: 230px;">Observacions</th>
+                            <th style="min-width: 50px; max-width: 80px;">Plataforma Preferent</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -881,7 +888,8 @@
                                 <td>
                                     <div class="form-check d-flex align-items-center">
                                         {% if command.bloqued_recived == 'False' %} 
-                                            <input class="form-check-input" type="checkbox" value="{{command.id}}" id="{{command.id}}_box" name="selection_multiple" checked>
+                                            <!-- <input class="form-check-input" type="checkbox" value="{{command.id}}" id="{{command.id}}_box" name="selection_multiple" checked> -->
+                                            <input class="form-check-input" type="checkbox" value="{{command.id}}" id="{{command.id}}_box" name="selection_multiple">
                                             <button type="button" class="btn btn-link btn-sm" id="{{command.id}}_btn_del" onclick="delete_command(`{{command.id}}`)">Tramitar</button>
                                         {% else %}
                                             <input class="form-check-input" type="checkbox" value="{{command.id}}" id="{{command.id}}_box" name="selection_multiple" disabled>
@@ -899,6 +907,7 @@
                                 <td>{{command.user_create}}</td>
                                 <td>{{command.cost_center}}</td>
                                 <td>{{command.observations}}</td>
+                                <td>{{lot.plataform_command_preferent}}</td>
 
                             </tr>
                         {% endfor %}
@@ -1027,7 +1036,10 @@
           <div class="modal-content">
             <div class="modal-header">
               <h5 class="modal-title" id="title"> Seguiment Comandes</h5>
-              <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="close_modal('modal_order_tracking')"><span aria-hidden="true">&times;</span></button>
+              <div>
+                <button type="button" class="btn btn-link" onclick="download_follow_commands()"><i class="fa-solid fa-file-arrow-down"></i> Descarregar comandes</button>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="close_modal('modal_order_tracking')"><span aria-hidden="true">&times;</span></button>
+              </div>
             </div>
             <div class="modal-body">
                 <div class="row">                                   
@@ -1048,6 +1060,7 @@
                                     <th style="width: 80px;">Data Tramitació</th>
                                     <th style="width: 80px;">Usuari</th>
                                     <th style="width: 80px;">CECO</th>
+                                    <th style="width: 80px;">Gestió Local</th>
                                     <th style="width: 80px;">Observacions</th>
                                 </tr>
                             </thead>
@@ -1059,6 +1072,8 @@
             </div>
           </div>
         </div>
+        <form action="/download_follow_commands" method="post" id="down_excel_follow_commands">
+        </form>
     </div>
     
 

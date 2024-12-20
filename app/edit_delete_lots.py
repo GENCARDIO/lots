@@ -64,6 +64,14 @@ def edit_lot():
     supplier = request.form.get("supplier")
     import_unit_ics = request.form.get("import_unit_ics")
     import_unit_idibgi = request.form.get("import_unit_idibgi")
+    local_management = request.form.get("local_management")
+    plataform_command_preferent = request.form.get("plataform_command_preferent")
+    maximum_amount = request.form.get("maximum_amount")
+    purchase_format_supplier = request.form.get("purchase_format_supplier")
+    units_format_supplier = request.form.get("units_format_supplier")
+    purchase_format = request.form.get("purchase_format")
+    units_format = request.form.get("units_format")
+
 
     select_lot = session1.query(Lots).filter(Lots.key == id_lot).first()
 
@@ -193,6 +201,55 @@ def edit_lot():
                 save_log(dict_save_info)
                 change_confirmed_price = True
 
+            if select_lot.local_management != local_management:
+                info_change = {"field": 'local_management', "old_info": select_lot.local_management, "new_info": local_management}
+                select_lot.local_management = local_management
+                dict_save_info['info'] = json.dumps(info_change)
+                save_log(dict_save_info)
+                change_confirmed = True
+
+            if select_lot.plataform_command_preferent != plataform_command_preferent:
+                info_change = {"field": 'plataform_command_preferent', "old_info": select_lot.plataform_command_preferent, "new_info": plataform_command_preferent}
+                select_lot.plataform_command_preferent = plataform_command_preferent
+                dict_save_info['info'] = json.dumps(info_change)
+                save_log(dict_save_info)
+                change_confirmed = True
+
+            if select_lot.maximum_amount != maximum_amount:
+                info_change = {"field": 'maximum_amount', "old_info": select_lot.maximum_amount, "new_info": maximum_amount}
+                select_lot.maximum_amount = maximum_amount
+                dict_save_info['info'] = json.dumps(info_change)
+                save_log(dict_save_info)
+                change_confirmed = True
+
+            if select_lot.purchase_format_supplier != purchase_format_supplier:
+                info_change = {"field": 'purchase_format_supplier', "old_info": select_lot.purchase_format_supplier, "new_info": purchase_format_supplier}
+                select_lot.purchase_format_supplier = purchase_format_supplier
+                dict_save_info['info'] = json.dumps(info_change)
+                save_log(dict_save_info)
+                change_confirmed = True
+
+            if select_lot.units_format_supplier != units_format_supplier:
+                info_change = {"field": 'units_format_supplier', "old_info": select_lot.units_format_supplier, "new_info": units_format_supplier}
+                select_lot.units_format_supplier = units_format_supplier
+                dict_save_info['info'] = json.dumps(info_change)
+                save_log(dict_save_info)
+                change_confirmed = True
+
+            if select_lot.purchase_format != purchase_format:
+                info_change = {"field": 'purchase_format', "old_info": select_lot.purchase_format, "new_info": purchase_format}
+                select_lot.purchase_format = purchase_format
+                dict_save_info['info'] = json.dumps(info_change)
+                save_log(dict_save_info)
+                change_confirmed = True
+
+            if select_lot.units_format != units_format:
+                info_change = {"field": 'units_format', "old_info": select_lot.units_format, "new_info": units_format}
+                select_lot.units_format = units_format
+                dict_save_info['info'] = json.dumps(info_change)
+                save_log(dict_save_info)
+                change_confirmed = True
+
             if not change_confirmed and not change_confirmed_price:
                 return "False_//_No has fet cap canvi respecte l'original."
 
@@ -241,6 +298,27 @@ def edit_lot():
 
                         if lot_stock.supplier != supplier:
                             lot_stock.supplier = supplier
+
+                        if lot_stock.local_management != local_management:
+                            lot_stock.local_management = local_management
+
+                        if lot_stock.plataform_command_preferent != plataform_command_preferent:
+                            lot_stock.plataform_command_preferent = plataform_command_preferent
+
+                        if lot_stock.maximum_amount != maximum_amount:
+                            lot_stock.maximum_amount = maximum_amount
+
+                        if lot_stock.purchase_format_supplier != purchase_format_supplier:
+                            lot_stock.purchase_format_supplier = purchase_format_supplier
+                        
+                        if lot_stock.units_format_supplier != units_format_supplier:
+                            lot_stock.units_format_supplier = units_format_supplier
+                        
+                        if lot_stock.purchase_format != purchase_format:
+                            lot_stock.purchase_format = purchase_format
+                        
+                        if lot_stock.units_format != units_format:
+                            lot_stock.units_format = units_format
 
                     if len(id_stock_lots_change) > 2:
                         id_stock_lots_change = id_stock_lots_change[:-2]
