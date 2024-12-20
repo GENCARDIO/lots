@@ -57,6 +57,15 @@ def look_spend_money():
                     # Convertir el valor a un float con hasta dos decimales
                     dic_info_spend_money[key][i] = round(value, 2)  # Redondear a dos decimales
 
+        for key, value_list in dic_info_spend_money.items():
+            if key == '8852' or key == '8860':
+                dic_info_spend_money[key][0] = '-'
+            if 'IDIBGI' in key or 'idigi' in key:
+                dic_info_spend_money[key][1] = '-'
+            if 'GRATUIT' in key or 'gratuit' in key:
+                dic_info_spend_money[key][0] = '0'
+                dic_info_spend_money[key][1] = '0'
+
         json_data = json.dumps(dic_info_spend_money)
         return f'True_//_{json_data}'
     except Exception:

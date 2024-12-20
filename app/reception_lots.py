@@ -80,6 +80,11 @@ def search_add_lot():
                              'units_format': lot.units_format,
                              'import_unit_ics': lot.import_unit_ics,
                              'import_unit_idibgi': lot.import_unit_idibgi,
+                             'local_management': lot.local_management,
+                             'plataform_command_preferent': lot.plataform_command_preferent,
+                             'maximum_amount': lot.maximum_amount,
+                             'purchase_format_supplier': lot.purchase_format_supplier,
+                             'units_format_supplier': lot.units_format_supplier,
                              'command_pending': command_pending,
                              'id_command': id_command,
                              'ceco_command': ceco_command,
@@ -133,7 +138,12 @@ def register_new_lot():
                               purchase_format=lots['purchase_format'],
                               units_format=lots['units_format'],
                               import_unit_ics=lots['import_unit_ics'],
-                              import_unit_idibgi=lots['import_unit_idibgi'])
+                              import_unit_idibgi=lots['import_unit_idibgi'],
+                              local_management=lots['local_management'],
+                              plataform_command_preferent=lots['plataform_command_preferent'],
+                              maximum_amount=lots['maximum_amount'],
+                              purchase_format_supplier=lots['purchase_format_supplier'],
+                              units_format_supplier=lots['units_format_supplier'])
             session1.add(insert_lot)
 
             json_lots = json.dumps(lots)
@@ -244,15 +254,15 @@ def add_stock_lot():
                     return 'False_reactive'
                 type_log = 'insert add stock'
                 dict_info_excel = {'catalog_reference': lots['catalog_reference'],
-                                   'description': lots['description'],
-                                   'description_subreference': lots['description_subreference'],
-                                   'id_reactive': lots['id_reactive'],
-                                   'lot': lots['lot'],
-                                   'internal_lot_value': lots['internal_lot'],
-                                   'reception_date': lots['reception_date'],
-                                   'date_expiry': lots['date_expiry'],
-                                   'analytical_technique': lots['analytical_technique'],
-                                   'user_add_command': lots['user_add_command']}
+                                    'description': lots['description'],
+                                    'description_subreference': lots['description_subreference'],
+                                    'id_reactive': lots['id_reactive'],
+                                    'lot': lots['lot'],
+                                    'internal_lot_value': lots['internal_lot'],
+                                    'reception_date': lots['reception_date'],
+                                    'date_expiry': lots['date_expiry'],
+                                    'analytical_technique': lots['analytical_technique'],
+                                    'user_add_command': lots['user_add_command']}
                 list_info_excel.append(dict_info_excel)
             else:
                 type_log = 'insert new stock'
@@ -262,7 +272,7 @@ def add_stock_lot():
                     unit_lot_value = lots['units_lot']
                     temperature_value = ''
 
-                    # Com que és un fungible posaresm la resta de fungibles a 0
+                    # Com que és un fungible posarem la resta de fungibles a 0
                     select_lots_ref = session1.query(Stock_lots).filter(
                         and_(
                             Stock_lots.catalog_reference == lots['catalog_reference'],
@@ -334,19 +344,25 @@ def add_stock_lot():
                                             purchase_format=lots['purchase_format'],
                                             units_format=lots['units_format'],
                                             import_unit_ics=lots['import_unit_ics'],
-                                            import_unit_idibgi=lots['import_unit_idibgi'])
+                                            import_unit_idibgi=lots['import_unit_idibgi'],
+                                            wrong_lots=lots['wrong_lots'],
+                                            local_management=lots['local_management'],
+                                            plataform_command_preferent=lots['plataform_command_preferent'],
+                                            maximum_amount=lots['maximum_amount'],
+                                            purchase_format_supplier=lots['purchase_format_supplier'],
+                                            units_format_supplier=lots['units_format_supplier'])
                     session1.add(insert_lot)
 
                     dict_info_excel = {'catalog_reference': lots['catalog_reference'],
-                                       'description': lots['description'],
-                                       'description_subreference': lots['description_subreference'],
-                                       'id_reactive': lots['id_reactive'],
-                                       'lot': lots['lot'],
-                                       'internal_lot_value': internal_lot_value,
-                                       'reception_date': lots['reception_date'],
-                                       'date_expiry': lots['date_expiry'],
-                                       'analytical_technique': lots['analytical_technique'],
-                                       'user_add_command': lots['user_add_command']}
+                                        'description': lots['description'],
+                                        'description_subreference': lots['description_subreference'],
+                                        'id_reactive': lots['id_reactive'],
+                                        'lot': lots['lot'],
+                                        'internal_lot_value': internal_lot_value,
+                                        'reception_date': lots['reception_date'],
+                                        'date_expiry': lots['date_expiry'],
+                                        'analytical_technique': lots['analytical_technique'],
+                                        'user_add_command': lots['user_add_command']}
                     list_info_excel.append(dict_info_excel)
 
             select_lot = session1.query(Stock_lots).order_by(Stock_lots.id.desc()).first()
