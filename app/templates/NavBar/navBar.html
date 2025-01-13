@@ -481,7 +481,9 @@
                         for (var key in list_lots[i]) {
                             if (list_lots[i].hasOwnProperty(key)) {
                                 if (key !== 'id' && key !== 'id_lot') {
-                                    if (key === 'info_article'){ new_row_data.push(`<button class="btn btn-outline-success btn-sm" onclick="show_edit_info('${list_lots[i][key]}')"><i class="fa-solid fa-pen-to-square"></i></button> <button class="btn btn-outline-danger btn-sm" onclick="show_delete_lot('${list_lots[i]['id']}')"><i class="fa-solid fa-trash"></i></button>`) }
+                                    if (key === 'info_article'){
+                                        const escaped_value = list_lots[i][key].replace(/'/g, "\\'");
+                                        new_row_data.push(`<button class="btn btn-outline-success btn-sm" onclick="show_edit_info('${escaped_value}')"><i class="fa-solid fa-pen-to-square"></i></button> <button class="btn btn-outline-danger btn-sm" onclick="show_delete_lot('${list_lots[i]['id']}')"><i class="fa-solid fa-trash"></i></button>`) }
                                     else { new_row_data.push(list_lots[i][key]) }
                                 }
                             }

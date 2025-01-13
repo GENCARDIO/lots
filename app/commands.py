@@ -8,6 +8,7 @@ import json
 from datetime import datetime
 import pandas as pd
 
+
 @app.route('/search_add_command', methods=['POST'])
 @requires_auth
 def search_add_command():
