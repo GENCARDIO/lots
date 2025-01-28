@@ -14,9 +14,6 @@ import pandas as pd
 def look_spend_money():
     '''
         dasjfasdfklajsflsñkadfjañlsdfkjñlasdfjñladfjñlajflñdafjñdajsñ
-        Busquem a la BD si el lot ja existeix.
-        Si existeix agafem tota la informació la posem en una llista de diccionaris i la enviem per ajax.
-        Si no existesix enviem una resposta per ajex avisan de que no tenim el lot registrat.
 
         :param str code_search: codi que hem de buscar a la BD
 
@@ -24,27 +21,91 @@ def look_spend_money():
         :rtype: json
     '''
     year = year_now()
-
     select_stock_lots = session1.query(Stock_lots).filter(Stock_lots.reception_date.like(f'%-{year}')).all()
     if not select_stock_lots:
         return "False_//_Error, No hem trobat dades de l'stock"
 
     dic_info_spend_money = {}
+    oligos_list = []
     try:
         for stock_lots in select_stock_lots:
             if stock_lots.cost_center_stock in dic_info_spend_money:
-                try:
-                    dic_info_spend_money[stock_lots.cost_center_stock][0] += float(stock_lots.import_unit_idibgi)
-                except Exception:
-                    print("No pot fer la suma, revisar que estigui ben entrat el valor a import_idibgi")
-                try:
-                    dic_info_spend_money[stock_lots.cost_center_stock][1] += float(stock_lots.import_unit_ics)
-                except Exception:
-                    print("No pot fer la suma, revisar que estigui ben entrat el valor a import_ics")
+                # Als fungible hem de tenir en compte que segurament tindràn més d'una unitat per lot i s'ha de multiplicar el valor
+                if stock_lots.react_or_fungible == 'Fungible':
+                    try:
+                        total_value_idibi = int(stock_lots.units_lot) * float(stock_lots.import_unit_idibgi)
+                        dic_info_spend_money[stock_lots.cost_center_stock][0] += total_value_idibi
+                    except Exception:
+                        print("No pot fer la suma, revisar que estigui ben entrat el valor a import_idibgi")
+                        print(stock_lots.import_unit_idibgi)
+                    try:
+                        total_value_ics = int(stock_lots.units_lot) * float(stock_lots.import_unit_ics)
+                        dic_info_spend_money[stock_lots.cost_center_stock][1] += total_value_ics
+                    except Exception:
+                        print("No pot fer la suma, revisar que estigui ben entrat el valor a import_ics")
+                        print(stock_lots.import_unit_ics)
+                else:
+                    # Els reactius semre seran 1 unitat exceptuan els oligos que s'ha de tenir en compte els parell de bases
+                    if "Oligos" in stock_lots.description:
+                        key_oligos = f'{stock_lots.reception_date}_{stock_lots.pb_oligos}'
+                        if key_oligos not in oligos_list:
+                            oligos_list.append(key_oligos)
+
+                            try:
+                                total_oligos_val = int(stock_lots.pb_oligos) * float(stock_lots.import_unit_idibgi)
+                                dic_info_spend_money[stock_lots.cost_center_stock][0] += total_oligos_val
+                            except Exception:
+                                print("No pot fer la suma, revisar que estigui ben entrat el valor a import_idibgi")
+                                print(stock_lots.import_unit_idibgi)
+                            try:
+                                total_oligos_val2 = int(stock_lots.pb_oligos) * float(stock_lots.import_unit_ics)
+                                dic_info_spend_money[stock_lots.cost_center_stock][1] += total_oligos_val2
+                            except Exception:
+                                print("No pot fer la suma, revisar que estigui ben entrat el valor a import_ics")
+                                print(stock_lots.import_unit_ics)
+                    else:
+                        try:
+                            dic_info_spend_money[stock_lots.cost_center_stock][0] += float(stock_lots.import_unit_idibgi)
+                        except Exception:
+                            print("No pot fer la suma, revisar que estigui ben entrat el valor a import_idibgi")
+                            print(stock_lots.import_unit_idibgi)
+                        try:
+                            dic_info_spend_money[stock_lots.cost_center_stock][1] += float(stock_lots.import_unit_ics)
+                        except Exception:
+                            print("No pot fer la suma, revisar que estigui ben entrat el valor a import_ics")
+                            print(stock_lots.import_unit_ics)
             else:
+                total_value_idibgi = 0
+                total_value_ics = 0
+                if stock_lots.react_or_fungible == 'Fungible':
+                    try:
+                        total_value_idibgi = int(stock_lots.units_lot) * float(stock_lots.import_unit_idibgi)
+                    except Exception:
+                        print("No pot fer la suma, revisar que estigui ben entrat el valor a import_idibgi")
+                    try:
+                        total_value_ics = int(stock_lots.units_lot) * float(stock_lots.import_unit_ics)
+                    except Exception:
+                        print("No pot fer la suma, revisar que estigui ben entrat el valor a import_ics")
+                elif "Oligos" in stock_lots.description:
+                    key_oligos = f'{stock_lots.reception_date}_{stock_lots.pb_oligos}'
+                    if key_oligos not in oligos_list:
+                        oligos_list.append(key_oligos)
+                        try:
+                            total_value_idibgi = int(stock_lots.pb_oligos) * float(stock_lots.import_unit_idibgi)
+                        except Exception:
+                            print("No pot fer la suma, revisar que estigui ben entrat el valor a import_idibgi")
+
+                        try:
+                            total_value_ics = int(stock_lots.pb_oligos) * float(stock_lots.import_unit_ics)
+                        except Exception:
+                            print("No pot fer la suma, revisar que estigui ben entrat el valor a import_ics")
+                else:
+                    total_value_idibgi = float(stock_lots.import_unit_idibgi)
+                    total_value_ics = float(stock_lots.import_unit_ics)
+
                 dic_info_spend_money[stock_lots.cost_center_stock] = [
-                    float(stock_lots.import_unit_idibgi),
-                    float(stock_lots.import_unit_ics)
+                    float(total_value_idibgi),
+                    float(total_value_ics)
                 ]
 
         for key, value_list in dic_info_spend_money.items():
@@ -57,16 +118,34 @@ def look_spend_money():
                     # Convertir el valor a un float con hasta dos decimales
                     dic_info_spend_money[key][i] = round(value, 2)  # Redondear a dos decimales
 
-        for key, value_list in dic_info_spend_money.items():
-            if key == '8852' or key == '8860':
-                dic_info_spend_money[key][0] = '-'
-            if 'IDIBGI' in key or 'idigi' in key:
-                dic_info_spend_money[key][1] = '-'
-            if 'GRATUIT' in key or 'gratuit' in key:
-                dic_info_spend_money[key][0] = '0'
-                dic_info_spend_money[key][1] = '0'
+        # print(dic_info_spend_money)
 
-        json_data = json.dumps(dic_info_spend_money)
+        def formatear_euros(valor):
+            partes = f"{valor:.2f}".split(".")  # Convertir a string con 2 decimales
+            entero = partes[0]  # Parte entera
+            decimal = partes[1]  # Parte decimal
+            entero_con_puntos = "{:,}".format(int(entero)).replace(",", ".")  # Agregar puntos a los miles
+            return f"{entero_con_puntos},{decimal} €"  # Combinar todo con la coma y el símbolo €
+
+        # Formatear los valores del diccionario
+        dict_formated = {
+            clave: [formatear_euros(valor) for valor in valores]
+            for clave, valores in dic_info_spend_money.items()
+        }
+
+        # print(dict_formated)
+
+        # Això és fa perque dependet del CECO volem que no surti informació en la columna en qüestió
+        for key, value_list in dict_formated.items():
+            if key == '8852' or key == '8860':
+                dict_formated[key][0] = '-'
+            if 'IDIBGI' in key or 'idigi' in key:
+                dict_formated[key][1] = '-'
+            if 'GRATUIT' in key or 'gratuit' in key:
+                dict_formated[key][0] = '0'
+                dict_formated[key][1] = '0'
+
+        json_data = json.dumps(dict_formated)
         return f'True_//_{json_data}'
     except Exception:
         return 'False_//_False'

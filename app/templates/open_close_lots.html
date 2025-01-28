@@ -112,10 +112,12 @@
                             if (split_response[1].includes("Aquesta referència s'ha esgotat,")){
                                 lis_ids_lots = split_response[2].split(';')
                                 lis_ids_lots.forEach(function(id){
+                                    var table = $('#example').DataTable();
                                     var tr_table = document.getElementById(id);
                                     if (tr_table) {
                                         // Elimina el elemento tr del DOM si existe
-                                        tr_table.parentNode.removeChild(tr_table);
+                                        // tr_table.parentNode.removeChild(tr_table);
+                                        table.row(tr_table).remove().draw(false); 
                                     }
                                 });
                             }

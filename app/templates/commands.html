@@ -851,7 +851,7 @@
         <div class="d-flex align-items-center">
             <button type="button" class="btn btn-link btn-sm" onclick="order_tracking()"><i class="fa-solid fa-truck-arrow-right"></i> Seguiment Comandes</button>
             <button type="button" class="btn btn-link btn-sm" onclick="commands_success()"><i class="fa-solid fa-table-list"></i> Comandes tramitades</button>
-            <button type="button" class="btn btn-link btn-sm" onclick="download_excel()"><i class="fa-solid fa-file-arrow-down"></i> Excel comandes</button>
+            <button type="button" class="btn btn-link btn-sm" onclick="download_excel()"><i class="fa-solid fa-file-arrow-down"></i> Excel Comandes pendents</button>
             <form action="/download_excel" method="post" id="down_excel"></form>
         </div>
 
@@ -993,7 +993,7 @@
             <div class="modal-header d-flex justify-content-between align-items-center">
                 <h5 class="modal-title" id="title"> Comandes tramitades</h5>
                 <div>
-                    <button type="button" class="btn btn-link" onclick="download_command_success()"><i class="fa-solid fa-file-arrow-down"></i> Descarregar comandes</button>
+                    <button type="button" class="btn btn-link" onclick="download_command_success()"><i class="fa-solid fa-file-arrow-down"></i> Excel comandes tramitades</button>
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="close_modal('modal_command_success')"><span aria-hidden="true">&times;</span></button>
                 </div>
             </div>     
@@ -1037,7 +1037,7 @@
             <div class="modal-header">
               <h5 class="modal-title" id="title"> Seguiment Comandes</h5>
               <div>
-                <button type="button" class="btn btn-link" onclick="download_follow_commands()"><i class="fa-solid fa-file-arrow-down"></i> Descarregar comandes</button>
+                <button type="button" class="btn btn-link" onclick="download_follow_commands()"><i class="fa-solid fa-file-arrow-down"></i> Excel seguiment comandes</button>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="close_modal('modal_order_tracking')"><span aria-hidden="true">&times;</span></button>
               </div>
             </div>

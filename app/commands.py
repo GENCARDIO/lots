@@ -25,33 +25,45 @@ def search_add_command():
     code_search = request.form.get("code_search")
     code_panel = request.form.get("code_panel")
 
-    select_lot = session1.query(Lots).filter(func.lower(Lots.catalog_reference) == code_search.lower()).filter(Lots.active == 1).first()
+    select_lot = session1.query(Lots).filter(func.lower(Lots.catalog_reference) == code_search.lower()).all()
     if not select_lot:
-        select_lot = session1.query(Lots).filter(func.lower(Lots.description) == code_search.lower()).filter(Lots.active == 1).first()
+        select_lot = session1.query(Lots).filter(func.lower(Lots.description) == code_search.lower()).all()
 
     if not select_lot and code_panel != '':
-        select_lot = session1.query(Lots).filter(func.lower(Lots.catalog_reference) == code_search.lower()).filter(func.lower(Lots.code_panel) == code_panel.lower()).filter(Lots.active == 1).all()
+        select_lot = session1.query(Lots).filter(func.lower(Lots.catalog_reference) == code_search.lower()).filter(func.lower(Lots.code_panel) == code_panel.lower()).all()
         if not select_lot:
-            select_lot = session1.query(Lots).filter(func.lower(Lots.description) == code_search.lower()).filter(func.lower(Lots.code_panel) == code_panel.lower()).filter(Lots.active == 1).all()
+            select_lot = session1.query(Lots).filter(func.lower(Lots.description) == code_search.lower()).filter(func.lower(Lots.code_panel) == code_panel.lower()).all()
 
     try:
         if not select_lot:
             return 'True_//_new'
         else:
-            if select_lot.purchase_format_supplier == '-' or select_lot.purchase_format == select_lot.purchase_format_supplier:
-                purchase_format_value = select_lot.purchase_format
-            else:
-                purchase_format_value = select_lot.purchase_format_supplier
+            # Mirem si tot el producte esta bloquejat, si ho està ho reportem a l'html
+            block_lot_mark = True
+            for block_lot in select_lot:
+                if int(block_lot.active) != 0:
+                    block_lot_mark = False
+            if block_lot_mark:
+                return 'True_//_inactive'
 
-            dict_lots = {'key': select_lot.key,
-                         'catalog_reference': select_lot.catalog_reference,
-                         'description': select_lot.description,
-                         'description_subreference': select_lot.description_subreference,
-                         'id_reactive': select_lot.id_reactive,
-                         'code_SAP': select_lot.code_SAP,
-                         'code_LOG': select_lot.code_LOG,
-                         'purchase_format': purchase_format_value}
-            json_data = json.dumps(dict_lots)
+            for lot in select_lot:
+                if lot.active != 0:
+                    if lot.purchase_format_supplier == '-' or lot.purchase_format == lot.purchase_format_supplier:
+                        purchase_format_value = lot.purchase_format
+                    else:
+                        purchase_format_value = lot.purchase_format_supplier
+
+                    dict_lots = {'key': lot.key,
+                                 'catalog_reference': lot.catalog_reference,
+                                 'description': lot.description,
+                                 'description_subreference': lot.description_subreference,
+                                 'id_reactive': lot.id_reactive,
+                                 'code_SAP': lot.code_SAP,
+                                 'code_LOG': lot.code_LOG,
+                                 'purchase_format': purchase_format_value,
+                                 'maximum_amount': lot.maximum_amount}
+                    json_data = json.dumps(dict_lots)
+                    break
             return f'True_//_{json_data}'
     except Exception:
         return 'False_//_False'

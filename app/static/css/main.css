@@ -71,3 +71,10 @@
 body.modal-open {
     overflow: auto; /* Permite el desplazamiento vertical en el cuerpo de la página cuando se abre el modal */
 }
+
+.p_add_command {
+    font-weight: bold !important;
+    font-style: italic !important;
+    background-color: yellow !important;
+    text-align: center !important;
+}

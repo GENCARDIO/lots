@@ -413,7 +413,7 @@
         <div class="modal-header d-flex justify-content-between align-items-center">
             <h5 class="modal-title" id="title"> Actualitzar Preus</h5>
             <div>
-                <button type="button" class="btn btn-link" id='_delivery_note' onclick="download_template()"><i class="fa-solid fa-file-arrow-down"></i> Plantilla</button>
+                <button type="button" class="btn btn-link" id='_delivery_note' onclick="download_template()"><i class="fa-solid fa-file-arrow-down"></i> Plantilla Preus</button>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="close_modal('open_update_price')"><span aria-hidden="true">&times;</span></button>
             </div>
         </div>      
@@ -432,7 +432,7 @@
         </div>
       </div>
     </div>
-    <form action="/download_template_price" method="post" id="down_excel">
+    <form action="/download_template_price" method="post" id="down_excel_price">
     </form>
 </div>
 
@@ -477,6 +477,7 @@
 
                     for (var i = 0; i < list_lots.length; i++) {
                         var new_row_data = [];
+                        var red_row = false
                         // Crea un nuevo elemento td para cada valor en la lista
                         for (var key in list_lots[i]) {
                             if (list_lots[i].hasOwnProperty(key)) {
@@ -484,12 +485,21 @@
                                     if (key === 'info_article'){
                                         const escaped_value = list_lots[i][key].replace(/'/g, "\\'");
                                         new_row_data.push(`<button class="btn btn-outline-success btn-sm" onclick="show_edit_info('${escaped_value}')"><i class="fa-solid fa-pen-to-square"></i></button> <button class="btn btn-outline-danger btn-sm" onclick="show_delete_lot('${list_lots[i]['id']}')"><i class="fa-solid fa-trash"></i></button>`) }
+                                    else if (key === 'active'){
+                                        console.log(list_lots[i]['active'])
+                                        if (list_lots[i]['active'] === 0){
+                                            red_row = true
+                                        }
+                                    }
                                     else { new_row_data.push(list_lots[i][key]) }
                                 }
                             }
                         }
                         var new_row = table.row.add(new_row_data).draw(false).node();
                         new_row.id = `${list_lots[i]['id']}_look_lots`;
+                        if (red_row){
+                            new_row.style.backgroundColor = 'rgba(255, 0, 0, 0.2)'; 
+                            $(new_row).find('td').css('background-color', 'rgba(255, 0, 0, 0.2)'); }
                     }
                     // Aplicar estilos CSS para centrar el contenido de las primeras cuatro columnas
                     for (var j = 0; j < 4; j++) {
@@ -1108,7 +1118,7 @@
      * Fa el submit de un form
      */
      function download_template(){
-        document.forms["down_excel"].submit();
+        document.forms["down_excel_price"].submit();
     }
 
 

@@ -96,6 +96,7 @@ class Stock_lots(Base):
     maximum_amount = Column(Integer())
     purchase_format_supplier = Column(String())
     units_format_supplier = Column(Integer())
+    pb_oligos = Column(Integer())
 
 
 class Logs(Base):

@@ -111,7 +111,7 @@ def open_close_lots():
             if num_lots_open >= select_lots.units_lot:
                 return "False_Tots els lots d'aquesta referència estan oberts."
             insert_consump = Lot_consumptions(id_lot=id_lot, date_open=date_open_close, user_open=session['acronim'],
-                                              date_close='', observations_open=observations,  observations_close='')
+                                                date_close='', observations_open=observations,  observations_close='')
             session1.add(insert_consump)
             if num_lots_open + 1 == 1:
                 message = f"El lot s'ha obert correctament, tens {num_lots_open + 1} unitat oberta d'aquesta referència."
@@ -130,6 +130,7 @@ def open_close_lots():
                 select_consumptions[pos_close].observations_close = observations
                 select_lots.units_lot = select_lots.units_lot - 1
                 message = "El lot s'ha tancat correctament"
+                # Si les unitats del lot han arribat a 0 mirem si queden unitats en el grup o ja esta totalment gastat
                 if select_lots.units_lot == 0:
                     select_group_lots = session1.query(Stock_lots).filter_by(group_insert=select_lots.group_insert).all()
                     sublot = 0
@@ -140,14 +141,26 @@ def open_close_lots():
                             sublot += 1
                     if sublot == 0:
                         for lot_group in select_group_lots:
-                            lot_group.spent = 1
-                            str_id_lots += f'{lot_group.id};'
-                            if lot_group.units_lot != 0:
-                                select_lot_consumptions = session1.query(Lot_consumptions).filter_by(id_lot=lot_group.id, date_close='').all()
-                                for lot_consumptions in select_lot_consumptions:
-                                    lot_consumptions.date_close = date_open_close
-                                    lot_consumptions.user_close = session['acronim']
-                                lot_group.units_lot = lot_group.units_lot - len(select_lot_consumptions)
+                            print(lot_group.id)
+                            if select_lots.description_subreference != '':
+                                if select_lots.description_subreference == lot_group.description_subreference:
+                                    lot_group.spent = 1
+                                    str_id_lots += f'{lot_group.id};'
+                                    if lot_group.units_lot != 0:
+                                        select_lot_consumptions = session1.query(Lot_consumptions).filter_by(id_lot=lot_group.id, date_close='').all()
+                                        for lot_consumptions in select_lot_consumptions:
+                                            lot_consumptions.date_close = date_open_close
+                                            lot_consumptions.user_close = session['acronim']
+                                        lot_group.units_lot = lot_group.units_lot - len(select_lot_consumptions)
+                            else:
+                                lot_group.spent = 1
+                                str_id_lots += f'{lot_group.id};'
+                                if lot_group.units_lot != 0:
+                                    select_lot_consumptions = session1.query(Lot_consumptions).filter_by(id_lot=lot_group.id, date_close='').all()
+                                    for lot_consumptions in select_lot_consumptions:
+                                        lot_consumptions.date_close = date_open_close
+                                        lot_consumptions.user_close = session['acronim']
+                                    lot_group.units_lot = lot_group.units_lot - len(select_lot_consumptions)
                         str_id_lots = str_id_lots[:-1]
                         message = f"El lot s'ha tancat correctament, Aquesta referència s'ha esgotat, ella i totes les subreferències han set posades com ha gastades._{str_id_lots}"
             else:
