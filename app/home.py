@@ -4,7 +4,7 @@ from app.utils import requires_auth, list_desciption_lots, list_cost_center, to_
 from app.models import IP_HOME, session1, Lots, Stock_lots, Lot_consumptions
 import jwt
 import json
-from sqlalchemy import and_
+from sqlalchemy import and_, or_
 from datetime import datetime
 from config import main_dir
 import pandas as pd
@@ -91,7 +91,7 @@ def search_lot_db():
         :rtype: json
     '''
     try:
-        select_lots = session1.query(Lots).filter(Lots.active == 1).all()
+        select_lots = session1.query(Lots).all()
         if not select_lots:
             return 'False_//_No hi ha cap lot a la BD.'
 
@@ -109,7 +109,7 @@ def search_lot_db():
             dict_lots['info_article'] = f"{lot.key}/-/{lot.catalog_reference}/-/{lot.manufacturer}/-/{lot.description}/-/{lot.analytical_technique}/-/{lot.reference_units}/-/{lot.id_reactive}/-/{lot.code_SAP}/-/{lot.code_LOG}/-/{lot.active}/-/{lot.temp_conservation}/-/{lot.description_subreference}/-/{lot.react_or_fungible}/-/{lot.code_panel}/-/{lot.location}/-/{lot.supplier}/-/{lot.purchase_format}/-/{lot.units_format}/-/{lot.import_unit_ics}/-/{lot.import_unit_idibgi}/-/{lot.local_management}/-/{lot.plataform_command_preferent}/-/{lot.maximum_amount}/-/{lot.purchase_format_supplier}/-/{lot.units_format_supplier}"
             dict_lots['description'] = lot.description
             dict_lots['description_subreference'] = lot.description_subreference
-            # dict_lots['active'] = lot.active
+            dict_lots['active'] = lot.active
             # dict_lots['temp_conservation'] = lot.temp_conservation
             # dict_lots['react_or_fungible'] = lot.react_or_fungible
 
@@ -242,19 +242,20 @@ def search_all_year():
 
     date = datetime.now()
     year = date.strftime("-%Y")
+    list_year = [year, int(year)+1, int(year)+2, int(year)+3, int(year)+4]
 
     try:
         if search_data_code == '':
             return 'False_//_Es codi no pot estar buit.'
         else:
             select_lots = session1.query(Stock_lots).filter(and_(Stock_lots.cost_center_stock == search_data_code,
-                                                                 Stock_lots.reception_date.like(f'%{year}'))).all()
+                                                                 or_(*[Stock_lots.reception_date.like(f'%{year}%') for year in list_year]))).all()
             if not select_lots:
                 select_lots = session1.query(Stock_lots).filter(and_(Stock_lots.catalog_reference == search_data_code,
-                                                                     Stock_lots.reception_date.like(f'%{year}'))).all()
+                                                                     or_(*[Stock_lots.reception_date.like(f'%{year}%') for year in list_year]))).all()
             if not select_lots:
                 select_lots = session1.query(Stock_lots).filter(and_(Stock_lots.code_SAP == search_data_code,
-                                                                     Stock_lots.reception_date.like(f'%{year}'))).all()
+                                                                     or_(*[Stock_lots.reception_date.like(f'%{year}%') for year in list_year]))).all()
             if not select_lots:
                 search_data_code = search_data_code.replace('/', '-')
                 select_lots = session1.query(Stock_lots).filter(Stock_lots.reception_date == search_data_code).all()
@@ -330,156 +331,156 @@ def charge_excel():
     return "fet" '''
 
 
-# @app.route('/add_samples_for_excel')
-# @requires_auth
-# def add_samples_for_excel():
-#     # directori = f'{main_dir}/doc_nuria_articles_unics.xlsx'
-#     # directori = f'{main_dir}/doc_nuria_all.xlsx'
-#     # df = pd.read_excel(directori)
-#     # df = pd.read_excel(directori, header=None)
-#     # list_excel = df.values.tolist()
-#     # print("inici del documenttttt")
-#     # list = []
-#     # list_dupl = []
-#     # for line in range(1, len(list_excel)):
-#     #     if str(list_excel[line][2]).rstrip() not in list:
-#     #             list.append(str(list_excel[line][2]))
-#         # if list_excel[line][11] == 'SI':
-#         #     # Esto ha sido para seleccionar los que tiene subreferencias i hacer-les un update de los datos conjuntos
-#         #     # select_lot = session1.query(Lots).filter(Lots.catalog_reference == str(list_excel[line][2]).rstrip()).all()
-#         #     # if select_lot:
+'''@app.route('/add_samples_for_excel')
+@requires_auth
+def add_samples_for_excel():
+    # directori = f'{main_dir}/doc_nuria_articles_unics.xlsx'
+    # directori = f'{main_dir}/doc_nuria_all.xlsx'
+    # df = pd.read_excel(directori)
+    # df = pd.read_excel(directori, header=None)
+    # list_excel = df.values.tolist()
+    # print("inici del documenttttt")
+    # list = []
+    # list_dupl = []
+    # for line in range(1, len(list_excel)):
+    #     if str(list_excel[line][2]).rstrip() not in list:
+    #             list.append(str(list_excel[line][2]))
+        # if list_excel[line][11] == 'SI':
+        #     # Esto ha sido para seleccionar los que tiene subreferencias i hacer-les un update de los datos conjuntos
+        #     # select_lot = session1.query(Lots).filter(Lots.catalog_reference == str(list_excel[line][2]).rstrip()).all()
+        #     # if select_lot:
 
-#         #     select_lot = session1.query(Lots).filter(Lots.catalog_reference == str(list_excel[line][2]).rstrip()).first()
-#         #     if select_lot is not None:
-#         #         # print(f"El lot {list_excel[line][2]} ja esta introduit, -> {select_lot.key}")
-#         #         for select in select_lot:
-#         #             select.manufacturer = list_excel[line][23]
-#         #             select.description = list_excel[line][1]
-#         #             select.analytical_technique = list_excel[line][0]
-#         #             select.reference_units = 1
-#         #             select.id_reactive = ''
-#         #             select.code_SAP = list_excel[line][4]
-#         #             select.code_LOG = list_excel[line][3]
-#         #             select.active = 1
-#         #             select.temp_conservation = list_excel[line][13]
-#         #             select.description_subreference = ''
-#         #             select.react_or_fungible = list_excel[line][10]
-#         #             select.location = list_excel[line][14]
-#         #             select.supplier = list_excel[line][20]
-#         #             select.purchase_format = list_excel[line][9]
-#         #             select.units_format = list_excel[line][8]
-#         #             select.import_unit_ics = list_excel[line][21]
-#         #             select.import_unit_idibgi = list_excel[line][22]
-#         #             select.local_management = list_excel[line][7]
-#         #             select.plataform_command_preferent = list_excel[line][5]
-#         #             select.maximum_amount = list_excel[line][19]
-#         #             select.purchase_format_supplier = list_excel[line][16]
-#         #             select.units_format_supplier = list_excel[line][15]
-#         #         session1.commit()
-#         #     else:
-#         #         print("ha entrat a noussssssssssssssssssssssssssssssss")
-#         #         for i in range(list_excel[line][12]):
-#         #             insert_lot = Lots(catalog_reference=str(list_excel[line][2]).rstrip(),
-#         #                               manufacturer=list_excel[line][23],
-#         #                               description=list_excel[line][1],
-#         #                               analytical_technique=list_excel[line][0],
-#         #                               reference_units=1,
-#         #                               id_reactive='',
-#         #                               code_SAP=list_excel[line][4],
-#         #                               code_LOG=list_excel[line][3],
-#         #                               active=1,
-#         #                               temp_conservation=list_excel[line][13],
-#         #                               description_subreference='',
-#         #                               react_or_fungible=list_excel[line][10],
-#         #                               code_panel='',
-#         #                               location=list_excel[line][14],
-#         #                               supplier=list_excel[line][20],
-#         #                               purchase_format=list_excel[line][9],
-#         #                               units_format=list_excel[line][8],
-#         #                               import_unit_ics=list_excel[line][21],
-#         #                               import_unit_idibgi=list_excel[line][22],
-#         #                               local_management=list_excel[line][7],
-#         #                               plataform_command_preferent=list_excel[line][5],
-#         #                               maximum_amount=list_excel[line][19],
-#         #                               purchase_format_supplier=list_excel[line][16],
-#         #                               units_format_supplier=list_excel[line][15]
-#         #             )
+        #     select_lot = session1.query(Lots).filter(Lots.catalog_reference == str(list_excel[line][2]).rstrip()).first()
+        #     if select_lot is not None:
+        #         # print(f"El lot {list_excel[line][2]} ja esta introduit, -> {select_lot.key}")
+        #         for select in select_lot:
+        #             select.manufacturer = list_excel[line][23]
+        #             select.description = list_excel[line][1]
+        #             select.analytical_technique = list_excel[line][0]
+        #             select.reference_units = 1
+        #             select.id_reactive = ''
+        #             select.code_SAP = list_excel[line][4]
+        #             select.code_LOG = list_excel[line][3]
+        #             select.active = 1
+        #             select.temp_conservation = list_excel[line][13]
+        #             select.description_subreference = ''
+        #             select.react_or_fungible = list_excel[line][10]
+        #             select.location = list_excel[line][14]
+        #             select.supplier = list_excel[line][20]
+        #             select.purchase_format = list_excel[line][9]
+        #             select.units_format = list_excel[line][8]
+        #             select.import_unit_ics = list_excel[line][21]
+        #             select.import_unit_idibgi = list_excel[line][22]
+        #             select.local_management = list_excel[line][7]
+        #             select.plataform_command_preferent = list_excel[line][5]
+        #             select.maximum_amount = list_excel[line][19]
+        #             select.purchase_format_supplier = list_excel[line][16]
+        #             select.units_format_supplier = list_excel[line][15]
+        #         session1.commit()
+        #     else:
+        #         print("ha entrat a noussssssssssssssssssssssssssssssss")
+        #         for i in range(list_excel[line][12]):
+        #             insert_lot = Lots(catalog_reference=str(list_excel[line][2]).rstrip(),
+        #                               manufacturer=list_excel[line][23],
+        #                               description=list_excel[line][1],
+        #                               analytical_technique=list_excel[line][0],
+        #                               reference_units=1,
+        #                               id_reactive='',
+        #                               code_SAP=list_excel[line][4],
+        #                               code_LOG=list_excel[line][3],
+        #                               active=1,
+        #                               temp_conservation=list_excel[line][13],
+        #                               description_subreference='',
+        #                               react_or_fungible=list_excel[line][10],
+        #                               code_panel='',
+        #                               location=list_excel[line][14],
+        #                               supplier=list_excel[line][20],
+        #                               purchase_format=list_excel[line][9],
+        #                               units_format=list_excel[line][8],
+        #                               import_unit_ics=list_excel[line][21],
+        #                               import_unit_idibgi=list_excel[line][22],
+        #                               local_management=list_excel[line][7],
+        #                               plataform_command_preferent=list_excel[line][5],
+        #                               maximum_amount=list_excel[line][19],
+        #                               purchase_format_supplier=list_excel[line][16],
+        #                               units_format_supplier=list_excel[line][15]
+        #             )
 
-#         #             session1.add(insert_lot)
-#         #         session1.commit()
-#         # else:
-#         #     # aixo es per saber quins tenia duplicats a l'excel
-#         #     # if str(list_excel[line][2]).rstrip() not in list:
-#         #     #     list.append(str(list_excel[line][2]).rstrip())
-#         #     # else:
-#         #     #     if str(list_excel[line][2]).rstrip() not in list_dupl:
-#         #     #         list_dupl.append(str(list_excel[line][2]).rstrip())
+        #             session1.add(insert_lot)
+        #         session1.commit()
+        # else:
+        #     # aixo es per saber quins tenia duplicats a l'excel
+        #     # if str(list_excel[line][2]).rstrip() not in list:
+        #     #     list.append(str(list_excel[line][2]).rstrip())
+        #     # else:
+        #     #     if str(list_excel[line][2]).rstrip() not in list_dupl:
+        #     #         list_dupl.append(str(list_excel[line][2]).rstrip())
 
-#         #     # Aqui inserirem o actualitzarem la info
-#         #     select_lot = session1.query(Lots).filter(Lots.catalog_reference == str(list_excel[line][2]).rstrip()).all()
-#         #     if select_lot:
-#         #         if len(select_lot) > 1:
-#         #             print(f"El lot {list_excel[line][2]} se nan trobat 2")
-#         #         else:
-#         #             for select in select_lot:
-#         #                 select.manufacturer = list_excel[line][23]
-#         #                 select.description = list_excel[line][1]
-#         #                 select.analytical_technique = list_excel[line][0]
-#         #                 select.reference_units = 1
-#         #                 select.id_reactive = ''
-#         #                 select.code_SAP = list_excel[line][4]
-#         #                 select.code_LOG = list_excel[line][3]
-#         #                 select.active = 1
-#         #                 select.temp_conservation = list_excel[line][13]
-#         #                 select.description_subreference = ''
-#         #                 select.react_or_fungible = list_excel[line][10]
-#         #                 select.location = list_excel[line][14]
-#         #                 select.supplier = list_excel[line][20]
-#         #                 select.purchase_format = list_excel[line][9]
-#         #                 select.units_format = list_excel[line][8]
-#         #                 select.import_unit_ics = list_excel[line][21]
-#         #                 select.import_unit_idibgi = list_excel[line][22]
-#         #                 select.local_management = list_excel[line][7]
-#         #                 select.plataform_command_preferent = list_excel[line][5]
-#         #                 select.maximum_amount = list_excel[line][19]
-#         #                 select.purchase_format_supplier = list_excel[line][16]
-#         #                 select.units_format_supplier = list_excel[line][15]
-#         #             session1.commit()
-#         #     else:
-#         #         print("ha entrat a noussssssssssssssssssssssssssssssss")
-#         #         insert_lot = Lots(catalog_reference=str(list_excel[line][2]).rstrip(),
-#         #                           manufacturer=list_excel[line][23],
-#         #                           description=list_excel[line][1],
-#         #                           analytical_technique=list_excel[line][0],
-#         #                           reference_units=1,
-#         #                           id_reactive='',
-#         #                           code_SAP=list_excel[line][4],
-#         #                           code_LOG=list_excel[line][3],
-#         #                           active=1,
-#         #                           temp_conservation=list_excel[line][13],
-#         #                           description_subreference='',
-#         #                           react_or_fungible=list_excel[line][10],
-#         #                           code_panel='',
-#         #                           location=list_excel[line][14],
-#         #                           supplier=list_excel[line][20],
-#         #                           purchase_format=list_excel[line][9],
-#         #                           units_format=list_excel[line][8],
-#         #                           import_unit_ics=list_excel[line][21],
-#         #                           import_unit_idibgi=list_excel[line][22],
-#         #                           local_management=list_excel[line][7],
-#         #                           plataform_command_preferent=list_excel[line][5],
-#         #                           maximum_amount=list_excel[line][19],
-#         #                           purchase_format_supplier=list_excel[line][16],
-#         #                           units_format_supplier=list_excel[line][15])
-#         #         session1.add(insert_lot)
-#         #         session1.commit()
+        #     # Aqui inserirem o actualitzarem la info
+        #     select_lot = session1.query(Lots).filter(Lots.catalog_reference == str(list_excel[line][2]).rstrip()).all()
+        #     if select_lot:
+        #         if len(select_lot) > 1:
+        #             print(f"El lot {list_excel[line][2]} se nan trobat 2")
+        #         else:
+        #             for select in select_lot:
+        #                 select.manufacturer = list_excel[line][23]
+        #                 select.description = list_excel[line][1]
+        #                 select.analytical_technique = list_excel[line][0]
+        #                 select.reference_units = 1
+        #                 select.id_reactive = ''
+        #                 select.code_SAP = list_excel[line][4]
+        #                 select.code_LOG = list_excel[line][3]
+        #                 select.active = 1
+        #                 select.temp_conservation = list_excel[line][13]
+        #                 select.description_subreference = ''
+        #                 select.react_or_fungible = list_excel[line][10]
+        #                 select.location = list_excel[line][14]
+        #                 select.supplier = list_excel[line][20]
+        #                 select.purchase_format = list_excel[line][9]
+        #                 select.units_format = list_excel[line][8]
+        #                 select.import_unit_ics = list_excel[line][21]
+        #                 select.import_unit_idibgi = list_excel[line][22]
+        #                 select.local_management = list_excel[line][7]
+        #                 select.plataform_command_preferent = list_excel[line][5]
+        #                 select.maximum_amount = list_excel[line][19]
+        #                 select.purchase_format_supplier = list_excel[line][16]
+        #                 select.units_format_supplier = list_excel[line][15]
+        #             session1.commit()
+        #     else:
+        #         print("ha entrat a noussssssssssssssssssssssssssssssss")
+        #         insert_lot = Lots(catalog_reference=str(list_excel[line][2]).rstrip(),
+        #                           manufacturer=list_excel[line][23],
+        #                           description=list_excel[line][1],
+        #                           analytical_technique=list_excel[line][0],
+        #                           reference_units=1,
+        #                           id_reactive='',
+        #                           code_SAP=list_excel[line][4],
+        #                           code_LOG=list_excel[line][3],
+        #                           active=1,
+        #                           temp_conservation=list_excel[line][13],
+        #                           description_subreference='',
+        #                           react_or_fungible=list_excel[line][10],
+        #                           code_panel='',
+        #                           location=list_excel[line][14],
+        #                           supplier=list_excel[line][20],
+        #                           purchase_format=list_excel[line][9],
+        #                           units_format=list_excel[line][8],
+        #                           import_unit_ics=list_excel[line][21],
+        #                           import_unit_idibgi=list_excel[line][22],
+        #                           local_management=list_excel[line][7],
+        #                           plataform_command_preferent=list_excel[line][5],
+        #                           maximum_amount=list_excel[line][19],
+        #                           purchase_format_supplier=list_excel[line][16],
+        #                           units_format_supplier=list_excel[line][15])
+        #         session1.add(insert_lot)
+        #         session1.commit()
 
-#     # select_lot = session1.query(Lots).all()
-#     # for lot in select_lot:
-#     #     if lot.catalog_reference not in list:
-#     #         if lot.catalog_reference not in list_dupl:
-#     #             list_dupl.append(lot.catalog_reference)
+    # select_lot = session1.query(Lots).all()
+    # for lot in select_lot:
+    #     if lot.catalog_reference not in list:
+    #         if lot.catalog_reference not in list_dupl:
+    #             list_dupl.append(lot.catalog_reference)
 
-#     select = session1.query(Stock_lots).all()s
-    
-#     return "fet"
+    select = session1.query(Stock_lots).all()s
+
+    return "fet" '''

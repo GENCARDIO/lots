@@ -27,24 +27,37 @@ def search_add_lot():
     code_panel = request.form.get("code_panel")
 
     if code_panel == '':
-        select_lot = session1.query(Lots).filter(func.lower(Lots.catalog_reference) == code_search.lower()).filter(Lots.active == 1).all()
+        select_lot = session1.query(Lots).filter(func.lower(Lots.catalog_reference) == code_search.lower()).all()
         if not select_lot:
-            select_lot = session1.query(Lots).filter(func.lower(Lots.description) == code_search.lower()).filter(Lots.active == 1).all()
+            select_lot = session1.query(Lots).filter(func.lower(Lots.description) == code_search.lower()).all()
     else:
-        select_lot = session1.query(Lots).filter(func.lower(Lots.catalog_reference) == code_search.lower()).filter(func.lower(Lots.code_panel) == code_panel.lower()).filter(Lots.active == 1).all()
+        select_lot = session1.query(Lots).filter(func.lower(Lots.catalog_reference) == code_search.lower()).filter(func.lower(Lots.code_panel) == code_panel.lower()).all()
         if not select_lot:
-            select_lot = session1.query(Lots).filter(func.lower(Lots.description) == code_search.lower()).filter(func.lower(Lots.code_panel) == code_panel.lower()).filter(Lots.active == 1).all()
+            select_lot = session1.query(Lots).filter(func.lower(Lots.description) == code_search.lower()).filter(func.lower(Lots.code_panel) == code_panel.lower()).all()
 
     try:
         if not select_lot:
             return 'True_//_new'
         else:
+            # Mirem si tot el producte esta bloquejat, si ho està ho reportem a l'html
+            block_lot_mark = True
+            for block_lot in select_lot:
+                if int(block_lot.active) != 0:
+                    block_lot_mark = False
+            if block_lot_mark:
+                return 'True_//_inactive'
+
             command_pending = ''
             id_command = ''
             ceco_command = ''
             user_add_command = ''
             list_commands = []
-            select_command = session1.query(Commands).filter(Commands.id_lot == select_lot[0].key).filter(Commands.received == 0).filter(Commands.code_command != '').all()
+            # Aqui mirem la key del lot actium ja que podem tenir subreferencies bloquejades
+            for lot in select_lot:
+                if lot.active != 0:
+                    key_lot = lot.key
+                    break
+            select_command = session1.query(Commands).filter(Commands.id_lot == key_lot).filter(Commands.received == 0).filter(Commands.code_command != '').all()
             if select_command:
                 for command in select_command:
                     units_command = int(command.units) - int(command.num_received)
@@ -60,36 +73,37 @@ def search_add_lot():
 
             list_lots = []
             for lot in select_lot:
-                dict_lots = {'key': lot.key,
-                             'catalog_reference': lot.catalog_reference,
-                             'manufacturer': lot.manufacturer,
-                             'description': lot.description,
-                             'description_subreference': lot.description_subreference,
-                             'analytical_technique': lot.analytical_technique,
-                             'reference_units': lot.reference_units,
-                             'id_reactive': lot.id_reactive,
-                             'code_SAP': lot.code_SAP,
-                             'code_LOG': lot.code_LOG,
-                             'active': lot.active,
-                             'temp_conservation': lot.temp_conservation,
-                             'react_or_fungible': lot.react_or_fungible,
-                             'code_panel': lot.code_panel,
-                             'location': lot.location,
-                             'supplier': lot.supplier,
-                             'purchase_format': lot.purchase_format,
-                             'units_format': lot.units_format,
-                             'import_unit_ics': lot.import_unit_ics,
-                             'import_unit_idibgi': lot.import_unit_idibgi,
-                             'local_management': lot.local_management,
-                             'plataform_command_preferent': lot.plataform_command_preferent,
-                             'maximum_amount': lot.maximum_amount,
-                             'purchase_format_supplier': lot.purchase_format_supplier,
-                             'units_format_supplier': lot.units_format_supplier,
-                             'command_pending': command_pending,
-                             'id_command': id_command,
-                             'ceco_command': ceco_command,
-                             'user_add_command': user_add_command}
-                list_lots.append(dict_lots)
+                if lot.active != 0:
+                    dict_lots = {'key': lot.key,
+                                'catalog_reference': lot.catalog_reference,
+                                'manufacturer': lot.manufacturer,
+                                'description': lot.description,
+                                'description_subreference': lot.description_subreference,
+                                'analytical_technique': lot.analytical_technique,
+                                'reference_units': lot.reference_units,
+                                'id_reactive': lot.id_reactive,
+                                'code_SAP': lot.code_SAP,
+                                'code_LOG': lot.code_LOG,
+                                'active': lot.active,
+                                'temp_conservation': lot.temp_conservation,
+                                'react_or_fungible': lot.react_or_fungible,
+                                'code_panel': lot.code_panel,
+                                'location': lot.location,
+                                'supplier': lot.supplier,
+                                'purchase_format': lot.purchase_format,
+                                'units_format': lot.units_format,
+                                'import_unit_ics': lot.import_unit_ics,
+                                'import_unit_idibgi': lot.import_unit_idibgi,
+                                'local_management': lot.local_management,
+                                'plataform_command_preferent': lot.plataform_command_preferent,
+                                'maximum_amount': lot.maximum_amount,
+                                'purchase_format_supplier': lot.purchase_format_supplier,
+                                'units_format_supplier': lot.units_format_supplier,
+                                'command_pending': command_pending,
+                                'id_command': id_command,
+                                'ceco_command': ceco_command,
+                                'user_add_command': user_add_command}
+                    list_lots.append(dict_lots)
             json_data = json.dumps(list_lots)
             list_commands_json = json.dumps(list_commands) 
             return f'True_//_{json_data}_//_{list_commands_json}'
@@ -137,8 +151,8 @@ def register_new_lot():
                               supplier=lots['supplier'],
                               purchase_format=lots['purchase_format'],
                               units_format=lots['units_format'],
-                              import_unit_ics=lots['import_unit_ics'],
-                              import_unit_idibgi=lots['import_unit_idibgi'],
+                              import_unit_ics=float(lots['import_unit_ics'].replace(',', '.')),
+                              import_unit_idibgi=float(lots['import_unit_idibgi'].replace(',', '.')),
                               local_management=lots['local_management'],
                               plataform_command_preferent=lots['plataform_command_preferent'],
                               maximum_amount=lots['maximum_amount'],
@@ -186,6 +200,7 @@ def add_stock_lot():
     unit_total_command = request.form.get("unit_total_command")
     list_lots_json = request.form.get("list_lots")
     id_substract_command = request.form.get("id_substract_command")
+    pb_oligos = request.form.get("pb_oligos")
 
     date = instant_date()
 
@@ -231,11 +246,28 @@ def add_stock_lot():
 
     list_lots = json.loads(list_lots_json)
 
+    # for llo in list_lots:
+    #     print(llo)
+
+    # print(unit_total_command)
+    # return "holaaaaa"
+
     # suma_units_lot = 0
     # number_unit_lot = 0
     # Iterar sobre cada diccionario y sumar los valores de 'units_lot'
     # for diccionario in list_lots:
     #     suma_units_lot += int(diccionario.get('units_lot', 0))
+
+    # Aqui el que fem es mirar si hi ha lots diferents i en cas afirmatiu agafem el total de la comanda i ho guardem en una diccionario,
+    # farem servir la key de l'article perque sigui la key del diccioari i així poder-los vincular, en aquest diccionari tambe hi haura
+    # el units que sera per saber quin es el numero unitari que hem de posar a cada article.
+    dict_totals_reference = {}
+    for l_lots in list_lots:
+        if l_lots['key'] not in dict_totals_reference:
+            dict_totals_reference[l_lots['key']] = l_lots['units_lot']
+            dict_totals_reference[f"{l_lots['key']}_unit"] = 0
+        else:
+            dict_totals_reference[l_lots['key']] += l_lots['units_lot']
 
     # Iterem sobre la llista de lots, transformem el json a diccionari,
     # consultem si el lo que anem a inserir ja esta introduït
@@ -244,6 +276,7 @@ def add_stock_lot():
     # es reactiu s'insereixen un linia per cada unitat i si es fungible una row amb el numero total d'unitas.
     list_info_excel = []
     for lots in list_lots:
+        print(lots)
         try:
             json_lots = json.dumps(lots)
             select_lot = session1.query(Stock_lots).filter_by(code_SAP=lots['code_SAP'], code_LOG=lots['code_LOG'], lot=lots['lot'], date_expiry=lots['date_expiry'], internal_lot=lots['internal_lot'], spent=0).first()
@@ -254,15 +287,15 @@ def add_stock_lot():
                     return 'False_reactive'
                 type_log = 'insert add stock'
                 dict_info_excel = {'catalog_reference': lots['catalog_reference'],
-                                    'description': lots['description'],
-                                    'description_subreference': lots['description_subreference'],
-                                    'id_reactive': lots['id_reactive'],
-                                    'lot': lots['lot'],
-                                    'internal_lot_value': lots['internal_lot'],
-                                    'reception_date': lots['reception_date'],
-                                    'date_expiry': lots['date_expiry'],
-                                    'analytical_technique': lots['analytical_technique'],
-                                    'user_add_command': lots['user_add_command']}
+                                   'description': lots['description'],
+                                   'description_subreference': lots['description_subreference'],
+                                   'id_reactive': lots['id_reactive'],
+                                   'lot': lots['lot'],
+                                   'internal_lot_value': lots['internal_lot'],
+                                   'reception_date': lots['reception_date'],
+                                   'date_expiry': lots['date_expiry'],
+                                   'analytical_technique': lots['analytical_technique'],
+                                   'user_add_command': lots['user_add_command']}
                 list_info_excel.append(dict_info_excel)
             else:
                 type_log = 'insert new stock'
@@ -296,7 +329,10 @@ def add_stock_lot():
                     if lots['react_or_fungible'] == 'Fungible':
                         internal_lot_value = ''
                     else:
-                        internal_lot_value = f"{lots['internal_lot']}_{number_unit_lot}/{lots['units_lot']}"
+                        # internal_lot_value = f"{lots['internal_lot']}_{number_unit_lot}/{lots['units_lot']}"
+                        dict_totals_reference[f"{lots['key']}_unit"] += 1
+                        unit_reactive = dict_totals_reference[f"{lots['key']}_unit"]
+                        internal_lot_value = f"{lots['internal_lot']}_{unit_reactive}/{dict_totals_reference[lots['key']]}"
 
                     select_lot_certificate = session1.query(Stock_lots).filter_by(catalog_reference=lots['catalog_reference'], lot=lots['lot'], id_reactive=lots['id_reactive']).first()
                     if select_lot_certificate is None:
@@ -350,7 +386,8 @@ def add_stock_lot():
                                             plataform_command_preferent=lots['plataform_command_preferent'],
                                             maximum_amount=lots['maximum_amount'],
                                             purchase_format_supplier=lots['purchase_format_supplier'],
-                                            units_format_supplier=lots['units_format_supplier'])
+                                            units_format_supplier=lots['units_format_supplier'],
+                                            pb_oligos=pb_oligos)
                     session1.add(insert_lot)
 
                     dict_info_excel = {'catalog_reference': lots['catalog_reference'],

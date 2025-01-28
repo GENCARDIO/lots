@@ -169,7 +169,7 @@
                                 </div>
                                 <div class="col-lg-6 col-md-12 col-sm-12" name="divs_new_lots">
                                     <div class="input-group mb-3">
-                                        <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Format compra PROV :</b></span>
+                                        <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Form. compra Prov :</b></span>
                                         <select class="form-select" id="purchase_format0">
                                             <option selected></option>
                                             <option>kit</option>
@@ -187,7 +187,7 @@
                                         <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Unitats format :</b></span>
                                         <select class="form-select" id="units_format0">
                                             <option selected>1</option>
-                                            {% for i in range(2, 101) %}
+                                            {% for i in range(2, 5001) %}
                                                 <option>{{ i }}</option>
                                             {% endfor %}
                                         </select>
@@ -213,7 +213,7 @@
                                         <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Unitats format ICS :</b></span>
                                         <select class="form-select" id="units_format_supplier0">
                                             <option selected>1</option>
-                                            {% for i in range(2, 101) %}
+                                            {% for i in range(2, 5001) %}
                                                 <option>{{ i }}</option>
                                             {% endfor %}
                                         </select>
@@ -282,6 +282,9 @@
                         document.getElementById('revised_by').value = acronim
                         document.getElementById('date_revised').value = formated_date
                         document.getElementById('cost_center_stock').value = ''
+                        document.getElementById('oligos_div1').style.display = "none";
+                        document.getElementById('oligos_div2').style.display = "none";
+
 
                         // Eliminar tots els div amb el name divs_subproduct
                         var elementosAEliminar = document.querySelectorAll('div[name="divs_subproducts"], input[name="divs_subproducts"]');
@@ -417,7 +420,7 @@
                                 </div>
                                 <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts">
                                     <div class="input-group mb-3">
-                                        <span class="input-group-text" id="basic-addon1" style="width: 148px;"><b>Format compra PROV :</b></span>
+                                        <span class="input-group-text" id="basic-addon1" style="width: 148px;"><b>Format compra Prov :</b></span>
                                         <input type="text" class="form-control" id="purchase_format0_${i}" aria-label="TTN" value="${purchase_format_end}" readonly>
                                     </div>
                                 </div>
@@ -437,6 +440,8 @@
                             else {
                                 if (list_info_lots[i]['description'].includes("Coriels") || list_info_lots[i]['description'].includes("Oligos")) {
                                     var nuevoHTML_context = nuevoHTML_context.replace('value=""', 'value="NA"').replace('value=""', 'value="NA"');
+                                    document.getElementById('oligos_div1').style.display = "block";
+                                    document.getElementById('oligos_div2').style.display = "block";
                                 }
                                 var nuevoHTML_context = `${nuevoHTML_context}
                                 <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts">
@@ -449,6 +454,7 @@
                                     <div class="input-group mb-3">
                                         <span class="input-group-text" id="basic-addon1" style="width: 148px;"><b>Unitats lot :</b></span>
                                         <select class="form-select" id="units_lot0_${i}">
+                                            <option>0</option>
                                             <option selected>1</option>
                                             {% for i in range(2, 1001) %}
                                                 <option>{{ i }}</option>
@@ -458,7 +464,7 @@
                                 </div>
                                 <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts">
                                     <div class="input-group mb-3">
-                                        <span class="input-group-text" id="basic-addon1" style="width: 148px;"><b>Format compra PROV :</b></span>
+                                        <span class="input-group-text" id="basic-addon1" style="width: 148px;"><b>Format compra Prov :</b></span>
                                         <input type="text" class="form-control" id="purchase_format0_${i}" aria-label="TTN" value="${purchase_format_end}" readonly>
                                     </div>
                                 </div>
@@ -605,7 +611,7 @@
                     </div>
                     <div class="col-lg-6 col-md-12 col-sm-12" name="divs_new_lots" ${nuevoHTML_start}>
                         <div class="input-group mb-3">
-                            <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Format compra PROV :</b></span>
+                            <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Form. compra Prov :</b></span>
                             <select class="form-select" id="purchase_format${x}">
                                 <option selected></option>
                                 <option>kit</option>
@@ -623,9 +629,35 @@
                             <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Unitats format :</b></span>
                             <select class="form-select" id="units_format${x}">
                                 <option selected>1</option>
-                                {% for i in range(2, 101) %}
+                                {% for i in range(2, 5001) %}
                                     <option>{{ i }}</option>
                                 {% endfor %}                            
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-lg-6 col-md-12 col-sm-12 divs_reatives" name="divs_new_lots" ${nuevoHTML_start}>       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Format compra ICS:</b></span>
+                            <select class="form-select" id="purchase_format_supplier${x}">
+                                <option selected></option>
+                                <option>kit</option>
+                                <option>caixa</option>
+                                <option>ampolla</option>
+                                <option>bossa</option>
+                                <option>rotlle</option>
+                                <option>unitats</option>
+                                <option>paquet</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-lg-6 col-md-12 col-sm-12" divs_reatives" name="divs_new_lots" ${nuevoHTML_start}>
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Unitats format ICS :</b></span>
+                            <select class="form-select" id="units_format_supplier${x}">
+                                <option selected>1</option>
+                                {% for i in range(2, 5001) %}
+                                    <option>{{ i }}</option>
+                                {% endfor %}
                             </select>
                         </div>
                     </div>
@@ -660,19 +692,8 @@
                             <input type="number" class="form-control" aria-label="TTN" id="maximum_amount${x}">
                         </div>
                     </div>
-                    <div class="col-lg-6 col-md-12 col-sm-12 divs_reatives" name="divs_new_lots" ${nuevoHTML_start}>       
+                    <div class="col-lg-6 col-md-12 col-sm-12" name="divs_new_lots" ${nuevoHTML_start}>       
                         <div class="input-group mb-3">
-                            <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Format compra ICS:</b></span>
-                            <select class="form-select" id="purchase_format_supplier${x}">
-                                <option selected></option>
-                                <option>kit</option>
-                                <option>caixa</option>
-                                <option>ampolla</option>
-                                <option>bossa</option>
-                                <option>rotlle</option>
-                                <option>unitats</option>
-                                <option>paquet</option>
-                            </select>
                         </div>
                     </div>
                 `;
@@ -751,7 +772,7 @@
                 </div>
                 <div class="col-lg-6 col-md-12 col-sm-12" name="divs_new_lots">
                     <div class="input-group mb-3">
-                        <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Format compra PROV :</b></span>
+                        <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Form. compra Prov :</b></span>
                         <select class="form-select" id="purchase_format0">
                             <option selected></option>
                             <option>kit</option>
@@ -768,7 +789,33 @@
                         <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Unitats format :</b></span>
                         <select class="form-select" id="units_format0">
                             <option selected>1</option>
-                            {% for i in range(2, 101) %}
+                            {% for i in range(2, 5001) %}
+                                <option>{{ i }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="col-lg-6 col-md-12 col-sm-12 divs_reatives" name="divs_new_lots">       
+                    <div class="input-group mb-3">
+                        <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Format compra ICS:</b></span>
+                        <select class="form-select" id="purchase_format_supplier0">
+                            <option selected></option>
+                            <option>kit</option>
+                            <option>caixa</option>
+                            <option>ampolla</option>
+                            <option>bossa</option>
+                            <option>rotlle</option>
+                            <option>unitats</option>
+                            <option>paquet</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-lg-6 col-md-12 col-sm-12" divs_reatives" name="divs_new_lots">
+                    <div class="input-group mb-3">
+                        <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Unitats format ICS :</b></span>
+                        <select class="form-select" id="units_format_supplier0">
+                            <option selected>1</option>
+                            {% for i in range(2, 5001) %}
                                 <option>{{ i }}</option>
                             {% endfor %}
                         </select>
@@ -803,21 +850,6 @@
                     <div class="input-group mb-3">
                         <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Q. màxima :</b></span>
                         <input type="number" class="form-control" aria-label="TTN" id="maximum_amount0">
-                    </div>
-                </div>
-                <div class="col-lg-6 col-md-12 col-sm-12 divs_reatives" name="divs_new_lots">       
-                    <div class="input-group mb-3">
-                        <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Format compra ICS:</b></span>
-                        <select class="form-select" id="purchase_format_supplier0">
-                            <option selected></option>
-                            <option>kit</option>
-                            <option>caixa</option>
-                            <option>ampolla</option>
-                            <option>bossa</option>
-                            <option>rotlle</option>
-                            <option>unitats</option>
-                            <option>paquet</option>
-                        </select>
                     </div>
                 </div>
                 `;
@@ -954,7 +986,7 @@
                         </div>
                         <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts">
                             <div class="input-group mb-3">
-                                <span class="input-group-text" id="basic-addon1" style="width: 148px;"><b>Format compra PROV :</b></span>
+                                <span class="input-group-text" id="basic-addon1" style="width: 148px;"><b>Form. compra Prov :</b></span>
                                 <input type="text" class="form-control" id="purchase_format${x}_${i}" aria-label="TTN" value="${purchase_format_end}" readonly>
                             </div>
                         </div>
@@ -973,6 +1005,8 @@
                 else {
                     if (list_info_lots[i]['description'].includes("Coriels") || list_info_lots[i]['description'].includes("Oligos")) {
                         var nuevoHTML_context = nuevoHTML_context.replace('value=""', 'value="NA"').replace('value=""', 'value="NA"');
+                        document.getElementById('oligos_div1').style.display = "block";
+                        document.getElementById('oligos_div2').style.display = "block";
                     }
                     var nuevoHTML_context = `${nuevoHTML_context}
                         <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts">
@@ -985,6 +1019,7 @@
                             <div class="input-group mb-3">
                                 <span class="input-group-text" id="basic-addon1" style="width: 145px;"><b>Unitats lot :</b></span>
                                 <select class="form-select" id="units_lot${x}_${i}">
+                                    <option>0</option>
                                     <option selected>1</option>
                                     {% for i in range(2, 1001) %}
                                         <option>{{ i }}</option>
@@ -994,7 +1029,7 @@
                         </div>
                         <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts">
                             <div class="input-group mb-3">
-                                <span class="input-group-text" id="basic-addon1" style="width: 148px;"><b>Format compra PROV :</b></span>
+                                <span class="input-group-text" id="basic-addon1" style="width: 148px;"><b>Form. compra Prov :</b></span>
                                 <input type="text" class="form-control" id="purchase_format${x}_${i}" aria-label="TTN" value="${purchase_format_end}" readonly>
                             </div>
                         </div>
@@ -1260,7 +1295,9 @@
         const maximum_amount = document.getElementById('maximum_amount_fix').value
         const purchase_format_supplier = document.getElementById('purchase_format_supplier_fix').value
         const units_format_supplier  = document.getElementById('units_format_supplier_fix').value
-        
+
+        const pb_oligos  = document.getElementById('pb_oligos').value
+
         /// Serveix per distingir si hi ha algun fallo o no en la recepció
         var wrong_lots = 1
         if (state !== 'Acceptat'){
@@ -1380,6 +1417,7 @@
         form_data.append('file_certificate', file_certificate)
         form_data.append('unit_total_command', unit_total_command)
         form_data.append('id_substract_command', id_substract_command)
+        form_data.append('pb_oligos', pb_oligos)
 
         $('#add_lot_info').modal('hide');
 
@@ -1549,7 +1587,6 @@
         // Carregar dades al form de l'html
         const code_search = document.getElementById('code_search_command').value
         const code_panel = document.getElementById('code_panel_command').value
-        alert(code_search)
 
         var regex = /^\s*$/;
         var only_space = regex.test(code_search);
@@ -1643,7 +1680,7 @@
                                 </div>
                                 <div class="col-lg-6 col-md-12 col-sm-12" name="divs_new_lots">
                                     <div class="input-group mb-3">
-                                        <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Format compra PROV :</b></span>
+                                        <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Form. compra Prov :</b></span>
                                         <select class="form-select" id="purchase_format0">
                                             <option selected></option>
                                             <option>kit</option>
@@ -1661,7 +1698,7 @@
                                         <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Unitats format :</b></span>
                                         <select class="form-select" id="units_format0">
                                             <option selected>1</option>
-                                            {% for i in range(2, 101) %}
+                                            {% for i in range(2, 5001) %}
                                                 <option>{{ i }}</option>
                                             {% endfor %}
                                         </select>
@@ -1687,7 +1724,7 @@
                                         <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Unitats format ICS :</b></span>
                                         <select class="form-select" id="units_format_supplier0">
                                             <option selected>1</option>
-                                            {% for i in range(2, 101) %}
+                                            {% for i in range(2, 5001) %}
                                                 <option>{{ i }}</option>
                                             {% endfor %}
                                         </select>
@@ -1731,6 +1768,9 @@
                         else { 
                             message = `L'article ${code_search} no està registrat, contacta amb un administrador perquè registri el producte.`
                             alert_type = 'warning'}}
+                    else if(split_response[1] === 'inactive'){
+                        message = `L'article ${code_search} està bloquejat!`
+                        alert_type = 'warning' }
                     else {
                         // Tranformem en diccionari el json
                         list_info_lots = JSON.parse(split_response[1]);
@@ -1742,7 +1782,7 @@
                         document.getElementById("key_lot_command").value = list_info_lots['key']
                         document.getElementById("cost_center").value = '--'
                         document.getElementById("cost_center_name").value = ''
-                        document.getElementById("info_purchase_format").value = list_info_lots['purchase_format']
+                        document.getElementById("info_purchase_format").value = `Unitats màximes -> ${list_info_lots['maximum_amount']} ${list_info_lots['purchase_format']}`
                         document.getElementById("div_ceco_manual").style.display ='none'
                         $('#add_command').modal('show'); 
                         message = '' }}
@@ -2212,6 +2252,7 @@
                             <!-- <input type="text" class="form-control" id='analytical_technique' aria-label="TTN" aria-describedby="basic-addon1"> -->
                             <select class="form-select" id="analytical_technique">
                                 <option selected></option>
+                                <option>AP</option>
                                 <option>Extracció</option>
                                 <option>Genèric</option>
                                 <option>Genotipat</option>
@@ -2310,6 +2351,21 @@
                         <div class="input-group mb-3">
                             <span class="input-group-text" id="basic-addon1" style="width: 145px;"><b>Descripció:</b></span>
                             <input type="text" class="form-control" id="description_add_lot" aria-label="TTN" readonly>
+                        </div>
+                    </div>
+                    <div class="col-lg-6 col-md-6 col-sm-12" style="display: none;" id="oligos_div1">
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 145px;"><b>Total P.B.:</b></span>
+                            <select class="form-select" id="pb_oligos">
+                                <option selected>1</option>
+                                {% for i in range(2, 1001) %}
+                                    <option>{{ i }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-lg-6 col-md-6 col-sm-12" style="display: none;" id="oligos_div2">
+                        <div class="input-group mb-3">
                         </div>
                     </div>
 
@@ -2560,8 +2616,8 @@
                     </div>
                     <div class="col-lg-6 col-md-12 col-sm-12">
                         <div class="input-group mb-3">
-                            <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>Format compra PROV :</b></span>
-                            <input type="text" class="form-control" id="info_purchase_format" aria-label="TTN" style="background-color: white;" readonly>
+                            <!-- <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>Format compra Prov :</b></span> -->
+                            <input type="text" class="form-control p_add_command" id="info_purchase_format" aria-label="TTN" readonly>
                         </div>
                     </div>
                     <div class="col-lg-6 col-md-12 col-sm-12" style="display: none;" id="div_ceco_manual">

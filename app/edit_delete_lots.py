@@ -72,6 +72,8 @@ def edit_lot():
     purchase_format = request.form.get("purchase_format")
     units_format = request.form.get("units_format")
 
+    import_unit_ics = import_unit_ics.replace(',', '.')
+    import_unit_idibgi = import_unit_idibgi.replace(',', '.')
 
     select_lot = session1.query(Lots).filter(Lots.key == id_lot).first()
 
