@@ -305,7 +305,7 @@
 
                         document.getElementsByName("title_add_lots")[0].textContent = `Afegeix article : ${list_info_lots[0]['catalog_reference']}`;
 
-                        document.getElementById("description_add_lot").value = `${list_info_lots[0]['description']}`;
+                        document.getElementById("description_add_lot").value = list_info_lots[0]['description'];
                         
                         document.getElementById("info_command").style.display = 'none';
 
@@ -356,7 +356,9 @@
                         miDiv.insertAdjacentHTML('beforebegin', HTML);
 
                         for (var i = 0; i < list_info_lots.length; i++) {
-                            var dict_lots = JSON.stringify(list_info_lots[i]);
+                            // var dict_lots = JSON.stringify(list_info_lots[i]);
+                            // Hacemos un replace de ' por su codigo en html, ya que sino rompe el stirng en el value i la informacion se pierde
+                            var dict_lots = JSON.stringify(list_info_lots[i]).replace(/'/g, "&#39;");
                             if (list_info_lots[i]['temp_conservation'] == '4'){
                                 temperature = `+${list_info_lots[i]['temp_conservation']} °C`}
                             else if (list_info_lots[i]['temp_conservation'] == '-20'){
@@ -923,7 +925,9 @@
             miDiv.insertAdjacentHTML('beforebegin', HTML);
             for (var i = 0; i < list_info_lots.length; i++) {
                 var temperature = ''
-                var dict_lots = JSON.stringify(list_info_lots[i]);
+                // var dict_lots = JSON.stringify(list_info_lots[i]);
+                // Hacemos un replace de ' por su codigo en html, ya que sino rompe el stirng en el value i la informacion se pierde
+                var dict_lots = JSON.stringify(list_info_lots[i]).replace(/'/g, "&#39;");
                 if (list_info_lots[i]['temp_conservation'] == '4'){
                     temperature = `+${list_info_lots[i]['temp_conservation']} °C`}
                 else if (list_info_lots[i]['temp_conservation'] == '-20'){
@@ -1355,7 +1359,9 @@
 
                 if (lot !== '' && expiry_date !== '' && internal_lot !== ''){
                     const json_info_lot = document.getElementById(`json_info_lot${x}_${i}`).value
-                    var dict_info_lot = JSON.parse(json_info_lot);
+                    // haremos un replace porque si la en la descripcion se puso alugn '
+                    const cleaned_json_info_lot = json_info_lot.replace(/&#39;/g, "'");
+                    var dict_info_lot = JSON.parse(cleaned_json_info_lot);
                     var id_reactive = dict_info_lot['id_reactive']
                     // 1 - si id_rectiu esta buit vol dir que es un article sense subreferncies, mirarem si el diccionar te 
                     //     units_command i si no la te la crearem amb total_units_lot com a value, si ja esta creat vol dir
