@@ -591,24 +591,32 @@
                 }
             } );
         
+            var navbarHeight = $('.navbar').outerHeight(); // Detecta la altura de la navbar
+
             var table = $('#example').DataTable( {
                 orderCellsTop: true,
-                fixedHeader: true,
+                fixedHeader: {
+                    header: true,
+                    headerOffset: navbarHeight - 10
+                },
                 columnDefs: [
                     {
-                        targets: 0, // Índice de la columna con las fechas
+                        targets: [4, 5], // Índice de la columna con las fechas
                         type: 'numeric', // Usar orden numérico personalizado
                         render: function(data, type, row) {
                             // Transformar la fecha en formato DD/MM/YYYY a un número YYYYMMDD para ordenar
                             if (type === 'sort') {
-                                var parts = data.split('/');
-                                return parseInt(parts[2] + parts[1] + parts[0]);
+                                var parts = data.split('-');
+                                if (parts.length === 3) {
+                                    return parseInt(parts[2] + parts[1] + parts[0]);
+                                }
+                                return 0
                             }
                             return data; // Mantener el formato original para mostrar
                         },
                     },
                 ],
-                order: [[0, 'desc']],
+                order: [[4, 'desc']],
             } );
 
             // Adjust column widths to content
