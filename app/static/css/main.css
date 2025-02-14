@@ -78,3 +78,8 @@ body.modal-open {
     background-color: yellow !important;
     text-align: center !important;
 }
+
+table tbody tr:hover td {
+    background-color: #ffeb99 !important; /* Amarillo claro */
+    color: #000 !important; /* Texto negro para contraste */
+}

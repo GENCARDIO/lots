@@ -661,7 +661,12 @@
      function close_modal(modal_id){
         $(`#${modal_id}`).modal('hide');
         if (modal_id === "modal_edit_lot"){ open_modal('info_lots_bd') }
-        else if (modal_id === "modal_edit_order_tracking"){ open_modal('modal_order_tracking') }
+        else if (modal_id === "modal_edit_order_tracking"){ 
+            open_modal('modal_order_tracking') 
+            $('#modal_edit_order_tracking').on('hidden.bs.modal', function () {
+                $('body').addClass('modal-open'); 
+            });
+        }
     }
 
 
@@ -1243,9 +1248,22 @@
 
     $(document).ready(function() {
         var table = $('#table_search_all_year').DataTable({
-            order: [0, 'desc'],
+            columnDefs: [
+                    {
+                        targets: 4, // Índice de la columna con las fechas
+                        type: 'numeric', // Usar orden numérico personalizado
+                        render: function(data, type, row) {
+                            // Transformar la fecha en formato DD/MM/YYYY a un número YYYYMMDD para ordenar
+                            if (type === 'sort') {
+                                var parts = data.split('-');
+                                return parseInt(parts[2] + parts[1] + parts[0]);
+                            }
+                            return data; // Mantener el formato original para mostrar
+                        },
+                    },
+                ],
+            order: [[4, 'desc']],
             autoWidth: true,
-            pageLength: 10 // Default page length
         });
         table.columns.adjust().draw();
     });
