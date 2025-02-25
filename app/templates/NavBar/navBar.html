@@ -423,7 +423,7 @@
                     <div class="mb-3">
                         <label for="formFile" class="form-label"><i>Carrega plantilla amb els canvis de preu</i></label>
                         <div class="d-flex align-items-center">
-                            <input class="form-control me-2" type="file" id="file" name="file" style="flex: 1;">
+                            <input class="form-control me-2" type="file" id="file_template" name="file_template" style="flex: 1;">
                             <button type="button" class="btn btn-primary" onclick="charge_doc_price()" style="margin-left: -10px;"><i class="fa-sharp fa-solid fa-file-arrow-up"></i> Carregar</button>
                         </div>
                     </div>                            
@@ -435,6 +435,35 @@
     <form action="/download_template_price" method="post" id="down_excel_price">
     </form>
 </div>
+
+
+<div class="modal fade" id="modal_lost_description_lots" tabindex="-1" role="dialog" aria-labelledby="editRegister" aria-hidden="true">
+    <div class="modal-dialog modal-lg" tabindex="-1" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="title"> Referències no trobades</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="close_modal('modal_lost_description_lots')"><span aria-hidden="true">&times;</span></button>
+        </div>
+        <div class="modal-body">
+            <div class="row">                                   
+                <div class="col-lg-12 col-md-12 col-sm-12">       
+                    <table id="table_lost_description_lots" class="display" style="width: 100%;">
+                        <thead>
+                            <tr id="thcolor">
+                                <th>Ref. proveïdor</th>
+                                <th>Descripció</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                    </table>
+                </div> 
+            </div>
+        </div>
+      </div>
+    </div>
+</div>
+
 
 <script>
     /**
@@ -647,7 +676,7 @@
         else if (modal_id == 'modal_edit_lot'){
             $('#info_lots_bd').modal('hide');
         } else if (modal_id == 'open_update_price'){
-            document.getElementById('file').value = ''
+            document.getElementById('file_template').value = ''
         }
         $(`#${modal_id}`).modal('show');
     }
@@ -664,6 +693,11 @@
         else if (modal_id === "modal_edit_order_tracking"){ 
             open_modal('modal_order_tracking') 
             $('#modal_edit_order_tracking').on('hidden.bs.modal', function () {
+                $('body').addClass('modal-open'); 
+            });}
+        else if (modal_id === "modal_incidence_command_success"){ 
+            open_modal('modal_command_success') 
+            $('#modal_incidence_command_success').on('hidden.bs.modal', function () {
                 $('body').addClass('modal-open'); 
             });
         }
@@ -1149,7 +1183,7 @@
             var form_data = new FormData();
 
             // Carregar dades al form de l'html            
-            const file_input = document.getElementById('file')
+            const file_input = document.getElementById('file_template')
             const file = file_input.files[0];
 
             if (!file){
@@ -1188,7 +1222,33 @@
                         if (split_response[2] === 'False'){
                             message = "No hi ha canvis entre el document i la BD."
                             alert_type = 'warning'}
-                        else if (split_response[1] === ''){
+                        else if (split_response[1] === 'not_found'){
+                            open_modal('modal_lost_description_lots')
+                            var table = $('#table_lost_description_lots').DataTable();
+                            table.page.len(10).draw();
+                            table.clear().draw();
+                            var response_dict = JSON.parse(split_response[2]);
+                            // Afegir les files des de response_dict
+                            response_dict.forEach(function(item) {
+                                // Afegeix la fila i guarda la referència
+                                console.log(item.catalog_reference)
+                                var row = table.row.add([
+                                    item.catalog_reference || '',  
+                                    item.description || ''
+                                ]).draw(false).node(); // Obté el node <tr>
+
+                                // Aplica estils a les cel·les
+                                $(row).find('td').css({
+                                    'white-space': 'nowrap', // Evita salts de línia
+                                    'width': 'auto',         // Ajusta al contingut
+                                    'padding': '8px'         // Afegeix espaiat
+                                });
+
+                                // Centra el text de la primera columna
+                                $(row).find('td:first').css('text-align', 'center');
+                            });
+                        }
+                        else if (split_response[1] === 'OK'){
                             message = "El document s'ha carregat correctament."
                             alert_type = 'success'}
                         else {
@@ -1270,5 +1330,13 @@
 
     $('#modal_seach_all_year').on('hidden.bs.modal', function () {
         $('body').css('overflow', 'auto'); // Restablecer el desplazamiento del cuerpo
+    });
+
+    $(document).ready(function() {
+        $('#table_lost_description_lots').DataTable({
+            "paging": true,
+            "searching": true,
+            "info": false
+        });
     });
 </script>

@@ -380,8 +380,8 @@ def delete_documents():
         if certificate == 'true':
             select_stock_lot = session1.query(Stock_lots).filter(Stock_lots.id == lot_id_delete).first()
             if select_stock_lot is not None:
-                stock_lot.certificate = ''
-                stock_lot.type_doc_certificate = ''
+                select_stock_lot.certificate = ''
+                select_stock_lot.type_doc_certificate = ''
 
         session1.commit()
     except Exception:

@@ -6,41 +6,75 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     {% include 'Header/header.html' %}
     <script>
-
+        // Taula seguiment comandes
         // Les seguents funcions fan que si al tocar un tr de la taula order tracking sobri un modal per poder editar.
         document.addEventListener("DOMContentLoaded", function() {
-        const tbody = document.querySelector("#table_order_tracking tbody");
+            const tbody = document.querySelector("#table_order_tracking tbody");
 
 
-        // Delegación de eventos para abrir el modal al hacer clic en las filas con la clase "open-modal"
-        tbody.addEventListener("click", function(event) {
-            const tr = event.target.closest(".open-modal");
-            if (tr) {
-                const info_row = tr.getAttribute("data-target");
-                const split_row = info_row.split('_//_');
+            // Delegación de eventos para abrir el modal al hacer clic en las filas con la clase "open-modal"
+            tbody.addEventListener("click", function(event) {
+                const tr = event.target.closest(".open-modal");
+                if (tr) {
+                    const info_row = tr.getAttribute("data-target");
+                    const split_row = info_row.split('_//_');
 
-                document.getElementById('id_command_order_tracking').value = split_row[0];
-                document.getElementById('units_order_tracking').value = split_row[1];
-                document.getElementById('observations_order_tracking').value = split_row[2];
-                document.getElementById('ref_prov_order_tracking').value = split_row[3];
-                document.getElementById('ceco_order_tracking').value = split_row[4];
+                    document.getElementById('id_command_order_tracking').value = split_row[0];
+                    document.getElementById('units_order_tracking').value = split_row[1];
+                    document.getElementById('observations_order_tracking').value = split_row[2];
+                    document.getElementById('ref_prov_order_tracking').value = split_row[3];
+                    document.getElementById('ceco_order_tracking').value = split_row[4];
+                    document.getElementById('incidence_number').value = (split_row[5] === null || split_row[5] === "null") ? '' : split_row[5];
 
-                $('#modal_order_tracking').modal('hide');  
-                $('#modal_edit_order_tracking').modal({
-                    keyboard: false
-                }).modal('show');
-            }
+                    $('#modal_order_tracking').modal('hide');  
+                    $('#modal_edit_order_tracking').modal({
+                        keyboard: false
+                    }).modal('show');
+                }
+            });
+
+
+            const modals = document.querySelectorAll(".modal");
+                modals.forEach(modal => {
+                    modal.addEventListener("click", function(event) {
+                        if (event.target === this) {
+                            this.style.display = "none";
+                        }
+                    });
+                });
         });
 
+        // Taula Comadnes tramitades
+        // Les seguents funcions fan que si al tocar un tr de la taula order tracking sobri un modal per poder editar.
+        document.addEventListener("DOMContentLoaded", function() {
+            const tbody_com = document.querySelector("#table_info_command_success tbody");
 
-        const modals = document.querySelectorAll(".modal");
-            modals.forEach(modal => {
-                modal.addEventListener("click", function(event) {
-                    if (event.target === this) {
-                        this.style.display = "none";
-                    }
-                });
+
+            // Delegación de eventos para abrir el modal al hacer clic en las filas con la clase "open-modal"
+            tbody_com.addEventListener("click", function(event) {
+                const tr = event.target.closest(".open-modal");
+                if (tr) {
+                    const info_row = tr.getAttribute("data-target");
+                    const split_row = info_row.split('_//_');
+
+                    document.getElementById('incidence_id_command').value = split_row[0];
+                    document.getElementById('incidence_number_command').value = (split_row[1] === null || split_row[1] === "null") ? '' : split_row[1];
+
+                    $('#modal_command_success').modal('hide');  
+                    $('#modal_incidence_command_success').modal({
+                        keyboard: false
+                    }).modal('show');
+                }
             });
+
+            const modals = document.querySelectorAll(".modal");
+                modals.forEach(modal => {
+                    modal.addEventListener("click", function(event) {
+                        if (event.target === this) {
+                            this.style.display = "none";
+                        }
+                    });
+                });
         });
 
 
@@ -174,14 +208,15 @@
             // 3r argumemt true sempre
             xhr.open('POST', '/command_success', true);
             xhr.onload = function(){
-                show_message = true
+                var show_message = true
+                var alert_type = "danger"
                 if (xhr.status === 200) {
                     var response = xhr.responseText;
                     var split_response = response.split('_//_')
                     if (split_response[0] === 'False'){
-                        message = split_response[1]
-                        alert_type = 'danger'}
+                        message = split_response[1] }
                     else if (split_response[0] === 'True'){
+                        show_message = false
                         $('#modal_command_success').modal('show');
 
                         var list_lots = JSON.parse(split_response[1]);
@@ -199,6 +234,10 @@
                                 }
                             }
                             var new_row = table.row.add(new_row_data).draw(false).node();
+                            $(new_row).attr('id', list_lots[i].id) // Usa 'id' o 'id_lot' según corresponda
+                                      .addClass('open-modal')   // Añade la clase que desees
+                                      .attr('data-target', `${list_lots[i].id}_//_${list_lots[i].incidence_number}`);
+
                         }
                         // Aplicar estilos CSS para centrar el contenido de las primeras cuatro columnas
                         for (var j = 0; j < 10; j++) {
@@ -207,26 +246,26 @@
                         }
                     } else {
                         message = `Error inesperat. Si persisteix l'error contacta amb un administrador`
-                        alert_type = 'danger'
                     }
                 }
                 else {
-                    message = `Error, No s'ha pogut realitzar l'operació. Si persisteix l'error contacta amb un administrador`
-                    alert_type = 'danger' }
+                    message = `Error, No s'ha pogut realitzar l'operació. Si persisteix l'error contacta amb un administrador` 
+                }
                 
-                var flashContainer = document.querySelector(".d-flex.justify-content-center .row");
-                // Eliminar la alerta anterior, si existe
-                if (flashContainer.children.length > 0) {
-                    flashContainer.removeChild(flashContainer.children[0]); }
-                var newFlash = document.createElement("div");
-                newFlash.className = "alert alert-" + alert_type + " alert-dismissible fade show ml-3";
-                newFlash.role = "alert";
-                newFlash.innerHTML = "<span>" + message + "</span>" + 
-                                    '<button type="button" class="close" data-dismiss="alert" aria-label="Close">' +
-                                    '<span aria-hidden="true">&times;</span>' +
-                                    '</button>';
-                flashContainer.appendChild(newFlash);
-                flashContainer.style.paddingTop = "20px";
+                if (show_message){
+                    var flashContainer = document.querySelector(".d-flex.justify-content-center .row");
+                    // Eliminar la alerta anterior, si existe
+                    if (flashContainer.children.length > 0) {
+                        flashContainer.removeChild(flashContainer.children[0]); }
+                    var newFlash = document.createElement("div");
+                    newFlash.className = "alert alert-" + alert_type + " alert-dismissible fade show ml-3";
+                    newFlash.role = "alert";
+                    newFlash.innerHTML = "<span>" + message + "</span>" + 
+                                        '<button type="button" class="close" data-dismiss="alert" aria-label="Close">' +
+                                        '<span aria-hidden="true">&times;</span>' +
+                                        '</button>';
+                    flashContainer.appendChild(newFlash);
+                    flashContainer.style.paddingTop = "20px"; }
             }
 
             xhr.send(form_data)
@@ -295,10 +334,10 @@
                             var new_row = table.row.add(new_row_data).draw(false).node();
                             $(new_row).attr('id', list_lots[i].id) // Usa 'id' o 'id_lot' según corresponda
                                       .addClass('open-modal')   // Añade la clase que desees
-                                      .attr('data-target', `${list_lots[i].id}_//_${list_lots[i].units}_//_${list_lots[i].observations}_//_${list_lots[i].catalog_reference}_//_${list_lots[i].cost_center}`);
+                                      .attr('data-target', `${list_lots[i].id}_//_${list_lots[i].units}_//_${list_lots[i].observations}_//_${list_lots[i].catalog_reference}_//_${list_lots[i].cost_center}_//_${list_lots[i].incidence_number}`);
                         }
                         // Aplicar estilos CSS para centrar el contenido de las primeras cuatro columnas
-                        for (var j = 0; j < 10; j++) {
+                        for (var j = 0; j < 11; j++) {
                             if (j !== 1) {
                                 table.column(j).nodes().to$().addClass('text-center');}
                         }
@@ -354,7 +393,8 @@
             observations = document.getElementById('observations_order_tracking').value;
             ref_prov = document.getElementById('ref_prov_order_tracking').value;
             ceco = document.getElementById('ceco_order_tracking').value;
-
+            incidence_number = document.getElementById('incidence_number').value;
+            
             if(units <= 0){
                 alert('No està permès posar 0 o nombres negatius')
                 return
@@ -366,6 +406,7 @@
             form_data.append('id', id)
             form_data.append('units', units)
             form_data.append('observations', observations)
+            form_data.append('incidence_number', incidence_number)
 
             // Creeem l'objecte per l'ajax
             var xhr = new XMLHttpRequest();
@@ -393,12 +434,19 @@
                                 row.style.backgroundColor = 'yellow';
                             }
                             if (split_response[2] === 'True'){
-                                cells[9].textContent = observations; 
+                                cells[10].textContent = observations; 
                                 row.style.backgroundColor = 'yellow';
                             }
 
-                            if (split_response[3] === 'False' && split_response[2] === 'False'){ alert("No has modificat cap dada.")} 
-                            row.setAttribute('data-target', `${id}_//_${units}_//_${observations}_//_${ref_prov}_//_${ceco}`);
+                            if (split_response[5] === 'True'){
+                                cells[11].textContent = incidence_number; 
+                                row.style.backgroundColor = 'yellow';
+                            }
+
+                            if (split_response[3] === 'False' && split_response[2] === 'False' && split_response[5] === 'False'){ 
+                                alert("No has modificat cap dada.")
+                            } 
+                            row.setAttribute('data-target', `${id}_//_${units}_//_${observations}_//_${ref_prov}_//_${ceco}_//_${incidence_number}`);
 
                             if (split_response[4] === 'True'){
                                 show_message = true
@@ -834,6 +882,88 @@
             document.forms["down_excel_follow_commands"].submit();
         }  
 
+    
+        /**
+        * Enviem una sol·licitud per AJAX per afegir una incidència a una comanda.
+        *
+        * @returns {void} No retorna cap valor.
+        *
+        * @descriptor Aquesta funció recull les dades de la comanda afectada (id i número d’incidència) i les envia al servidor 
+        * mitjançant una sol·licitud AJAX per actualitzar la informació a la base de dades.
+        * En funció de la resposta del servidor, la funció modifica la taula HTML i mostra missatges d'alerta segons correspongui.
+        *
+        * - Si la resposta del servidor indica que l'operació s'ha realitzat correctament, la funció actualitza el número d’incidència 
+        *   de la comanda a la taula i modifica el color de la fila per indicar el canvi.
+        * - En cas d'error, es mostra un missatge d'alerta informant l'usuari i recomanant contactar amb un administrador si el problema persisteix.
+        * - Si no hi ha cap canvi significatiu, es mostra una alerta indicant-ho.
+        *
+        * La funció també s'encarrega de tancar els modals rellevants i gestionar les alertes dins l'aplicació per mantenir una bona experiència d'usuari.
+        */
+        function add_incidence_command_succes(){
+            id = document.getElementById('incidence_id_command').value;
+            incidence_number_command = document.getElementById('incidence_number_command').value;
+            
+            // Crear form data
+            var form_data = new FormData();
+
+            form_data.append('id', id)
+            form_data.append('incidence_number_command', incidence_number_command)
+
+            // Creeem l'objecte per l'ajax
+            var xhr = new XMLHttpRequest();
+            // 1er argument si es pots o get
+            // 2n argument url o ruta
+            // 3r argumemt true sempre
+            xhr.open('POST', '/add_incidence_command_succes', true);
+            xhr.onload = function(){
+                show_message = true
+                var alert_type = 'danger'
+                $('#modal_incidence_command_success').modal('hide');
+                if (xhr.status === 200) {
+                    var response = xhr.responseText;
+                    var split_response = response.split('_//_')
+                    message = split_response[1]
+                    if (split_response[0] === 'True'){
+                        show_message = false
+                        var row = document.getElementById(id);
+                        if (row) {
+                            // Obtener todas las celdas <td> de la fila
+                            var cells = row.getElementsByTagName('td');
+                            cells[9].textContent = incidence_number_command; 
+                            row.style.backgroundColor = 'yellow';
+                            row.setAttribute('data-target', `${id}_//_${incidence_number_command}`);
+                        }
+                    } else {
+                        message = `Error inesperat. Si persisteix l'error contacta amb un administrador`
+                    }
+                }
+                else {
+                    message = `Error, No s'ha pogut realitzar l'operació. Si persisteix l'error contacta amb un administrador`}
+                
+                if (show_message){
+                    $('#modal_order_tracking').modal('hide');
+                    var flashContainer = document.querySelector(".d-flex.justify-content-center .row");
+                    // Eliminar la alerta anterior, si existe
+                    if (flashContainer.children.length > 0) {
+                        flashContainer.removeChild(flashContainer.children[0]); }
+                    var newFlash = document.createElement("div");
+                    newFlash.className = "alert alert-" + alert_type + " alert-dismissible fade show ml-3";
+                    newFlash.role = "alert";
+                    newFlash.innerHTML = "<span>" + message + "</span>" + 
+                                        '<button type="button" class="close" data-dismiss="alert" aria-label="Close">' +
+                                        '<span aria-hidden="true">&times;</span>' +
+                                        '</button>';
+                    flashContainer.appendChild(newFlash);
+                    flashContainer.style.paddingTop = "20px";}
+                else {
+                    $('#modal_command_success').modal('show');
+                }
+            }
+
+            xhr.send(form_data)
+
+        }
+
     </script>
 
     <style>
@@ -1018,6 +1148,7 @@
                                     <th style="width: 80px;">Data Tramitació</th>
                                     <th style="width: 80px;">Usuari</th>
                                     <th style="width: 80px;">CECO</th>
+                                    <th style="width: 80px;">N. Incidència</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -1064,6 +1195,7 @@
                                     <th style="width: 80px;">CECO</th>
                                     <th style="width: 80px;">Gestió Local</th>
                                     <th style="width: 80px;">Observacions</th>
+                                    <th style="width: 80px;">N. Incidència</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -1098,6 +1230,12 @@
                         <div class="input-group mb-3">
                             <span class="input-group-text" id="basic-addon1" style="width: 145px;"><b>Observacions :</b></span>
                             <textarea class="form-control" id='observations_order_tracking' name='observations_order_tracking' aria-label="TTN" aria-describedby="basic-addon1" rows="3"></textarea>
+                        </div>
+                    </div>   
+                    <div class="col-lg-12 col-md-12 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 145px;"><b>Incidències :</b></span>
+                            <input type="text" class="form-control" id='incidence_number' name='incidence_number' aria-label="TTN" aria-describedby="basic-addon1">
                         </div>
                     </div>   
                     <div class="col-lg-12 col-md-12 col-sm-12 text-center">       
@@ -1150,6 +1288,31 @@
         </div>
     </div>
 
+    
+    <div class="modal fade"  id="modal_incidence_command_success" tabindex="-1" role="dialog" aria-labelledby="editRegister" aria-hidden="true">
+        <div class="modal-dialog modal-md" tabindex="-1" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="title">Afegir Incidència</h5>
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="close_modal('modal_incidence_command_success')"><span aria-hidden="true">&times;</span></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">                                   
+                    <div class="col-lg-12 col-md-12 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 145px;"><b>Incidències :</b></span>
+                            <input type="text" class="form-control" id='incidence_number_command' name='incidence_number_command' aria-label="TTN" aria-describedby="basic-addon1">
+                        </div>
+                    </div>   
+                    <div class="col-lg-12 col-md-12 col-sm-12 text-center">       
+                        <input type="hidden" id="incidence_id_command" value=""/>
+                        <button type="button" class="btn btn-outline-success btn-sm" onclick="add_incidence_command_succes()" style="margin-right: 10px;"><i class="fa-solid fa-share-from-square"></i> Afegir</button>
+                    </div>      
+                </div>
+            </div>
+          </div>
+        </div>
+    </div>
 
     <script>
         $(document).ready(function() {
@@ -1260,8 +1423,6 @@
             // Adjust column widths to content
             table.columns.adjust().draw();
         } );
-
-
 
   </script>
 

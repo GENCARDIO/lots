@@ -18,8 +18,11 @@ import smtplib
 def requires_auth(f):
     @wraps(f)
     def decorated_function(*args):
-        if session['rol'] == 'None' or session['rol'] is None or session['rol'] == '':
-            url = f'{IP_HOME}logout/You dont have permissions'
+        if session['rol'] == 'None' or session['rol'] is None or session['rol'] == '' or session['rol'] == 'Usuario no encontrado':
+            url = f'{IP_HOME}logout/No tens permisos per entrar en aquesta a plicació'
+            return redirect(url)
+        elif session['acronim'] == 'None' or session['acronim'] is None or session['acronim'] == '' or session['acronim'] == 'Usuario no encontrado':
+            url = f"{IP_HOME}logout/L'arcronim s'ha esborrat, siusplau torna a fer el log-in"
             return redirect(url)
         else:
             pass
@@ -153,13 +156,13 @@ def send_mail(list_info_excel):
         msg['Subject'] = subject
 
         if list_info_excel[0]['analytical_technique'] == 'NGS':
-            emails = ['monicacoll.girona.ics@gencat.cat', 'llopez@gencardio.com', 'mcorona.girona.ics@gencat.cat', 'mmoliner@idibgi.org', 'msoriano@idibgi.org', 'mpinsach.girona.ics@gencat.cat', 'aperezs.girona.ics@gencat.cat', 'asimon.girona.ics@gencat.cat']
+            emails = ['monicacoll.girona.ics@gencat.cat', 'llopez@gencardio.com', 'mcorona.girona.ics@gencat.cat', 'mmoliner@idibgi.org', 'msoriano@idibgi.org', 'mpinsach.girona.ics@gencat.cat', 'asimon.girona.ics@gencat.cat']
             msg["To"] = ', '.join(emails)
         elif list_info_excel[0]['analytical_technique'] == 'Genotipat2':
             emails = ['nneto.girona.ics@gencat.cat', 'mpuigmule.girona.ics@gencat.cat', 'mmoliner@idibgi.org']
             msg["To"] = ', '.join(emails)
         elif list_info_excel[0]['analytical_technique'] == 'Sanger2':
-            emails = ['ferran.pico@gencardio.com', 'aardila@idibgi.org', 'aperezs.girona.ics@gencat.cat']
+            emails = ['ferran.pico@gencardio.com', 'aardila@idibgi.org']
             msg["To"] = ', '.join(emails)
         elif list_info_excel[0]['analytical_technique'] == 'Extracció2':
             emails = ['abatchelli.girona.ics@gencat.cat', 'igomez.girona.ics@gencat.cat']
@@ -297,3 +300,42 @@ def create_excel_info_reception(list_info_excel):
 def to_dict(obj):
     """Convertir un objeto SQLAlchemy a un diccionario."""
     return {c.name: getattr(obj, c.name) for c in obj.__table__.columns}
+
+
+def format_price(value):
+    '''
+        Aquesta funció format_price s'encarrega de normalitzar els valors numèrics per tal que tinguin un format coherent, especialment per a preus. El seu funcionament és el següent:
+        Gestió de guions:
+        Si el valor introduït és un guió ('-'), el retorna tal qual sense cap modificació.
+
+        1 - Conversió a número:
+            Converteix el valor a un número decimal, substituint la coma per un punt si cal. Això permet gestionar formats europeus on la coma s'utilitza com a separador decimal.
+
+        2 - Format segons el tipus de número:
+            Si el número és enter (sense decimals), es retorna com a enter.
+            Si té decimals, es retorna amb màxim dos decimals.
+
+        3 - Gestió d'errors:
+            Si el valor no es pot convertir a número (per exemple, si és text), retorna el valor original.
+
+        :param str value: valor extret de l'excel
+
+        :return: Retorna el valor formatejat o en el seu defecte el valor original
+        :rtype: int, flot o str
+    '''
+    # Si és un guió, retornem tal qual
+    if str(value).strip() == '-':
+        return value
+
+    # Convertim a float i fem servir punt decimal
+    try:
+        num = float(str(value).replace(',', '.'))
+
+        # Si és un número rodó, retornem sense decimals
+        if num.is_integer():
+            return int(num)
+        else:
+            return round(num, 2)
+    except ValueError:
+        # En cas d'error de format, retornem el valor original
+        return value

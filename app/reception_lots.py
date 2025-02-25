@@ -75,34 +75,34 @@ def search_add_lot():
             for lot in select_lot:
                 if lot.active != 0:
                     dict_lots = {'key': lot.key,
-                                'catalog_reference': lot.catalog_reference,
-                                'manufacturer': lot.manufacturer,
-                                'description': lot.description,
-                                'description_subreference': lot.description_subreference,
-                                'analytical_technique': lot.analytical_technique,
-                                'reference_units': lot.reference_units,
-                                'id_reactive': lot.id_reactive,
-                                'code_SAP': lot.code_SAP,
-                                'code_LOG': lot.code_LOG,
-                                'active': lot.active,
-                                'temp_conservation': lot.temp_conservation,
-                                'react_or_fungible': lot.react_or_fungible,
-                                'code_panel': lot.code_panel,
-                                'location': lot.location,
-                                'supplier': lot.supplier,
-                                'purchase_format': lot.purchase_format,
-                                'units_format': lot.units_format,
-                                'import_unit_ics': lot.import_unit_ics,
-                                'import_unit_idibgi': lot.import_unit_idibgi,
-                                'local_management': lot.local_management,
-                                'plataform_command_preferent': lot.plataform_command_preferent,
-                                'maximum_amount': lot.maximum_amount,
-                                'purchase_format_supplier': lot.purchase_format_supplier,
-                                'units_format_supplier': lot.units_format_supplier,
-                                'command_pending': command_pending,
-                                'id_command': id_command,
-                                'ceco_command': ceco_command,
-                                'user_add_command': user_add_command}
+                                 'catalog_reference': lot.catalog_reference,
+                                 'manufacturer': lot.manufacturer,
+                                 'description': lot.description,
+                                 'description_subreference': lot.description_subreference,
+                                 'analytical_technique': lot.analytical_technique,
+                                 'reference_units': lot.reference_units,
+                                 'id_reactive': lot.id_reactive,
+                                 'code_SAP': lot.code_SAP,
+                                 'code_LOG': lot.code_LOG,
+                                 'active': lot.active,
+                                 'temp_conservation': lot.temp_conservation,
+                                 'react_or_fungible': lot.react_or_fungible,
+                                 'code_panel': lot.code_panel,
+                                 'location': lot.location,
+                                 'supplier': lot.supplier,
+                                 'purchase_format': lot.purchase_format,
+                                 'units_format': lot.units_format,
+                                 'import_unit_ics': lot.import_unit_ics,
+                                 'import_unit_idibgi': lot.import_unit_idibgi,
+                                 'local_management': lot.local_management,
+                                 'plataform_command_preferent': lot.plataform_command_preferent,
+                                 'maximum_amount': lot.maximum_amount,
+                                 'purchase_format_supplier': lot.purchase_format_supplier,
+                                 'units_format_supplier': lot.units_format_supplier,
+                                 'command_pending': command_pending,
+                                 'id_command': id_command,
+                                 'ceco_command': ceco_command,
+                                 'user_add_command': user_add_command}
                     list_lots.append(dict_lots)
             json_data = json.dumps(list_lots)
             list_commands_json = json.dumps(list_commands) 
@@ -201,6 +201,11 @@ def add_stock_lot():
     list_lots_json = request.form.get("list_lots")
     id_substract_command = request.form.get("id_substract_command")
     pb_oligos = request.form.get("pb_oligos")
+    incidence_number = request.form.get("incidence_number")
+    price_coriells = request.form.get("price_coriells")
+
+    number_total_lot_discount = request.form.get("number_total_lot_discount")
+    subreference_active = request.form.get("subreference_active")
 
     date = instant_date()
 
@@ -334,13 +339,17 @@ def add_stock_lot():
                         unit_reactive = dict_totals_reference[f"{lots['key']}_unit"]
                         internal_lot_value = f"{lots['internal_lot']}_{unit_reactive}/{dict_totals_reference[lots['key']]}"
 
-                    select_lot_certificate = session1.query(Stock_lots).filter_by(catalog_reference=lots['catalog_reference'], lot=lots['lot'], id_reactive=lots['id_reactive']).first()
-                    if select_lot_certificate is None:
-                        filename_certificate = ''
-                        type_doc_certificate = ''
-                    else:
-                        filename_certificate = select_lot_certificate.certificate
-                        type_doc_certificate = select_lot_certificate.type_doc_certificate
+                    # Si no han carregat certificat, comprobarem si ja tenim introduït un altre lot amb el mateixos camps i així podrem aprofitar el seu certificat ja que serà el mateix
+                    if filename_certificate == '':
+                        select_lot_certificate = session1.query(Stock_lots).filter_by(catalog_reference=lots['catalog_reference'], lot=lots['lot'], id_reactive=lots['id_reactive']).first()
+                        if select_lot_certificate is not None:
+                            filename_certificate = select_lot_certificate.certificate
+                            type_doc_certificate = select_lot_certificate.type_doc_certificate
+
+                    # Si són coriels el preu el posen directament i no es pot fer servir el que hi ha a l'article mare
+                    if isinstance(lots.get('description'), str) and 'coriel' in lots['description'].lower():
+                        lots['import_unit_ics'] = price_coriells
+                        lots['import_unit_idibgi'] = price_coriells
 
                     insert_lot = Stock_lots(id_lot=lots['key'],
                                             catalog_reference=lots['catalog_reference'],
@@ -391,15 +400,15 @@ def add_stock_lot():
                     session1.add(insert_lot)
 
                     dict_info_excel = {'catalog_reference': lots['catalog_reference'],
-                                        'description': lots['description'],
-                                        'description_subreference': lots['description_subreference'],
-                                        'id_reactive': lots['id_reactive'],
-                                        'lot': lots['lot'],
-                                        'internal_lot_value': internal_lot_value,
-                                        'reception_date': lots['reception_date'],
-                                        'date_expiry': lots['date_expiry'],
-                                        'analytical_technique': lots['analytical_technique'],
-                                        'user_add_command': lots['user_add_command']}
+                                       'description': lots['description'],
+                                       'description_subreference': lots['description_subreference'],
+                                       'id_reactive': lots['id_reactive'],
+                                       'lot': lots['lot'],
+                                       'internal_lot_value': internal_lot_value,
+                                       'reception_date': lots['reception_date'],
+                                       'date_expiry': lots['date_expiry'],
+                                       'analytical_technique': lots['analytical_technique'],
+                                       'user_add_command': lots['user_add_command']}
                     list_info_excel.append(dict_info_excel)
 
             select_lot = session1.query(Stock_lots).order_by(Stock_lots.id.desc()).first()
@@ -423,8 +432,19 @@ def add_stock_lot():
     select_command = session1.query(Commands).filter(Commands.id == id_substract_command).first()
     if select_command:
         # total_received = int(select_command.num_received) + int(list_lots[0]['units_lot'])
-        total_received = int(select_command.num_received) + int(unit_total_command)
+        # Si el lot te subreferncies no es pot contabilitzar normalment ja que cada subrerferencia pot portar un numero difrents d'unitats,
+        # així doncs em habilitat un camp on si es una subrefencia ens posaran les unitats que hem de descontar realment
+        if subreference_active == "True":
+            total_received = int(select_command.num_received) + int(number_total_lot_discount)
+        else:
+            total_received = int(select_command.num_received) + int(unit_total_command)
         select_command.num_received = total_received
+        if incidence_number != '':
+            if select_command.incidence_number == '' or select_command.incidence_number is None:
+                select_command.incidence_number = incidence_number
+            else:
+                select_command.incidence_number += f"; {incidence_number}"
+
         if int(total_received) == int(select_command.units):
             message_command = f"S'ha rebut tot el contingut de la comanda {select_command.code_command}"
             select_command.received = 1

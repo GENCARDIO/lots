@@ -284,7 +284,14 @@
                         document.getElementById('cost_center_stock').value = ''
                         document.getElementById('oligos_div1').style.display = "none";
                         document.getElementById('oligos_div2').style.display = "none";
-
+                        document.getElementById('div_coriells').style.display = "none";
+                        document.getElementById('div_coriells2').style.display = "none";
+                        document.getElementById('div_subreff').style.display = "none";
+                        document.getElementById('div_subreff2').style.display = "none";
+                        document.getElementById('incidence_number').value = ''
+                        document.getElementById('price_coriells').value = 0
+                        document.getElementById('number_total_lot_discount').value = 0
+                        document.getElementById('subreference_active').value = 'False'
 
                         // Eliminar tots els div amb el name divs_subproduct
                         var elementosAEliminar = document.querySelectorAll('div[name="divs_subproducts"], input[name="divs_subproducts"]');
@@ -307,6 +314,30 @@
 
                         document.getElementById("description_add_lot").value = list_info_lots[0]['description'];
                         
+                        // Mirem si són coriells i si ho son fem visible el camp
+                        let description_coriells = list_info_lots[0]['description'];
+                        let lower_description_coriells = description_coriells.toLowerCase(); 
+                        if (lower_description_coriells.includes("coriell") || lower_description_coriells.includes("coriells")) {
+                            document.getElementById('div_coriells').style.display = "block";
+                            document.getElementById('div_coriells2').style.display = "block";
+                        }
+
+                        // Mirem si són oligos i si ho son fem visible el camp
+                        let description_oligos = list_info_lots[0]['description'];
+                        let lower_description_oligos = description_coriells.toLowerCase(); 
+                        if (lower_description_coriells.includes("oligos")) {
+                            document.getElementById('oligos_div1').style.display = "block";
+                            document.getElementById('oligos_div2').style.display = "block";
+                        }
+
+                        // Mirem tenen subreferencies i si ho son fem visible el camp
+                        let description_subreff = list_info_lots[0]['description_subreference'];
+                        if (description_subreff !== '') {
+                            document.getElementById('div_subreff').style.display = "block";
+                            document.getElementById('div_subreff2').style.display = "block";
+                            document.getElementById('subreference_active').value = 'True'
+                        }
+
                         document.getElementById("info_command").style.display = 'none';
 
                         var select = document.getElementById('select_substract_lot');
@@ -422,7 +453,7 @@
                                 </div>
                                 <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts">
                                     <div class="input-group mb-3">
-                                        <span class="input-group-text" id="basic-addon1" style="width: 148px;"><b>Format compra Prov :</b></span>
+                                        <span class="input-group-text" id="basic-addon1" style="width: 148px;"><b>F. compra Prov :</b></span>
                                         <input type="text" class="form-control" id="purchase_format0_${i}" aria-label="TTN" value="${purchase_format_end}" readonly>
                                     </div>
                                 </div>
@@ -440,10 +471,8 @@
                                 <input type='hidden' id='json_info_lot0_${i}' value='${dict_lots}' name="divs_subproducts">
                                 `;}
                             else {
-                                if (list_info_lots[i]['description'].includes("Coriels") || list_info_lots[i]['description'].includes("Oligos")) {
+                                if (list_info_lots[i]['description'].includes("Coriells") || list_info_lots[i]['description'].includes("Oligos")) {
                                     var nuevoHTML_context = nuevoHTML_context.replace('value=""', 'value="NA"').replace('value=""', 'value="NA"');
-                                    document.getElementById('oligos_div1').style.display = "block";
-                                    document.getElementById('oligos_div2').style.display = "block";
                                 }
                                 var nuevoHTML_context = `${nuevoHTML_context}
                                 <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts">
@@ -466,7 +495,7 @@
                                 </div>
                                 <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts">
                                     <div class="input-group mb-3">
-                                        <span class="input-group-text" id="basic-addon1" style="width: 148px;"><b>Format compra Prov :</b></span>
+                                        <span class="input-group-text" id="basic-addon1" style="width: 148px;"><b>F. compra Prov :</b></span>
                                         <input type="text" class="form-control" id="purchase_format0_${i}" aria-label="TTN" value="${purchase_format_end}" readonly>
                                     </div>
                                 </div>
@@ -1007,10 +1036,8 @@
                         </div>
                         <input type='hidden' id='json_info_lot${x}_${i}' value='${dict_lots}' name="divs_subproducts">`;}
                 else {
-                    if (list_info_lots[i]['description'].includes("Coriels") || list_info_lots[i]['description'].includes("Oligos")) {
+                    if (list_info_lots[i]['description'].includes("Coriells") || list_info_lots[i]['description'].includes("Oligos")) {
                         var nuevoHTML_context = nuevoHTML_context.replace('value=""', 'value="NA"').replace('value=""', 'value="NA"');
-                        document.getElementById('oligos_div1').style.display = "block";
-                        document.getElementById('oligos_div2').style.display = "block";
                     }
                     var nuevoHTML_context = `${nuevoHTML_context}
                         <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts">
@@ -1293,6 +1320,7 @@
         const cost_center_stock = document.getElementById('cost_center_stock').value
         const id_command = document.getElementById('id_command').value
         const user_add_command = document.getElementById('user_add_command').value
+        const incidence_number = document.getElementById('incidence_number').value
 
         const local_management = document.getElementById('local_management_fix').value
         const plataform_command_preferent = document.getElementById('plataform_command_preferent_fix').value
@@ -1301,6 +1329,24 @@
         const units_format_supplier  = document.getElementById('units_format_supplier_fix').value
 
         const pb_oligos  = document.getElementById('pb_oligos').value
+        const price_coriells  = document.getElementById('price_coriells').value
+        const number_total_lot_discount  = document.getElementById('number_total_lot_discount').value
+        const subreference_active  = document.getElementById('subreference_active').value
+
+        // Això ho fem per validar si son coriels i si ho són el preu no pot ser 0
+        const description_add_lot  = document.getElementById('description_add_lot').value
+        let description_coriells = description_add_lot.toLowerCase(); // Convertim tot a minúscules
+        if (description_coriells.includes("coriell") || description_coriells.includes("coriells")) {
+            if (price_coriells === '0'){
+                alert("El preu de les Coriells no pot ser 0");
+                return
+            }
+        }
+
+        if (subreference_active == 'True' && number_total_lot_discount == 0){
+            alert("Si hi ha subreferències, el total de stock inserit no pot ser 0")
+            return
+        }
 
         /// Serveix per distingir si hi ha algun fallo o no en la recepció
         var wrong_lots = 1
@@ -1424,6 +1470,10 @@
         form_data.append('unit_total_command', unit_total_command)
         form_data.append('id_substract_command', id_substract_command)
         form_data.append('pb_oligos', pb_oligos)
+        form_data.append('incidence_number', incidence_number)
+        form_data.append('price_coriells', price_coriells)
+        form_data.append('number_total_lot_discount', number_total_lot_discount)
+        form_data.append('subreference_active', subreference_active)
 
         $('#add_lot_info').modal('hide');
 
@@ -1790,6 +1840,26 @@
                         document.getElementById("cost_center_name").value = ''
                         document.getElementById("info_purchase_format").value = `Unitats màximes -> ${list_info_lots['maximum_amount']} ${list_info_lots['purchase_format']}`
                         document.getElementById("div_ceco_manual").style.display ='none'
+                        
+                        let input_units = document.getElementById("units_command");
+
+                        let lower_prova = list_info_lots['description'].toLowerCase(); // Convertir tot a minúscules
+                        if (lower_prova.includes("coriell") || lower_prova.includes("coriells")) {
+                            input_units.value = 1;
+                            input_units.setAttribute("readonly", true); // Evita modificació manual
+                            input_units.setAttribute("min", "1");
+                            input_units.setAttribute("max", "1");
+                            document.getElementById("info_purchase_format").value = `Unitats màximes -> 1, total real a observació`
+                        } else {
+                            input_units.removeAttribute("readonly");
+                            input_units.removeAttribute("min", "1");
+                            input_units.removeAttribute("max");
+                            input_units.addEventListener("input", function () {
+                                if (input_units.value < 1) {
+                                    input_units.value = 1; // Si l'usuari posa 0 o negatius, es canvia a 1
+                                }
+                            });
+                        }
                         $('#add_command').modal('show'); 
                         message = '' }}
                 else if (split_response === 'False'){
@@ -2359,9 +2429,21 @@
                             <input type="text" class="form-control" id="description_add_lot" aria-label="TTN" readonly>
                         </div>
                     </div>
+
+                    <div class="col-lg-6 col-md-6 col-sm-12" id="div_coriells" style="display: none;">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 145px; background-color: yellow;"><b>Import Coriells:</b></span>
+                            <input type="number" class="form-control" id='price_coriells' aria-label="TTN" aria-describedby="basic-addon1" min="0" step="0.01">
+                        </div>
+                    </div>
+                    <div class="col-lg-6 col-md-6 col-sm-12" style="display: none;" id="div_coriells2">
+                        <div class="input-group mb-3">
+                        </div>
+                    </div>
+
                     <div class="col-lg-6 col-md-6 col-sm-12" style="display: none;" id="oligos_div1">
                         <div class="input-group mb-3">
-                            <span class="input-group-text" id="basic-addon1" style="width: 145px;"><b>Total P.B.:</b></span>
+                            <span class="input-group-text" id="basic-addon1" style="width: 145px; background-color: yellow;"><b>Total P.B.:</b></span>
                             <select class="form-select" id="pb_oligos">
                                 <option selected>1</option>
                                 {% for i in range(2, 1001) %}
@@ -2375,6 +2457,18 @@
                         </div>
                     </div>
 
+                    <div class="col-lg-6 col-md-6 col-sm-12" id="div_subreff" style="display: none;">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 145px; background-color: yellow;"><b>Stock real</b></span>
+                            <input type="number" class="form-control" id='number_total_lot_discount' aria-label="TTN" aria-describedby="basic-addon1" min="0">
+                        </div>
+                    </div>
+                    <div class="col-lg-6 col-md-6 col-sm-12" style="display: none;" id="div_subreff2">
+                        <div class="input-group mb-3">
+                        </div>
+                    </div>
+                    <input type="hidden" id="subreference_active" value="False" />
+                    
                     <div id="div_info_lot"></div>
 
                     <center><button type="button" class="btn btn-primary btn-sm" onclick="add_stock_lot()" id="add_div" style="display: none;">Afegir</button></center>
@@ -2435,7 +2529,7 @@
                     </div>
                     <div class="col-lg-6 col-md-12 col-sm-12">       
                         <div class="input-group mb-3">
-                            <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>Num. comanda :</b></span>
+                            <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>N. comanda :</b></span>
                             <input type="text" class="form-control" id='comand_number' aria-label="TTN" aria-describedby="basic-addon1">
                         </div>
                     </div>
@@ -2449,6 +2543,12 @@
                                     <option>{{ ceco.name }}</option>
                                 {% endfor %}
                             </select>
+                        </div>
+                    </div>
+                    <div class="col-lg-6 col-md-12 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>N. Incidència :</b></span>
+                            <input type="text" class="form-control" id='incidence_number' aria-label="TTN" aria-describedby="basic-addon1">
                         </div>
                     </div>
 
@@ -2622,7 +2722,7 @@
                     </div>
                     <div class="col-lg-6 col-md-12 col-sm-12">
                         <div class="input-group mb-3">
-                            <!-- <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>Format compra Prov :</b></span> -->
+                            <!-- <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>F. compra Prov :</b></span> -->
                             <input type="text" class="form-control p_add_command" id="info_purchase_format" aria-label="TTN" readonly>
                         </div>
                     </div>

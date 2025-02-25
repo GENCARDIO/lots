@@ -141,6 +141,7 @@ class Commands(Base):
     received = Column(Integer())
     num_received = Column(Integer())
     observations = Column(String())
+    incidence_number = Column(String())
 
 
 class Cost_center(Base):

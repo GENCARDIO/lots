@@ -7,6 +7,7 @@ from config import main_dir_docs
 import json
 from datetime import datetime
 import pandas as pd
+from openpyxl import load_workbook
 
 
 @app.route('/search_add_command', methods=['POST'])
@@ -243,7 +244,8 @@ def command_success():
                          # 'user_create': command.user_create,
                          'date_close': command.date_close,
                          'user_close': command.user_close,
-                         'cost_center': command.cost_center}
+                         'cost_center': command.cost_center,
+                         'incidence_number': command.incidence_number}
 
         list_commands.append(dict_commands)
 
@@ -310,7 +312,8 @@ def order_tracking():
                          'cost_center': command.cost_center,
                          'local_management': lot.local_management,
                          'observations': command.observations,
-                         'plataform_command_preferent': lot.plataform_command_preferent}
+                         'plataform_command_preferent': lot.plataform_command_preferent,
+                         'incidence_number': command.incidence_number}
 
         list_commands.append(dict_commands)
 
@@ -340,8 +343,10 @@ def modify_order_tracking():
     id_command = request.form.get("id")
     unit_command = request.form.get("units")
     observations_command = request.form.get("observations")
+    incidence_number = request.form.get("incidence_number")
     change_unit = False
     change_obs = False
+    change_inc = False
     change_delete = False
 
     date = instant_date()
@@ -353,7 +358,7 @@ def modify_order_tracking():
 
     select_command = session1.query(Commands).filter_by(id=id_command).first()
     if not select_command:
-        return "False_//_No s'ha trobat la comanda a la BD_//_none_//_none_//_none"
+        return "False_//_No s'ha trobat la comanda a la BD_//_none_//_none_//_none_//_none"
 
     if select_command.observations != observations_command and observations_command != 'null':
         info_change = {"field": 'observations', "old_info": select_command.observations, "new_info": observations_command}
@@ -378,10 +383,18 @@ def modify_order_tracking():
             select_command.received = 1
             change_delete = True
 
-    if change_unit or change_obs:
+    if select_command.incidence_number != incidence_number:
+        info_change = {"field": 'incidence_number', "old_info": select_command.observations, "new_info": incidence_number}
+        dict_save_info['info'] = json.dumps(info_change)
+        save_log(dict_save_info)
+
+        select_command.incidence_number = incidence_number
+        change_inc = True
+
+    if change_unit or change_obs or incidence_number:
         session1.commit()
 
-    return f'True_//_Canvi realitzat correctament_//_{change_obs}_//_{change_unit}_//_{change_delete}'
+    return f'True_//_Canvi realitzat correctament_//_{change_obs}_//_{change_unit}_//_{change_delete}_//_{change_inc}'
 
 
 @app.route('/delete_order_tracking', methods=['POST'])
@@ -544,7 +557,8 @@ def download_follow_commands():
                 'Usuari creació': [],
                 'Usuari tramitació': [],
                 'CECO': [],
-                'Preu ICS': []
+                'Preu ICS': [],
+                'N. Incidència': []
             }
 
             for command, lot in select_command:
@@ -561,6 +575,7 @@ def download_follow_commands():
                 data['Usuari tramitació'].append(command.user_close)
                 data['CECO'].append(command.cost_center)
                 data['Preu ICS'].append(lot.import_unit_ics)
+                data['N. Incidència'].append(command.incidence_number)
 
             return pd.DataFrame(data)
 
@@ -573,8 +588,59 @@ def download_follow_commands():
         with pd.ExcelWriter(path, engine='openpyxl') as writer:
             df_current_year.to_excel(writer, sheet_name="Seguiment_comanes", index=False)
 
+        # Ajustar automáticamente el ancho de las columnas
+        wb = load_workbook(path)
+        ws = wb.active
+
+        for col in ws.columns:
+            max_length = max((len(str(cell.value)) if cell.value else 0) for cell in col)
+            ws.column_dimensions[col[0].column_letter].width = max_length + 2  # Ajuste extra
+
+        wb.save(path)
+
         return send_file(path, as_attachment=True)
     except Exception:
         flash("Error inesperat, contacteu amb un administrador", "danger")
         return render_template('home.html', list_desciption_lots=list_desciption_lots(),
                                list_cost_center=list_cost_center())
+
+
+@app.route('/add_incidence_command_succes', methods=['POST'])
+@requires_auth
+def add_incidence_command_succes():
+    '''
+        Afegim o eliminem una incidència també es guardarà un log de tot el que es faci.
+
+        :param str id_command: Identificador únic del la comanda
+        :param str incidence_number_command: Text amb el codi de l'incidència
+
+        :function: save_log(dict)
+
+        :return: True o False, un missatge d'error i True o false depenen del que s'haji modificat
+        :rtype: str
+    '''
+    id_command = request.form.get("id")
+    incidence_number_command = request.form.get("incidence_number_command")
+
+    date = instant_date()
+    dict_save_info = {'id_lot': id_command,
+                      'type': 'add or delete incidence',
+                      'user': session['acronim'],
+                      'id_user': session['idClient'],
+                      'date': date}
+
+    select_command = session1.query(Commands).filter_by(id=id_command).first()
+    if not select_command:
+        return "False_//_No s'ha trobat la comanda a la BD"
+
+    if select_command.incidence_number != incidence_number_command and incidence_number_command != 'null':
+        info_change = {"field": 'incidence_number', "old_info": select_command.incidence_number, "new_info": incidence_number_command}
+        dict_save_info['info'] = json.dumps(info_change)
+        save_log(dict_save_info)
+
+        select_command.incidence_number = incidence_number_command
+        session1.commit()
+    else:
+        return "False_//_No s'ha detectat cap canvi_//_none_//_none_//_none_//_none"
+
+    return 'True_//_Canvi realitzat correctament'
