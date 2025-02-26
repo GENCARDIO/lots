@@ -123,9 +123,24 @@
                                 elementosAEliminar.forEach(function(elemento) {
                                     elemento.remove(); });
 
+                            var nuevoHTML_start = `style="background-color: #BFD7ED;"`
+
                             var miDiv = document.getElementById('div_info_new_lot');
                             var nuevoHTML = `
-                                <div class="col-lg-6 col-md-6 col-sm-12 divs_reatives" name="divs_new_lots">       
+                                <div class="col-lg-12 col-md-12 col-sm-12" name="divs_new_lots" ${nuevoHTML_start}>       
+                                    <div class="input-group mb-3">
+                                    </div>
+                                </div>
+                                <div class="col-lg-5 col-md-12 col-sm-12" name="divs_new_lots" ${nuevoHTML_start}>
+                                    <hr>
+                                </div>
+                                <div class="col-lg-2 col-md-12 col-sm-12" name="divs_new_lots" ${nuevoHTML_start}>
+                                    <center><b>Lot 1</b></center>
+                                </div>
+                                <div class="col-lg-5 col-md-12 col-sm-12" name="divs_new_lots" ${nuevoHTML_start}>
+                                    <hr>
+                                </div>
+                                <div class="col-lg-6 col-md-6 col-sm-12 divs_reatives" name="divs_new_lots" ${nuevoHTML_start}>       
                                     <div class="input-group mb-3">
                                         <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Temp. conservació :</b></span>
                                         <select class="form-select" id="temp_conservation0">
@@ -136,7 +151,7 @@
                                         </select>
                                     </div>
                                 </div>
-                                <div class="col-lg-6 col-md-6 col-sm-12" name="divs_new_lots">       
+                                <div class="col-lg-6 col-md-6 col-sm-12" name="divs_new_lots" ${nuevoHTML_start}>       
                                     <div class="input-group mb-3">
                                         <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Reactiu o fungible :</b></span>
                                         <select class="form-select" id="react_or_fungible0" onchange="show_reactive(this.value)">
@@ -145,13 +160,13 @@
                                         </select>
                                     </div>
                                 </div>
-                                <div class="col-lg-6 col-md-6 col-sm-12 divs_reatives" name="divs_new_lots">       
+                                <div class="col-lg-6 col-md-6 col-sm-12 divs_reatives" name="divs_new_lots" ${nuevoHTML_start}>       
                                     <div class="input-group mb-3">
                                         <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Id panell(*) :</b></span>
                                         <input type="text" class="form-control" aria-label="TTN" id="code_panel0" value='${code_panel}'>
                                     </div>
                                 </div>
-                                <div class="col-lg-6 col-md-12 col-sm-12" name="divs_new_lots">       
+                                <div class="col-lg-6 col-md-12 col-sm-12" name="divs_new_lots" ${nuevoHTML_start}>       
                                     <div class="input-group mb-3">
                                         <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Ubicació :</b></span>
                                         <select class="form-select" id="location0">
@@ -167,9 +182,9 @@
                                         </select>
                                     </div>
                                 </div>
-                                <div class="col-lg-6 col-md-12 col-sm-12" name="divs_new_lots">
+                                <div class="col-lg-6 col-md-12 col-sm-12" name="divs_new_lots" ${nuevoHTML_start}>
                                     <div class="input-group mb-3">
-                                        <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Form. compra Prov :</b></span>
+                                        <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>F. compra Prov :</b></span>
                                         <select class="form-select" id="purchase_format0">
                                             <option selected></option>
                                             <option>kit</option>
@@ -182,7 +197,7 @@
                                         </select>
                                     </div>
                                 </div>
-                                <div class="col-lg-6 col-md-12 col-sm-12" name="divs_new_lots">
+                                <div class="col-lg-6 col-md-12 col-sm-12" name="divs_new_lots" ${nuevoHTML_start}>
                                     <div class="input-group mb-3">
                                         <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Unitats format :</b></span>
                                         <select class="form-select" id="units_format0">
@@ -193,7 +208,7 @@
                                         </select>
                                     </div>
                                 </div>
-                                <div class="col-lg-6 col-md-6 col-sm-12" name="divs_new_lots">       
+                                <div class="col-lg-6 col-md-6 col-sm-12" name="divs_new_lots" ${nuevoHTML_start}>       
                                     <div class="input-group mb-3">
                                         <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Format compra ICS :</b></span>
                                         <select class="form-select" id="purchase_format_supplier0">
@@ -208,7 +223,7 @@
                                         </select>
                                     </div>
                                 </div>
-                                <div class="col-lg-6 col-md-12 col-sm-12" name="divs_new_lots">
+                                <div class="col-lg-6 col-md-12 col-sm-12" name="divs_new_lots" ${nuevoHTML_start}>
                                     <div class="input-group mb-3">
                                         <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Unitats format ICS :</b></span>
                                         <select class="form-select" id="units_format_supplier0">
@@ -219,35 +234,39 @@
                                         </select>
                                     </div>
                                 </div>
-                                <div class="col-lg-6 col-md-6 col-sm-12" name="divs_new_lots">       
+                                <div class="col-lg-6 col-md-6 col-sm-12" name="divs_new_lots" ${nuevoHTML_start}>       
                                     <div class="input-group mb-3">
                                         <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Import u. ICS :</b></span>
                                         <input type="number" class="form-control" aria-label="TTN" id="import_unit_ics0">
                                     </div>
                                 </div>
-                                <div class="col-lg-6 col-md-6 col-sm-12" name="divs_new_lots">       
+                                <div class="col-lg-6 col-md-6 col-sm-12" name="divs_new_lots" ${nuevoHTML_start}>       
                                     <div class="input-group mb-3">
                                         <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Import u. IDIBGI :</b></span>
                                         <input type="number" class="form-control" aria-label="TTN" id="import_unit_idibgi0">
                                     </div>
                                 </div>
 
-                                <div class="col-lg-6 col-md-6 col-sm-12" name="divs_new_lots">       
+                                <div class="col-lg-6 col-md-6 col-sm-12" name="divs_new_lots" ${nuevoHTML_start}>       
                                     <div class="input-group mb-3">
                                         <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Gestió local: :</b></span>
                                         <input type="text" class="form-control" aria-label="TTN" id="local_management0" value=''>
                                     </div>
                                 </div>
-                                <div class="col-lg-6 col-md-6 col-sm-12" name="divs_new_lots">       
+                                <div class="col-lg-6 col-md-6 col-sm-12" name="divs_new_lots" ${nuevoHTML_start}>       
                                     <div class="input-group mb-3">
                                         <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Cmd. preferent :</b></span>
                                         <input type="text" class="form-control" aria-label="TTN" id="plataform_command_preferent0" value=''>
                                     </div>
                                 </div>
-                                <div class="col-lg-6 col-md-6 col-sm-12" name="divs_new_lots">       
+                                <div class="col-lg-6 col-md-6 col-sm-12" name="divs_new_lots" ${nuevoHTML_start}>       
                                     <div class="input-group mb-3">
                                         <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Q. màxima :</b></span>
                                         <input type="number" class="form-control" aria-label="TTN" id="maximum_amount0">
+                                    </div>
+                                </div>
+                                <div class="col-lg-6 col-md-6 col-sm-12" name="divs_new_lots" ${nuevoHTML_start}>       
+                                    <div class="input-group mb-3">
                                     </div>
                                 </div>
                                 `;
@@ -371,14 +390,22 @@
                             }
                         }
 
+                        var nuevoHTML_start = `style="background-color: #BFD7ED;"`
+                        var nuevoHTML_start_separtor = `style="background-color: #BFD7ED; margin-top: -20px; margin-bottom: -5px;"`
+                        var nuevoHTML_start_none = `style="background-color: #BFD7ED; display: none;"`
+
                         var HTML = `
-                            <div class="col-lg-5 col-md-12 col-sm-12" name="divs_subproducts">
+                            <div class="col-lg-12 col-md-12 col-sm-12" name="divs_subproducts" ${nuevoHTML_start}>  
+                                <div class='input-group mb-3'>
+                                </div>
+                            </div>
+                            <div class="col-lg-5 col-md-12 col-sm-12" name="divs_subproducts" ${nuevoHTML_start}>
                                 <hr>
                             </div>
-                            <div class="col-lg-2 col-md-12 col-sm-12" name="divs_subproducts">
-                                <center>Article 1</center>
+                            <div class="col-lg-2 col-md-12 col-sm-12" name="divs_subproducts" ${nuevoHTML_start}>
+                                <center><b>Lot 1</b></center>
                             </div>
-                            <div class="col-lg-5 col-md-12 col-sm-12" name="divs_subproducts">
+                            <div class="col-lg-5 col-md-12 col-sm-12" name="divs_subproducts" ${nuevoHTML_start}>
                                 <hr>
                             </div>
                         `;
@@ -398,21 +425,21 @@
                                 temperature = `${list_info_lots[i]['temp_conservation']} °C`}
                             else{
                                 temperature = `${list_info_lots[i]['temp_conservation']}`}
-                            var nuevoHTML_variable = `<div class="col-lg-12 col-md-12 col-sm-12" name="divs_subproducts" style="display: none;">`
-                            var nuevoHTML_variable2 = `<div class="col-lg-12 col-md-12 col-sm-12" name="divs_subproducts">`
+                            var nuevoHTML_variable = `<div class="col-lg-12 col-md-12 col-sm-12" name="divs_subproducts" ${nuevoHTML_start_none}">`
+                            var nuevoHTML_variable2 = `<div class="col-lg-12 col-md-12 col-sm-12" name="divs_subproducts"  ${nuevoHTML_start}>`
                             var nuevoHTML_context = `
                                     <div class="input-group mb-3">
                                         <span class="input-group-text" id="basic-addon1" style="width: 148px;"><b>Descripció :</b></span>
                                         <input type="text" class="form-control" id="descripton0_${i}" aria-label="TTN" value="${list_info_lots[i]['id_reactive']} || ${list_info_lots[i]['description_subreference']}" readonly>
                                     </div>
                                 </div>
-                                <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts">
+                                <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts" ${nuevoHTML_start}>
                                     <div class="input-group mb-3">
                                         <span class="input-group-text" id="basic-addon1" style="width: 148px;"><b>Lot :</b></span>
                                         <input type="text" class="form-control" id="lot0_${i}" aria-label="TTN" value="">
                                     </div>
                                 </div>
-                                <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts">  
+                                <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts" ${nuevoHTML_start}>  
                                     <div class='input-group mb-3'>
                                         <span class='input-group-text' id='basic-addon1' style='width: 148px;'><b>Data caducitat :</b></span>
                                         <input type="text" class="form-control" id="expiry_date0_${i}" aria-label="TTN" aria-describedby="basic-addon1" oninput="replae_slash_with_hyphen(this); filter_characters(this)" value="">
@@ -434,13 +461,13 @@
                             if (list_info_lots[i]['react_or_fungible'] == 'Fungible'){
                                 var nuevoHTML_context = nuevoHTML_context.replace('value=""', 'value="NA"').replace('value=""', 'value="NA"');
                                 var nuevoHTML_context = `${nuevoHTML_context}
-                                <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts" style="display: none">
+                                <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts" ${nuevoHTML_start_none}>
                                     <div class="input-group mb-3">
                                         <span class="input-group-text" id="basic-addon1" style="width: 148px;"><b>Lot intern :</b></span>
                                         <input type="text" class="form-control" id="internal_lot0_${i}" aria-label="TTN" value="${internal_lot}">
                                     </div>
                                 </div>
-                                <div class="col-lg-12 col-md-12 col-sm-12" name="divs_subproducts">
+                                <div class="col-lg-12 col-md-12 col-sm-12" name="divs_subproducts" ${nuevoHTML_start}>
                                     <div class="input-group mb-3">
                                         <span class="input-group-text" id="basic-addon1" style="width: 148px;"><b>Unitats lot :</b></span>
                                         <select class="form-select" id="units_lot0_${i}">
@@ -451,19 +478,19 @@
                                         </select>
                                     </div>
                                 </div>
-                                <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts">
+                                <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts" ${nuevoHTML_start}>
                                     <div class="input-group mb-3">
                                         <span class="input-group-text" id="basic-addon1" style="width: 148px;"><b>F. compra Prov :</b></span>
                                         <input type="text" class="form-control" id="purchase_format0_${i}" aria-label="TTN" value="${purchase_format_end}" readonly>
                                     </div>
                                 </div>
-                                <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts">
+                                <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts" ${nuevoHTML_start}>
                                     <div class="input-group mb-3">
                                         <span class="input-group-text" id="basic-addon1" style="width: 148px;"><b>Unitats format :</b></span>
                                         <input type="text" class="form-control" id="units_format0_${i}" aria-label="TTN" value="${units_format_end}" readonly>
                                     </div>
                                 </div>
-                                <div class="col-lg-12 col-md-12 col-sm-12" name="divs_subproducts" style="display: none">
+                                <div class="col-lg-12 col-md-12 col-sm-12" name="divs_subproducts" ${nuevoHTML_start_none}>
                                     <div class="input-group mb-3">
                                         <span class="input-group-text" id="basic-addon1" style="width: 100%;"><b>La conservació d'aquest article s'ha de fer a ${temperature}</b></span>
                                     </div>
@@ -475,13 +502,13 @@
                                     var nuevoHTML_context = nuevoHTML_context.replace('value=""', 'value="NA"').replace('value=""', 'value="NA"');
                                 }
                                 var nuevoHTML_context = `${nuevoHTML_context}
-                                <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts">
+                                <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts" ${nuevoHTML_start}>
                                     <div class="input-group mb-3">
                                         <span class="input-group-text" id="basic-addon1" style="width: 148px;"><b>Lot intern :</b></span>
                                         <input type="text" class="form-control" id="internal_lot0_${i}" aria-label="TTN" value="${internal_lot}">
                                     </div>
                                 </div>
-                                <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts">
+                                <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts" ${nuevoHTML_start}>
                                     <div class="input-group mb-3">
                                         <span class="input-group-text" id="basic-addon1" style="width: 148px;"><b>Unitats lot :</b></span>
                                         <select class="form-select" id="units_lot0_${i}">
@@ -493,19 +520,19 @@
                                         </select>
                                     </div>
                                 </div>
-                                <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts">
+                                <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts" ${nuevoHTML_start}>
                                     <div class="input-group mb-3">
                                         <span class="input-group-text" id="basic-addon1" style="width: 148px;"><b>F. compra Prov :</b></span>
                                         <input type="text" class="form-control" id="purchase_format0_${i}" aria-label="TTN" value="${purchase_format_end}" readonly>
                                     </div>
                                 </div>
-                                <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts">
+                                <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts" ${nuevoHTML_start}>
                                     <div class="input-group mb-3">
                                         <span class="input-group-text" id="basic-addon1" style="width: 148px;"><b>Unitats format :</b></span>
                                         <input type="text" class="form-control" id="units_format0_${i}" aria-label="TTN" value="${units_format_end}" readonly>
                                     </div>
                                 </div>
-                                <div class="col-lg-12 col-md-12 col-sm-12" name="divs_subproducts">
+                                <div class="col-lg-12 col-md-12 col-sm-12" name="divs_subproducts" ${nuevoHTML_start}>
                                     <div class="input-group mb-3">
                                         <span class="input-group-text" id="basic-addon1" style="width: 100%;"><b>La conservació d'aquest article s'ha de fer a ${temperature}</b></span>
                                     </div>
@@ -517,6 +544,22 @@
                                 var nuevoHTML = nuevoHTML_variable + nuevoHTML_context}
                             else { var nuevoHTML = nuevoHTML_variable2 + nuevoHTML_context }
                             // Agrega el nuevo conjunto debajo del div existente
+
+                            var separator = `
+                                <div class="col-lg-2 col-md-12 col-sm-12" name="divs_subproducts" ${nuevoHTML_start_separtor}>
+                                </div>
+                                <div class="col-lg-8 col-md-12 col-sm-12" name="divs_subproducts" ${nuevoHTML_start_separtor}>
+                                    <hr>
+                                </div>
+                                <div class="col-lg-2 col-md-12 col-sm-12" name="divs_subproducts" ${nuevoHTML_start_separtor}>
+                                </div>
+                            `;
+                            
+                            // Si hi ha subproductes posarem un separador entre el subproductes
+                            if (list_info_lots.length > 1 && list_info_lots.length - 1 != i){
+                                var nuevoHTML = nuevoHTML + separator
+                            }
+
                             miDiv.insertAdjacentHTML('beforebegin', nuevoHTML);}
 
                         $('#add_lot_info').modal('show');
@@ -577,9 +620,9 @@
 
         for (var x = 0; x < number_references; x++){
             if (x % 2 === 0) {
-                var nuevoHTML_start = `style="background-color: lightsteelblue;"`
+                var nuevoHTML_start = `style="background-color: #B7E4C7;"`
             } else {
-                var nuevoHTML_start = `style="background-color: lightgrey;"`
+                var nuevoHTML_start = `style="background-color: #BFD7ED;"`
             }
             var nuevoHTML = `
                     <div class="col-lg-6 col-md-12 col-sm-12" name="divs_new_lots" ${nuevoHTML_start}>       
@@ -642,7 +685,7 @@
                     </div>
                     <div class="col-lg-6 col-md-12 col-sm-12" name="divs_new_lots" ${nuevoHTML_start}>
                         <div class="input-group mb-3">
-                            <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Form. compra Prov :</b></span>
+                            <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>F. compra Prov :</b></span>
                             <select class="form-select" id="purchase_format${x}">
                                 <option selected></option>
                                 <option>kit</option>
@@ -741,7 +784,7 @@
                     <hr>
                 </div>
                 <div class="col-lg-2 col-md-12 col-sm-12" name="divs_new_lots" ${nuevoHTML_start}>
-                    <center>Article ${number_lot}</center>
+                    <center><b>Lot ${number_lot}</b></center>
                 </div>
                 <div class="col-lg-5 col-md-12 col-sm-12" name="divs_new_lots" ${nuevoHTML_start}>
                     <hr>
@@ -758,8 +801,23 @@
             elementosAEliminar.forEach(function(elemento) {
                 elemento.remove(); });
 
+            var nuevoHTML_start = `style="background-color: #BFD7ED;"`
+
             var nuevoHTML = `
-                <div class="col-lg-6 col-md-12 col-sm-12 divs_reatives" name="divs_new_lots">       
+                <div class="col-lg-12 col-md-12 col-sm-12" name="divs_new_lots" ${nuevoHTML_start}>       
+                    <div class="input-group mb-3">
+                    </div>
+                </div>
+                <div class="col-lg-5 col-md-12 col-sm-12" name="divs_new_lots" ${nuevoHTML_start}>
+                    <hr>
+                </div>
+                <div class="col-lg-2 col-md-12 col-sm-12" name="divs_new_lots" ${nuevoHTML_start}>
+                    <center><b>Lot 1</b></center>
+                </div>
+                <div class="col-lg-5 col-md-12 col-sm-12" name="divs_new_lots" ${nuevoHTML_start}>
+                    <hr>
+                </div>
+                <div class="col-lg-6 col-md-12 col-sm-12 divs_reatives" name="divs_new_lots" ${nuevoHTML_start}>       
                     <div class="input-group mb-3">
                         <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Temp. conservació :</b></span>
                         <select class="form-select" id="temp_conservation0">
@@ -770,7 +828,7 @@
                         </select>
                     </div>
                 </div>
-                <div class="col-lg-6 col-md-12 col-sm-12" name="divs_new_lots">       
+                <div class="col-lg-6 col-md-12 col-sm-12" name="divs_new_lots" ${nuevoHTML_start}>       
                     <div class="input-group mb-3">
                         <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Reactiu o fungible :</b></span>
                         <select class="form-select" id="react_or_fungible0" onchange="show_reactive(this.value)">
@@ -779,13 +837,13 @@
                         </select>
                     </div>
                 </div>
-                <div class="col-lg-6 col-md-12 col-sm-12 divs_reatives" name="divs_new_lots">       
+                <div class="col-lg-6 col-md-12 col-sm-12 divs_reatives" name="divs_new_lots" ${nuevoHTML_start}>       
                     <div class="input-group mb-3">
                         <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Id panell(*) :</b></span>
                         <input type="text" class="form-control" aria-label="TTN" id="code_panel0">
                     </div>
                 </div>
-                <div class="col-lg-6 col-md-12 col-sm-12" name="divs_new_lots">       
+                <div class="col-lg-6 col-md-12 col-sm-12" name="divs_new_lots" ${nuevoHTML_start}>       
                     <div class="input-group mb-3">
                         <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Ubicació :</b></span>
                         <select class="form-select" id="location0">
@@ -801,9 +859,9 @@
                         </select>
                     </div>
                 </div>
-                <div class="col-lg-6 col-md-12 col-sm-12" name="divs_new_lots">
+                <div class="col-lg-6 col-md-12 col-sm-12" name="divs_new_lots" ${nuevoHTML_start}>
                     <div class="input-group mb-3">
-                        <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Form. compra Prov :</b></span>
+                        <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>F. compra Prov :</b></span>
                         <select class="form-select" id="purchase_format0">
                             <option selected></option>
                             <option>kit</option>
@@ -815,7 +873,7 @@
                         </select>
                     </div>
                 </div>
-                <div class="col-lg-6 col-md-12 col-sm-12" name="divs_new_lots">
+                <div class="col-lg-6 col-md-12 col-sm-12" name="divs_new_lots" ${nuevoHTML_start}>
                     <div class="input-group mb-3">
                         <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Unitats format :</b></span>
                         <select class="form-select" id="units_format0">
@@ -826,7 +884,7 @@
                         </select>
                     </div>
                 </div>
-                <div class="col-lg-6 col-md-12 col-sm-12 divs_reatives" name="divs_new_lots">       
+                <div class="col-lg-6 col-md-12 col-sm-12 divs_reatives" name="divs_new_lots" ${nuevoHTML_start}>       
                     <div class="input-group mb-3">
                         <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Format compra ICS:</b></span>
                         <select class="form-select" id="purchase_format_supplier0">
@@ -841,7 +899,7 @@
                         </select>
                     </div>
                 </div>
-                <div class="col-lg-6 col-md-12 col-sm-12" divs_reatives" name="divs_new_lots">
+                <div class="col-lg-6 col-md-12 col-sm-12" divs_reatives" name="divs_new_lots" ${nuevoHTML_start}>
                     <div class="input-group mb-3">
                         <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Unitats format ICS :</b></span>
                         <select class="form-select" id="units_format_supplier0">
@@ -852,35 +910,39 @@
                         </select>
                     </div>
                 </div>
-                <div class="col-lg-6 col-md-12 col-sm-12" name="divs_new_lots">       
+                <div class="col-lg-6 col-md-12 col-sm-12" name="divs_new_lots" ${nuevoHTML_start}>       
                     <div class="input-group mb-3">
                         <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Import u. ICS :</b></span>
                         <input type="number" class="form-control" aria-label="TTN" id="import_unit_ics0">
                     </div>
                 </div>
-                <div class="col-lg-6 col-md-12 col-sm-12" name="divs_new_lots">       
+                <div class="col-lg-6 col-md-12 col-sm-12" name="divs_new_lots" ${nuevoHTML_start}>       
                     <div class="input-group mb-3">
                         <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Import u. IDIBGI :</b></span>
                         <input type="number" class="form-control" aria-label="TTN" id="import_unit_idibgi0">
                     </div>
                 </div>
 
-                <div class="col-lg-6 col-md-12 col-sm-12 divs_reatives" name="divs_new_lots">       
+                <div class="col-lg-6 col-md-12 col-sm-12 divs_reatives" name="divs_new_lots" ${nuevoHTML_start}>       
                     <div class="input-group mb-3">
                         <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Gestió local: :</b></span>
                         <input type="text" class="form-control" aria-label="TTN" id="local_management0" value=''>
                     </div>
                 </div>
-                <div class="col-lg-6 col-md-12 col-sm-12 divs_reatives" name="divs_new_lots">       
+                <div class="col-lg-6 col-md-12 col-sm-12 divs_reatives" name="divs_new_lots" ${nuevoHTML_start}>       
                     <div class="input-group mb-3">
                         <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Cmd. preferent :</b></span>
                         <input type="text" class="form-control" aria-label="TTN" id="plataform_command_preferent0" value=''>
                     </div>
                 </div>
-                <div class="col-lg-6 col-md-12 col-sm-12" name="divs_new_lots">       
+                <div class="col-lg-6 col-md-12 col-sm-12" name="divs_new_lots" ${nuevoHTML_start}>       
                     <div class="input-group mb-3">
                         <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Q. màxima :</b></span>
                         <input type="number" class="form-control" aria-label="TTN" id="maximum_amount0">
+                    </div>
+                </div>
+                <div class="col-lg-6 col-md-12 col-sm-12" name="divs_new_lots" ${nuevoHTML_start}>       
+                    <div class="input-group mb-3">
                     </div>
                 </div>
                 `;
@@ -937,15 +999,28 @@
 
         var miDiv = document.getElementById('div_info_lot');
         for (var x = 0; x < number_references; x++){
+            if (x % 2 === 0) {
+                var nuevoHTML_start = `style="background-color: #BFD7ED;"`
+                var nuevoHTML_start_separator = `style="background-color: #BFD7ED; margin-top: -20px; margin-bottom: -5px;"`
+                var nuevoHTML_start_none = `style="background-color: #BFD7ED; display: none;"`
+            } else {
+                var nuevoHTML_start = `style="background-color: #B7E4C7;"`
+                var nuevoHTML_start_separator = `style="background-color: #B7E4C7; margin-top: -20px; margin-bottom: -5px;"`
+                var nuevoHTML_start_none = `style="background-color: #B7E4C7; display: none;"`
+            }
             var number_lot =  x + 1
             var HTML = `
-                <div class="col-lg-5 col-md-12 col-sm-12" name="divs_subproducts">
+                <div class="col-lg-12 col-md-12 col-sm-12" name="divs_subproducts" ${nuevoHTML_start}>  
+                    <div class='input-group mb-3'>
+                    </div>
+                </div>
+                <div class="col-lg-5 col-md-12 col-sm-12" name="divs_subproducts" ${nuevoHTML_start}>
                     <hr>
                 </div>
-                <div class="col-lg-2 col-md-12 col-sm-12" name="divs_subproducts">
-                    <center>Article ${number_lot}</center>
+                <div class="col-lg-2 col-md-12 col-sm-12" name="divs_subproducts" ${nuevoHTML_start}>
+                    <center><b>Lot ${number_lot}</b></center>
                 </div>
-                <div class="col-lg-5 col-md-12 col-sm-12" name="divs_subproducts">
+                <div class="col-lg-5 col-md-12 col-sm-12" name="divs_subproducts" ${nuevoHTML_start}>
                     <hr>
                 </div>
             `;
@@ -965,21 +1040,21 @@
                     temperature = `${list_info_lots[i]['temp_conservation']} °C`}
                 else{
                     temperature = `${list_info_lots[i]['temp_conservation']}`}
-                var nuevoHTML_variable = `<div class="col-lg-12 col-md-12 col-sm-12" name="divs_subproducts" style="display: none;">`
-                var nuevoHTML_variable2 = `<div class="col-lg-12 col-md-12 col-sm-12" name="divs_subproducts">`
+                var nuevoHTML_variable = `<div class="col-lg-12 col-md-12 col-sm-12" name="divs_subproducts" ${nuevoHTML_start_none}>`
+                var nuevoHTML_variable2 = `<div class="col-lg-12 col-md-12 col-sm-12" name="divs_subproducts" ${nuevoHTML_start}>`
                 var nuevoHTML_context = `
                         <div class="input-group mb-3">
                             <span class="input-group-text" id="basic-addon1" style="width: 145px;"><b>Descripció:</b></span>
                             <input type="text" class="form-control" aria-label="TTN" id="description${x}_${i}" value="${list_info_lots[i]['id_reactive']} || ${list_info_lots[i]['description_subreference']}" readonly>
                         </div>
                     </div>
-                    <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts">
+                    <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts" ${nuevoHTML_start}>
                         <div class="input-group mb-3">
                             <span class="input-group-text" id="basic-addon1" style="width: 145px;"><b>Lot :</b></span>
                             <input type="text" class="form-control" id="lot${x}_${i}" aria-label="TTN" value="">
                         </div>
                     </div>
-                    <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts">  
+                    <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts" ${nuevoHTML_start}>  
                         <div class='input-group mb-3'>
                             <span class='input-group-text' id='basic-addon1' style='width: 145px;'><b>Data caducitat :</b></span>
                             <input type='text' class='form-control' id='expiry_date${x}_${i}' aria-label='TTN' aria-describedby='basic-addon1' oninput="replae_slash_with_hyphen(this); filter_characters(this)" value="">
@@ -1000,13 +1075,13 @@
                 if (list_info_lots[i]['react_or_fungible'] == 'Fungible'){
                     var nuevoHTML_context = nuevoHTML_context.replace('value=""', 'value="NA"').replace('value=""', 'value="NA"');
                     var nuevoHTML_context = `${nuevoHTML_context}
-                        <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts" style="display: none;">
+                        <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts" ${nuevoHTML_start_none}">
                             <div class="input-group mb-3">
                                 <span class="input-group-text" id="basic-addon1" style="width: 145px;"><b>Lot intern :</b></span>
                                 <input type="text" class="form-control" id="internal_lot${x}_${i}" aria-label="TTN" value="${internal_lot}">
                             </div>
                         </div>
-                        <div class="col-lg-12 col-md-12 col-sm-12" name="divs_subproducts">
+                        <div class="col-lg-12 col-md-12 col-sm-12" name="divs_subproducts" ${nuevoHTML_start}>
                             <div class="input-group mb-3">
                                 <span class="input-group-text" id="basic-addon1" style="width: 145px;"><b>Unitats lot :</b></span>
                                 <select class="form-select" id="units_lot${x}_${i}">
@@ -1017,19 +1092,19 @@
                                 </select>
                             </div>
                         </div>
-                        <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts">
+                        <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts" ${nuevoHTML_start}>
                             <div class="input-group mb-3">
-                                <span class="input-group-text" id="basic-addon1" style="width: 148px;"><b>Form. compra Prov :</b></span>
+                                <span class="input-group-text" id="basic-addon1" style="width: 148px;"><b>F. compra Prov :</b></span>
                                 <input type="text" class="form-control" id="purchase_format${x}_${i}" aria-label="TTN" value="${purchase_format_end}" readonly>
                             </div>
                         </div>
-                        <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts">
+                        <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts" ${nuevoHTML_start}>
                             <div class="input-group mb-3">
                                 <span class="input-group-text" id="basic-addon1" style="width: 148px;"><b>Unitats format :</b></span>
                                 <input type="text" class="form-control" id="units_format${x}_${i}" aria-label="TTN" value="${units_format_end}" readonly>
                             </div>
                         </div>
-                        <div class="col-lg-12 col-md-12 col-sm-12" name="divs_subproducts" style="display: none;">
+                        <div class="col-lg-12 col-md-12 col-sm-12" name="divs_subproducts" ${nuevoHTML_start_none}>
                             <div class="input-group mb-3">
                                 <span class="input-group-text" id="basic-addon1" style="width: 100%;"><b>La conservació d'aquest article s'ha de fer a ${temperature}</b></span>
                             </div>
@@ -1040,13 +1115,13 @@
                         var nuevoHTML_context = nuevoHTML_context.replace('value=""', 'value="NA"').replace('value=""', 'value="NA"');
                     }
                     var nuevoHTML_context = `${nuevoHTML_context}
-                        <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts">
+                        <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts" ${nuevoHTML_start}>
                             <div class="input-group mb-3">
                                 <span class="input-group-text" id="basic-addon1" style="width: 145px;"><b>Lot intern :</b></span>
                                 <input type="text" class="form-control" id="internal_lot${x}_${i}" aria-label="TTN" value="${internal_lot}">
                             </div>
                         </div>
-                        <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts">
+                        <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts" ${nuevoHTML_start}>
                             <div class="input-group mb-3">
                                 <span class="input-group-text" id="basic-addon1" style="width: 145px;"><b>Unitats lot :</b></span>
                                 <select class="form-select" id="units_lot${x}_${i}">
@@ -1058,19 +1133,19 @@
                                 </select>
                             </div>
                         </div>
-                        <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts">
+                        <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts" ${nuevoHTML_start}>
                             <div class="input-group mb-3">
-                                <span class="input-group-text" id="basic-addon1" style="width: 148px;"><b>Form. compra Prov :</b></span>
+                                <span class="input-group-text" id="basic-addon1" style="width: 148px;"><b>F. compra Prov :</b></span>
                                 <input type="text" class="form-control" id="purchase_format${x}_${i}" aria-label="TTN" value="${purchase_format_end}" readonly>
                             </div>
                         </div>
-                        <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts">
+                        <div class="col-lg-6 col-md-12 col-sm-12" name="divs_subproducts" ${nuevoHTML_start}>
                             <div class="input-group mb-3">
                                 <span class="input-group-text" id="basic-addon1" style="width: 148px;"><b>Unitats format :</b></span>
                                 <input type="text" class="form-control" id="units_format${x}_${i}" aria-label="TTN" value="${units_format_end}" readonly>
                             </div>
                         </div>
-                        <div class="col-lg-12 col-md-12 col-sm-12" name="divs_subproducts">
+                        <div class="col-lg-12 col-md-12 col-sm-12" name="divs_subproducts" ${nuevoHTML_start}>
                             <div class="input-group mb-3">
                                 <span class="input-group-text" id="basic-addon1" style="width: 100%;"><b>La conservació d'aquest article s'ha de fer a ${temperature}</b></span>
                             </div>
@@ -1080,6 +1155,21 @@
                 if (list_info_lots[i]['description_subreference'] === '' || list_info_lots[i]['description_subreference'] === null || list_info_lots[i]['description_subreference'] === undefined){ 
                     var nuevoHTML = nuevoHTML_variable + nuevoHTML_context}
                 else { var nuevoHTML = nuevoHTML_variable2 + nuevoHTML_context }
+
+                var separator = `
+                    <div class="col-lg-2 col-md-12 col-sm-12" name="divs_subproducts" ${nuevoHTML_start_separator}>
+                    </div>
+                    <div class="col-lg-8 col-md-12 col-sm-12" name="divs_subproducts" ${nuevoHTML_start_separator}>
+                        <hr>
+                    </div>
+                    <div class="col-lg-2 col-md-12 col-sm-12" name="divs_subproducts" ${nuevoHTML_start_separator}>
+                    </div>
+                `;
+                
+                // Si hi ha subproductes posarem un separador entre el subproductes
+                if (list_info_lots.length > 1 && list_info_lots.length - 1 != i){
+                    var nuevoHTML = nuevoHTML + separator
+                }
 
                 // Agrega el nuevo conjunto debajo del div existente
                 miDiv.insertAdjacentHTML('beforebegin', nuevoHTML);
@@ -1691,8 +1781,24 @@
                                     elemento.remove(); });
 
                             var miDiv = document.getElementById('div_info_new_lot');
+
+                            var nuevoHTML_start = `style="background-color: #BFD7ED;"`
+
                             var nuevoHTML = `
-                                <div class="col-lg-6 col-md-6 col-sm-12 divs_reatives" name="divs_new_lots">       
+                                <div class="col-lg-12 col-md-12 col-sm-12" name="divs_new_lots" ${nuevoHTML_start}>       
+                                    <div class="input-group mb-3">
+                                    </div>
+                                </div>
+                                <div class="col-lg-5 col-md-12 col-sm-12" name="divs_new_lots" ${nuevoHTML_start}>
+                                    <hr>
+                                </div>
+                                <div class="col-lg-2 col-md-12 col-sm-12" name="divs_new_lots" ${nuevoHTML_start}>
+                                    <center><b>Lot 1</b></center>
+                                </div>
+                                <div class="col-lg-5 col-md-12 col-sm-12" name="divs_new_lots" ${nuevoHTML_start}>
+                                    <hr>
+                                </div>
+                                <div class="col-lg-6 col-md-6 col-sm-12 divs_reatives" name="divs_new_lots" ${nuevoHTML_start}>       
                                     <div class="input-group mb-3">
                                         <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Temp. conservació :</b></span>
                                         <select class="form-select" id="temp_conservation0">
@@ -1703,7 +1809,7 @@
                                         </select>
                                     </div>
                                 </div>
-                                <div class="col-lg-6 col-md-6 col-sm-12" name="divs_new_lots">       
+                                <div class="col-lg-6 col-md-6 col-sm-12" name="divs_new_lots" ${nuevoHTML_start}>       
                                     <div class="input-group mb-3">
                                         <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Reactiu o fungible :</b></span>
                                         <select class="form-select" id="react_or_fungible0" onchange="show_reactive(this.value)">
@@ -1712,13 +1818,13 @@
                                         </select>
                                     </div>
                                 </div>
-                                <div class="col-lg-6 col-md-6 col-sm-12 divs_reatives" name="divs_new_lots">       
+                                <div class="col-lg-6 col-md-6 col-sm-12 divs_reatives" name="divs_new_lots" ${nuevoHTML_start}>       
                                     <div class="input-group mb-3">
                                         <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Id panell(*) :</b></span>
                                         <input type="text" class="form-control" aria-label="TTN" id="code_panel0" value='${code_panel}'>
                                     </div>
                                 </div>
-                                <div class="col-lg-6 col-md-12 col-sm-12" name="divs_new_lots">       
+                                <div class="col-lg-6 col-md-12 col-sm-12" name="divs_new_lots" ${nuevoHTML_start}>       
                                     <div class="input-group mb-3">
                                         <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Ubicació :</b></span>
                                         <select class="form-select" id="location0">
@@ -1734,9 +1840,9 @@
                                         </select>
                                     </div>
                                 </div>
-                                <div class="col-lg-6 col-md-12 col-sm-12" name="divs_new_lots">
+                                <div class="col-lg-6 col-md-12 col-sm-12" name="divs_new_lots" ${nuevoHTML_start}>
                                     <div class="input-group mb-3">
-                                        <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Form. compra Prov :</b></span>
+                                        <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>F. compra Prov :</b></span>
                                         <select class="form-select" id="purchase_format0">
                                             <option selected></option>
                                             <option>kit</option>
@@ -1749,7 +1855,7 @@
                                         </select>
                                     </div>
                                 </div>
-                                <div class="col-lg-6 col-md-12 col-sm-12" name="divs_new_lots">
+                                <div class="col-lg-6 col-md-12 col-sm-12" name="divs_new_lots" ${nuevoHTML_start}>
                                     <div class="input-group mb-3">
                                         <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Unitats format :</b></span>
                                         <select class="form-select" id="units_format0">
@@ -1760,7 +1866,7 @@
                                         </select>
                                     </div>
                                 </div>
-                                <div class="col-lg-6 col-md-6 col-sm-12" name="divs_new_lots">       
+                                <div class="col-lg-6 col-md-6 col-sm-12" name="divs_new_lots" ${nuevoHTML_start}>       
                                     <div class="input-group mb-3">
                                         <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Format compra ICS:</b></span>
                                         <select class="form-select" id="purchase_format_supplier0">
@@ -1775,7 +1881,7 @@
                                         </select>
                                     </div>
                                 </div>
-                                <div class="col-lg-6 col-md-12 col-sm-12" name="divs_new_lots">
+                                <div class="col-lg-6 col-md-12 col-sm-12" name="divs_new_lots" ${nuevoHTML_start}>
                                     <div class="input-group mb-3">
                                         <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Unitats format ICS :</b></span>
                                         <select class="form-select" id="units_format_supplier0">
@@ -1786,35 +1892,39 @@
                                         </select>
                                     </div>
                                 </div>
-                                <div class="col-lg-6 col-md-6 col-sm-12" name="divs_new_lots">       
+                                <div class="col-lg-6 col-md-6 col-sm-12" name="divs_new_lots" ${nuevoHTML_start}>       
                                     <div class="input-group mb-3">
                                         <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Import u. ICS :</b></span>
                                         <input type="number" class="form-control" aria-label="TTN" id="import_unit_ics0">
                                     </div>
                                 </div>
-                                <div class="col-lg-6 col-md-6 col-sm-12" name="divs_new_lots">       
+                                <div class="col-lg-6 col-md-6 col-sm-12" name="divs_new_lots" ${nuevoHTML_start}>       
                                     <div class="input-group mb-3">
                                         <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Import u. IDIBGI :</b></span>
                                         <input type="number" class="form-control" aria-label="TTN" id="import_unit_idibgi0">
                                     </div>
                                 </div>
 
-                                <div class="col-lg-6 col-md-6 col-sm-12" name="divs_new_lots">       
+                                <div class="col-lg-6 col-md-6 col-sm-12" name="divs_new_lots" ${nuevoHTML_start}>       
                                     <div class="input-group mb-3">
                                         <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Gestió local: :</b></span>
                                         <input type="text" class="form-control" aria-label="TTN" id="local_management0" value=''>
                                     </div>
                                 </div>
-                                <div class="col-lg-6 col-md-6 col-sm-12" name="divs_new_lots">       
+                                <div class="col-lg-6 col-md-6 col-sm-12" name="divs_new_lots" ${nuevoHTML_start}>       
                                     <div class="input-group mb-3">
                                         <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Cmd. preferent :</b></span>
                                         <input type="text" class="form-control" aria-label="TTN" id="plataform_command_preferent0" value=''>
                                     </div>
                                 </div>
-                                <div class="col-lg-6 col-md-6 col-sm-12" name="divs_new_lots">       
+                                <div class="col-lg-6 col-md-6 col-sm-12" name="divs_new_lots" ${nuevoHTML_start}>       
                                     <div class="input-group mb-3">
                                         <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Q. màxima :</b></span>
                                         <input type="number" class="form-control" aria-label="TTN" id="maximum_amount0">
+                                    </div>
+                                </div>
+                                <div class="col-lg-6 col-md-6 col-sm-12" name="divs_new_lots" ${nuevoHTML_start}>       
+                                    <div class="input-group mb-3">
                                     </div>
                                 </div>
                                 `;
@@ -2459,7 +2569,7 @@
 
                     <div class="col-lg-6 col-md-6 col-sm-12" id="div_subreff" style="display: none;">       
                         <div class="input-group mb-3">
-                            <span class="input-group-text" id="basic-addon1" style="width: 145px; background-color: yellow;"><b>Stock real</b></span>
+                            <span class="input-group-text" id="basic-addon1" style="width: 145px; background-color: yellow;"><b>N. Kits rebut</b></span>
                             <input type="number" class="form-control" id='number_total_lot_discount' aria-label="TTN" aria-describedby="basic-addon1" min="0">
                         </div>
                     </div>
