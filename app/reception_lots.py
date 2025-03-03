@@ -280,148 +280,162 @@ def add_stock_lot():
     # Si no mirem si es fungible o reactiu, preparem les dades perque es pugin inserir, la part mes dificil es que si
     # es reactiu s'insereixen un linia per cada unitat i si es fungible una row amb el numero total d'unitas.
     list_info_excel = []
+    subrefernce_count = 0
     for lots in list_lots:
         print(lots)
-        try:
-            json_lots = json.dumps(lots)
-            select_lot = session1.query(Stock_lots).filter_by(code_SAP=lots['code_SAP'], code_LOG=lots['code_LOG'], lot=lots['lot'], date_expiry=lots['date_expiry'], internal_lot=lots['internal_lot'], spent=0).first()
-            if select_lot:
-                if select_lot.react_or_fungible != 'Reactiu':
-                    select_lot.units_lot = int(select_lot.units_lot) + int(lots['units_lot'])
-                else:
-                    return 'False_reactive'
-                type_log = 'insert add stock'
-                dict_info_excel = {'catalog_reference': lots['catalog_reference'],
-                                   'description': lots['description'],
-                                   'description_subreference': lots['description_subreference'],
-                                   'id_reactive': lots['id_reactive'],
-                                   'lot': lots['lot'],
-                                   'internal_lot_value': lots['internal_lot'],
-                                   'reception_date': lots['reception_date'],
-                                   'date_expiry': lots['date_expiry'],
-                                   'analytical_technique': lots['analytical_technique'],
-                                   'user_add_command': lots['user_add_command']}
-                list_info_excel.append(dict_info_excel)
+        # try:
+        json_lots = json.dumps(lots)
+        select_lot = session1.query(Stock_lots).filter_by(code_SAP=lots['code_SAP'], code_LOG=lots['code_LOG'], lot=lots['lot'], date_expiry=lots['date_expiry'], internal_lot=lots['internal_lot'], spent=0).first()
+        if select_lot:
+            if select_lot.react_or_fungible != 'Reactiu':
+                select_lot.units_lot = int(select_lot.units_lot) + int(lots['units_lot'])
             else:
-                type_log = 'insert new stock'
+                return 'False_reactive'
+            type_log = 'insert add stock'
+            dict_info_excel = {'catalog_reference': lots['catalog_reference'],
+                                'description': lots['description'],
+                                'description_subreference': lots['description_subreference'],
+                                'id_reactive': lots['id_reactive'],
+                                'lot': lots['lot'],
+                                'internal_lot_value': lots['internal_lot'],
+                                'reception_date': lots['reception_date'],
+                                'date_expiry': lots['date_expiry'],
+                                'analytical_technique': lots['analytical_technique'],
+                                'user_add_command': lots['user_add_command']}
+            list_info_excel.append(dict_info_excel)
+        else:
+            type_log = 'insert new stock'
+
+            if lots['react_or_fungible'] == 'Fungible':
+                units_lots_reactive = 1
+                unit_lot_value = lots['units_lot']
+                temperature_value = ''
+
+                # Com que és un fungible posarem la resta de fungibles a 0
+                select_lots_ref = session1.query(Stock_lots).filter(
+                    and_(
+                        Stock_lots.catalog_reference == lots['catalog_reference'],
+                        Stock_lots.spent == 0,
+                        Stock_lots.react_or_fungible == 'Fungible'
+                    )
+                ).all()
+
+                for select_lots_r in select_lots_ref:
+                    select_lots_r.units_lot = 0
+                    select_lots_r.spent = 1
+            else:
+                units_lots_reactive = int(lots['units_lot'])
+                unit_lot_value = 1
+                temperature_value = lots['temp_conservation']
+
+            number_unit_lot = 0
+            for i in range(units_lots_reactive):
+                number_unit_lot += 1
 
                 if lots['react_or_fungible'] == 'Fungible':
-                    units_lots_reactive = 1
-                    unit_lot_value = lots['units_lot']
-                    temperature_value = ''
-
-                    # Com que és un fungible posarem la resta de fungibles a 0
-                    select_lots_ref = session1.query(Stock_lots).filter(
-                        and_(
-                            Stock_lots.catalog_reference == lots['catalog_reference'],
-                            Stock_lots.spent == 0,
-                            Stock_lots.react_or_fungible == 'Fungible'
-                        )
-                    ).all()
-
-                    for select_lots_r in select_lots_ref:
-                        select_lots_r.units_lot = 0
-                        select_lots_r.spent = 1
+                    internal_lot_value = ''
                 else:
-                    units_lots_reactive = int(lots['units_lot'])
-                    unit_lot_value = 1
-                    temperature_value = lots['temp_conservation']
+                    # internal_lot_value = f"{lots['internal_lot']}_{number_unit_lot}/{lots['units_lot']}"
+                    dict_totals_reference[f"{lots['key']}_unit"] += 1
+                    unit_reactive = dict_totals_reference[f"{lots['key']}_unit"]
+                    internal_lot_value = f"{lots['internal_lot']}_{unit_reactive}/{dict_totals_reference[lots['key']]}"
 
-                number_unit_lot = 0
-                for i in range(units_lots_reactive):
-                    number_unit_lot += 1
+                # Si no han carregat certificat, comprobarem si ja tenim introduït un altre lot amb el mateixos camps i així podrem aprofitar el seu certificat ja que serà el mateix
+                if filename_certificate == '':
+                    select_lot_certificate = session1.query(Stock_lots).filter_by(catalog_reference=lots['catalog_reference'], lot=lots['lot'], id_reactive=lots['id_reactive']).first()
+                    if select_lot_certificate is not None:
+                        filename_certificate = select_lot_certificate.certificate
+                        type_doc_certificate = select_lot_certificate.type_doc_certificate
 
-                    if lots['react_or_fungible'] == 'Fungible':
-                        internal_lot_value = ''
+                # Si són coriels el preu el posen directament i no es pot fer servir el que hi ha a l'article mare
+                if isinstance(lots.get('description'), str) and 'coriel' in lots['description'].lower():
+                    lots['import_unit_ics'] = price_coriells
+                    lots['import_unit_idibgi'] = price_coriells
+
+                # Mirem si el lot te subreferencies, si en te mirem cuantes d'elles aniran amb preu i quantes no, com que son subreferencies nomes una de cada lot pot anar amb preu, sino es contabilitzarien extra
+                if subreference_active == 'True':
+                    if int(number_total_lot_discount) > int(subrefernce_count):
+                        ics_price_aux = lots['import_unit_ics']
+                        idibgi_price_aux = lots['import_unit_idibgi']
                     else:
-                        # internal_lot_value = f"{lots['internal_lot']}_{number_unit_lot}/{lots['units_lot']}"
-                        dict_totals_reference[f"{lots['key']}_unit"] += 1
-                        unit_reactive = dict_totals_reference[f"{lots['key']}_unit"]
-                        internal_lot_value = f"{lots['internal_lot']}_{unit_reactive}/{dict_totals_reference[lots['key']]}"
+                        ics_price_aux = f"subref_{lots['import_unit_ics']}"
+                        idibgi_price_aux = f"subref_{lots['import_unit_idibgi']}"
+                    subrefernce_count += 1
+                else:
+                    ics_price_aux = lots['import_unit_ics']
+                    idibgi_price_aux = lots['import_unit_idibgi']
 
-                    # Si no han carregat certificat, comprobarem si ja tenim introduït un altre lot amb el mateixos camps i així podrem aprofitar el seu certificat ja que serà el mateix
-                    if filename_certificate == '':
-                        select_lot_certificate = session1.query(Stock_lots).filter_by(catalog_reference=lots['catalog_reference'], lot=lots['lot'], id_reactive=lots['id_reactive']).first()
-                        if select_lot_certificate is not None:
-                            filename_certificate = select_lot_certificate.certificate
-                            type_doc_certificate = select_lot_certificate.type_doc_certificate
+                insert_lot = Stock_lots(id_lot=lots['key'],
+                                        catalog_reference=lots['catalog_reference'],
+                                        manufacturer=lots['manufacturer'],
+                                        description=lots['description'],
+                                        description_subreference=lots['description_subreference'],
+                                        analytical_technique=lots['analytical_technique'],
+                                        id_reactive=lots['id_reactive'],
+                                        code_SAP=lots['code_SAP'],
+                                        code_LOG=lots['code_LOG'],
+                                        date_expiry=lots['date_expiry'],
+                                        lot=lots['lot'],
+                                        spent=0,
+                                        reception_date=lots['reception_date'],
+                                        units_lot=unit_lot_value,
+                                        internal_lot=internal_lot_value,
+                                        transport_conditions=lots['transport_conditions'],
+                                        packaging=lots['packaging'],
+                                        inspected_by=lots['inspected_by'],
+                                        date_inspected=lots['date_inspected'],
+                                        observations_inspection=lots['observations_inspection'],
+                                        state=lots['state'],
+                                        comand_number=lots['comand_number'],
+                                        revised_by=lots['revised_by'],
+                                        date_revised=lots['date_revised'],
+                                        delivery_note=filename_delivery,
+                                        certificate=filename_certificate,
+                                        type_doc_certificate=type_doc_certificate,
+                                        type_doc_delivery=type_doc_delivery,
+                                        group_insert=group_insert_number,
+                                        temp_conservation=temperature_value,
+                                        react_or_fungible=lots['react_or_fungible'],
+                                        code_panel=lots['code_panel'],
+                                        location=lots['location'],
+                                        supplier=lots['supplier'],
+                                        cost_center_stock=lots['cost_center_stock'],
+                                        purchase_format=lots['purchase_format'],
+                                        units_format=lots['units_format'],
+                                        import_unit_ics=ics_price_aux,
+                                        import_unit_idibgi=idibgi_price_aux,
+                                        wrong_lots=lots['wrong_lots'],
+                                        local_management=lots['local_management'],
+                                        plataform_command_preferent=lots['plataform_command_preferent'],
+                                        maximum_amount=lots['maximum_amount'],
+                                        purchase_format_supplier=lots['purchase_format_supplier'],
+                                        units_format_supplier=lots['units_format_supplier'],
+                                        pb_oligos=pb_oligos)
+                session1.add(insert_lot)
 
-                    # Si són coriels el preu el posen directament i no es pot fer servir el que hi ha a l'article mare
-                    if isinstance(lots.get('description'), str) and 'coriel' in lots['description'].lower():
-                        lots['import_unit_ics'] = price_coriells
-                        lots['import_unit_idibgi'] = price_coriells
+                dict_info_excel = {'catalog_reference': lots['catalog_reference'],
+                                    'description': lots['description'],
+                                    'description_subreference': lots['description_subreference'],
+                                    'id_reactive': lots['id_reactive'],
+                                    'lot': lots['lot'],
+                                    'internal_lot_value': internal_lot_value,
+                                    'reception_date': lots['reception_date'],
+                                    'date_expiry': lots['date_expiry'],
+                                    'analytical_technique': lots['analytical_technique'],
+                                    'user_add_command': lots['user_add_command']}
+                list_info_excel.append(dict_info_excel)
 
-                    insert_lot = Stock_lots(id_lot=lots['key'],
-                                            catalog_reference=lots['catalog_reference'],
-                                            manufacturer=lots['manufacturer'],
-                                            description=lots['description'],
-                                            description_subreference=lots['description_subreference'],
-                                            analytical_technique=lots['analytical_technique'],
-                                            id_reactive=lots['id_reactive'],
-                                            code_SAP=lots['code_SAP'],
-                                            code_LOG=lots['code_LOG'],
-                                            date_expiry=lots['date_expiry'],
-                                            lot=lots['lot'],
-                                            spent=0,
-                                            reception_date=lots['reception_date'],
-                                            units_lot=unit_lot_value,
-                                            internal_lot=internal_lot_value,
-                                            transport_conditions=lots['transport_conditions'],
-                                            packaging=lots['packaging'],
-                                            inspected_by=lots['inspected_by'],
-                                            date_inspected=lots['date_inspected'],
-                                            observations_inspection=lots['observations_inspection'],
-                                            state=lots['state'],
-                                            comand_number=lots['comand_number'],
-                                            revised_by=lots['revised_by'],
-                                            date_revised=lots['date_revised'],
-                                            delivery_note=filename_delivery,
-                                            certificate=filename_certificate,
-                                            type_doc_certificate=type_doc_certificate,
-                                            type_doc_delivery=type_doc_delivery,
-                                            group_insert=group_insert_number,
-                                            temp_conservation=temperature_value,
-                                            react_or_fungible=lots['react_or_fungible'],
-                                            code_panel=lots['code_panel'],
-                                            location=lots['location'],
-                                            supplier=lots['supplier'],
-                                            cost_center_stock=lots['cost_center_stock'],
-                                            purchase_format=lots['purchase_format'],
-                                            units_format=lots['units_format'],
-                                            import_unit_ics=lots['import_unit_ics'],
-                                            import_unit_idibgi=lots['import_unit_idibgi'],
-                                            wrong_lots=lots['wrong_lots'],
-                                            local_management=lots['local_management'],
-                                            plataform_command_preferent=lots['plataform_command_preferent'],
-                                            maximum_amount=lots['maximum_amount'],
-                                            purchase_format_supplier=lots['purchase_format_supplier'],
-                                            units_format_supplier=lots['units_format_supplier'],
-                                            pb_oligos=pb_oligos)
-                    session1.add(insert_lot)
-
-                    dict_info_excel = {'catalog_reference': lots['catalog_reference'],
-                                       'description': lots['description'],
-                                       'description_subreference': lots['description_subreference'],
-                                       'id_reactive': lots['id_reactive'],
-                                       'lot': lots['lot'],
-                                       'internal_lot_value': internal_lot_value,
-                                       'reception_date': lots['reception_date'],
-                                       'date_expiry': lots['date_expiry'],
-                                       'analytical_technique': lots['analytical_technique'],
-                                       'user_add_command': lots['user_add_command']}
-                    list_info_excel.append(dict_info_excel)
-
-            select_lot = session1.query(Stock_lots).order_by(Stock_lots.id.desc()).first()
-            info_lot = {'id_lot': select_lot.id,
-                        'type': type_log,
-                        'info': json_lots,
-                        'user': session['acronim'],
-                        'id_user': session['idClient'],
-                        'date': date}
-            save_log(info_lot)
-        except Exception:
-            session1.rollback()
-            return 'False_error'
+        select_lot = session1.query(Stock_lots).order_by(Stock_lots.id.desc()).first()
+        info_lot = {'id_lot': select_lot.id,
+                    'type': type_log,
+                    'info': json_lots,
+                    'user': session['acronim'],
+                    'id_user': session['idClient'],
+                    'date': date}
+        save_log(info_lot)
+        # except Exception:
+        #     session1.rollback()
+        #     return 'False_error'
 
     # Si id_substract_command es none voldra dir que nomes hi ha un lot a descontar i haurem de buscar el id de la comanda normalment,
     # si hi ha mes d'un lot l'usuari ja haura seleccionat de quin es i ja tindrem aquest pas fet.
@@ -448,9 +462,11 @@ def add_stock_lot():
         if int(total_received) == int(select_command.units):
             message_command = f"S'ha rebut tot el contingut de la comanda {select_command.code_command}"
             select_command.received = 1
+            select_command.date_complete = date
         elif int(total_received) > int(select_command.units):
             message_command = f"S'ha rebut més estock del que haviem demanat a la comanda {select_command.code_command}"
             select_command.received = 1
+            select_command.date_complete = date
         elif int(total_received) < int(select_command.units):
             message_command = f"Stock guardat, encara falten productes per arribar de la comanda {select_command.code_command}"
     else:
