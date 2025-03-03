@@ -7,6 +7,7 @@ from config import main_dir_docs
 from werkzeug.utils import secure_filename
 import os
 import pandas as pd
+import re
 
 
 @app.route('/look_spend_money', methods=['POST'])
@@ -24,7 +25,7 @@ def look_spend_money():
     select_stock_lots = session1.query(Stock_lots).filter(Stock_lots.reception_date.like(f'%-{year}')).all()
     if not select_stock_lots:
         return "False_//_Error, No hem trobat dades de l'stock"
-
+    print("------------------------------------ INICI -------------------------------------------")
     dic_info_spend_money = {}
     oligos_list = []
     try:
@@ -40,7 +41,9 @@ def look_spend_money():
                         print(stock_lots.import_unit_idibgi)
                     try:
                         total_value_ics = int(stock_lots.units_lot) * float(stock_lots.import_unit_ics.replace(",", "."))
+                        print(f"Suma {stock_lots.cost_center_stock} -> {stock_lots.units_lot} * {stock_lots.import_unit_ics} = {total_value_ics}")
                         dic_info_spend_money[stock_lots.cost_center_stock][1] += total_value_ics
+                        print(f"Total {stock_lots.cost_center_stock} -> {dic_info_spend_money[stock_lots.cost_center_stock][1]}")
                     except Exception:
                         print("No pot fer la suma, revisar que estigui ben entrat el valor a import_ics")
                         print(stock_lots.import_unit_ics)
@@ -50,7 +53,6 @@ def look_spend_money():
                         key_oligos = f'{stock_lots.reception_date}_{stock_lots.pb_oligos}'
                         if key_oligos not in oligos_list:
                             oligos_list.append(key_oligos)
-
                             try:
                                 total_oligos_val = int(stock_lots.pb_oligos) * float(stock_lots.import_unit_idibgi.replace(",", "."))
                                 dic_info_spend_money[stock_lots.cost_center_stock][0] += total_oligos_val
@@ -59,37 +61,45 @@ def look_spend_money():
                                 print(stock_lots.import_unit_idibgi)
                             try:
                                 total_oligos_val2 = int(stock_lots.pb_oligos) * float(stock_lots.import_unit_ics.replace(",", "."))
+                                print(f"Suma {stock_lots.cost_center_stock} -> {stock_lots.pb_oligos} * {stock_lots.import_unit_ics} = {total_oligos_val2}")
                                 dic_info_spend_money[stock_lots.cost_center_stock][1] += total_oligos_val2
+                                print(f"Total {stock_lots.cost_center_stock} -> {dic_info_spend_money[stock_lots.cost_center_stock][1]}")
                             except Exception:
                                 print("No pot fer la suma, revisar que estigui ben entrat el valor a import_ics")
                                 print(stock_lots.import_unit_ics)
                     else:
                         # Si el lot te subreferencies, nomes s'ha de contar el primer, si sumesim els suman extra
                         # El que fem es mirar si es el 1/x i si ho es el sumem, sino no fem res
-                        if stock_lots.description_subreference != '':
-                            lot_one = stock_lots.internal_lot.split('_')
-                            if lot_one[1][0] == '1':
-                                try:
-                                    dic_info_spend_money[stock_lots.cost_center_stock][0] += float(stock_lots.import_unit_idibgi.replace(",", "."))
-                                except Exception:
-                                    print("No pot fer la suma, revisar que estigui ben entrat el valor a import_idibgi")
-                                    print(stock_lots.import_unit_idibgi)
-                                try:
-                                    dic_info_spend_money[stock_lots.cost_center_stock][1] += float(stock_lots.import_unit_ics.replace(",", "."))
-                                except Exception:
-                                    print("No pot fer la suma, revisar que estigui ben entrat el valor a import_ics")
-                                    print(stock_lots.import_unit_ics)
-                        else:
-                            try:
-                                dic_info_spend_money[stock_lots.cost_center_stock][0] += float(stock_lots.import_unit_idibgi.replace(",", "."))
-                            except Exception:
-                                print("No pot fer la suma, revisar que estigui ben entrat el valor a import_idibgi")
-                                print(stock_lots.import_unit_idibgi)
-                            try:
-                                dic_info_spend_money[stock_lots.cost_center_stock][1] += float(stock_lots.import_unit_ics.replace(",", "."))
-                            except Exception:
-                                print("No pot fer la suma, revisar que estigui ben entrat el valor a import_ics")
-                                print(stock_lots.import_unit_ics)
+                        # if stock_lots.description_subreference != '':
+                        #     lot_one = stock_lots.internal_lot.split('_')
+                        #     if lot_one[1][0] == '1':
+                        #         try:
+                        #             dic_info_spend_money[stock_lots.cost_center_stock][0] += float(stock_lots.import_unit_idibgi.replace(",", "."))
+                        #         except Exception:
+                        #             print("No pot fer la suma, revisar que estigui ben entrat el valor a import_idibgi")
+                        #             print(stock_lots.import_unit_idibgi)
+                        #         try:
+                        #             print(f"Suma {stock_lots.cost_center_stock} -> {stock_lots.import_unit_ics}")
+                        #             dic_info_spend_money[stock_lots.cost_center_stock][1] += float(stock_lots.import_unit_ics.replace(",", "."))
+                        #             print(f"Total {dic_info_spend_money[stock_lots.cost_center_stock][1]}")
+                        #         except Exception:
+                        #             print("No pot fer la suma, revisar que estigui ben entrat el valor a import_ics")
+                        #             print(stock_lots.import_unit_ics)
+                        #     else:
+                        #         print(f"Aqust no es conta {lot_one[1]}")
+                        # else:
+                        try:
+                            dic_info_spend_money[stock_lots.cost_center_stock][0] += float(stock_lots.import_unit_idibgi.replace(",", "."))
+                        except Exception:
+                            print("No pot fer la suma, revisar que estigui ben entrat el valor a import_idibgi")
+                            print(stock_lots.import_unit_idibgi)
+                        try:
+                            print(f"Suma {stock_lots.cost_center_stock} -> {stock_lots.import_unit_ics}")
+                            dic_info_spend_money[stock_lots.cost_center_stock][1] += float(stock_lots.import_unit_ics.replace(",", "."))
+                            print(f"Total {dic_info_spend_money[stock_lots.cost_center_stock][1]}")
+                        except Exception:
+                            print("No pot fer la suma, revisar que estigui ben entrat el valor a import_ics")
+                            print(stock_lots.import_unit_ics)
             else:
                 total_value_idibgi = 0
                 total_value_ics = 0
@@ -100,6 +110,7 @@ def look_spend_money():
                         print("No pot fer la suma, revisar que estigui ben entrat el valor a import_idibgi")
                     try:
                         total_value_ics = int(stock_lots.units_lot) * float(stock_lots.import_unit_ics.replace(",", "."))
+                        print(f"Inici {stock_lots.cost_center_stock} -> {stock_lots.units_lot} * {stock_lots.import_unit_ics} = {total_value_ics}")
                     except Exception:
                         print("No pot fer la suma, revisar que estigui ben entrat el valor a import_ics")
                 elif "Oligos" in stock_lots.description:
@@ -113,11 +124,21 @@ def look_spend_money():
 
                         try:
                             total_value_ics = int(stock_lots.pb_oligos) * float(stock_lots.import_unit_ics.replace(",", "."))
+                            print(f"Inici {stock_lots.cost_center_stock} -> {stock_lots.pb_oligos} * {stock_lots.import_unit_ics} = {total_value_ics}")
                         except Exception:
                             print("No pot fer la suma, revisar que estigui ben entrat el valor a import_ics")
                 else:
-                    total_value_idibgi = float(stock_lots.import_unit_idibgi.replace(",", "."))
-                    total_value_ics = float(stock_lots.import_unit_ics.replace(",", "."))
+                    try:
+                        total_value_idibgi = float(stock_lots.import_unit_idibgi.replace(",", "."))
+                    except Exception:
+                        print("No pot fer la suma, revisar que estigui ben entrat el valor a import_idibgi")
+                        print(stock_lots.import_unit_idibgi)
+                    try:
+                        total_value_ics = float(stock_lots.import_unit_ics.replace(",", "."))
+                    except Exception:
+                        print("No pot fer la suma, revisar que estigui ben entrat el valor a import_ics")
+                        print(stock_lots.import_unit_ics)
+                    print(f"Inici {stock_lots.cost_center_stock} -> {total_value_ics}")
 
                 dic_info_spend_money[stock_lots.cost_center_stock] = [
                     float(total_value_idibgi),
@@ -148,7 +169,6 @@ def look_spend_money():
             clave: [formatear_euros(valor) for valor in valores]
             for clave, valores in dic_info_spend_money.items()
         }
-
         # print(dict_formated)
 
         # Això és fa perque dependet del CECO volem que no surti informació en la columna en qüestió
@@ -380,8 +400,7 @@ def upload_template_price():
             description = list_excel[line][0]
             price_ics = str(list_excel[line][4])
 
-            if '.0' in str(price_ics):
-                price_ics = str(price_ics).replace('.0', '')
+            price_ics = re.sub(r'\.0+$', '', str(price_ics))
 
             select_lots = session1.query(Lots).filter(Lots.description == str(description)).filter(Lots.catalog_reference == catalog_reference).first()
             if select_lots is not None:
@@ -412,6 +431,7 @@ def upload_template_price():
             # Iterem sobre la llista de trobats, formatejarem els imports i farem els canvis que siguin necesaris, es guardara log de totes les operacions
             for found in lot_found:
                 if found['price_ics_old'] != found['price_ics_new']:
+                    print(found['catalog_reference'])
                     print(f"Canvi de {found['price_ics_old']} a {found['price_ics_new']}")
                     select_lot = session1.query(Lots).filter(Lots.catalog_reference == found['catalog_reference']).filter(Lots.description == found['description']).all()
                     for lot in select_lot:

@@ -117,7 +117,8 @@ def add_command():
                                   received=0,
                                   num_received=0,
                                   code_command='',
-                                  observations=observations_command)
+                                  observations=observations_command,
+                                  date_complete='')
         session1.add(insert_command)
 
         select_stock_lot = session1.query(Stock_lots).filter_by(id_lot=key_lot, spent=0, react_or_fungible='Fungible').all()
@@ -454,12 +455,12 @@ def download_order_success():
 
         select_command_year = session1.query(Commands, Lots).join(Lots, Commands.id_lot == Lots.key)\
                                                             .filter(Commands.user_close != '')\
-                                                            .filter(Commands.date_close.like(f'%-{year}'))\
+                                                            .filter(Commands.date_complete.like(f'%-{year}'))\
                                                             .filter(Commands.received == '1').all()
 
         select_command_last_year = session1.query(Commands, Lots).join(Lots, Commands.id_lot == Lots.key)\
                                                                 .filter(Commands.user_close != '')\
-                                                                .filter(Commands.date_close.like(f'%-{last_year}'))\
+                                                                .filter(Commands.date_complete.like(f'%-{last_year}'))\
                                                                 .filter(Commands.received == '1').all()
 
         if not select_command_year and not select_command_last_year:
