@@ -689,14 +689,21 @@
      */
      function close_modal(modal_id){
         $(`#${modal_id}`).modal('hide');
-        if (modal_id === "modal_edit_lot"){ open_modal('info_lots_bd') }
+        if (modal_id === "modal_edit_lot"){ 
+            open_modal('info_lots_bd') 
+            // Esto sierve para cuando cierrras i abres modals a la vez el scroll siga activo
+            $('#modal_edit_lot').on('hidden.bs.modal', function () {
+                $('body').addClass('modal-open'); 
+            });}
         else if (modal_id === "modal_edit_order_tracking"){ 
             open_modal('modal_order_tracking') 
+            // Esto sierve para cuando cierrras i abres modals a la vez el scroll siga activo
             $('#modal_edit_order_tracking').on('hidden.bs.modal', function () {
                 $('body').addClass('modal-open'); 
             });}
         else if (modal_id === "modal_incidence_command_success"){ 
             open_modal('modal_command_success') 
+            // Esto sierve para cuando cierrras i abres modals a la vez el scroll siga activo
             $('#modal_incidence_command_success').on('hidden.bs.modal', function () {
                 $('body').addClass('modal-open'); 
             });

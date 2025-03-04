@@ -12,6 +12,9 @@ from email.mime.image import MIMEImage
 from email.mime.base import MIMEBase
 from email import encoders
 import smtplib
+import pandas as pd
+from openpyxl import load_workbook
+from openpyxl.styles import Font, PatternFill, Alignment
 
 
 # Authentication
@@ -108,24 +111,99 @@ def create_excel(select_row):
         Iterem la llista i anem posant la informació on toca
     '''
     try:
-        # Crear arxiu nou
-        archivo = f"{main_dir_docs}/comandes_pendents.csv"
-        csv = open(archivo, "w")
-        # Inserir linies al csv
-        csv.write('Peticionari;Codi proveidor;Descripció;Codi SAP;Codi LOG;Unitats;Data creació;Usuari;CECO\n')
-        for command, lot in select_row:
-            linia_csv = str(command.user_create) + ';'
-            linia_csv += str(lot.catalog_reference) + ';'
-            linia_csv += str(lot.description) + ';'
-            linia_csv += str(lot.code_SAP) + ';'
-            linia_csv += str(lot.code_LOG) + ';'
-            linia_csv += str(command.units) + ';'
-            linia_csv += str(command.date_create) + ';'
-            linia_csv += str(command.user_create) + ';'
-            linia_csv += str(command.cost_center) + ';'
-            linia_csv += '\n'
-            csv.write(linia_csv)
-        csv.close()
+        # # Crear arxiu nou
+        # archivo = f"{main_dir_docs}/comandes_pendents.csv"
+        # csv = open(archivo, "w")
+        # # Inserir linies al csv
+        # csv.write('Peticionari;Codi proveidor;Descripció;Codi SAP;Codi LOG;Unitats;Data creació;Usuari;CECO\n')
+        # for command, lot in select_row:
+        #     linia_csv = str(command.user_create) + ';'
+        #     linia_csv += str(lot.catalog_reference) + ';'
+        #     linia_csv += str(lot.description) + ';'
+        #     linia_csv += str(lot.code_SAP) + ';'
+        #     linia_csv += str(lot.code_LOG) + ';'
+        #     linia_csv += str(command.units) + ';'
+        #     linia_csv += str(command.date_create) + ';'
+        #     linia_csv += str(command.user_create) + ';'
+        #     linia_csv += str(command.cost_center) + ';'
+        #     linia_csv += '\n'
+        #     csv.write(linia_csv)
+        # csv.close()
+
+        def create_dataframe(select_row):
+            # Crear un DataFrame con los datos
+            data = {
+                'Peticionari': [],
+                'Codi proveidor': [],
+                'Descripció': [],
+                'Codi SAP': [],
+                'Codi LOG': [],
+                'Unitats': [],
+                'Data creació': [],
+                'Usuari': [],
+                'CECO': [],
+            }
+
+            for command, lot in select_row:
+                data['Peticionari'].append(command.user_create)
+                data['Codi proveidor'].append(lot.catalog_reference)
+                data['Descripció'].append(lot.description)
+                data['Codi SAP'].append(lot.code_SAP)
+                data['Codi LOG'].append(lot.code_LOG)
+                data['Unitats'].append(command.units)
+                data['Data creació'].append(command.date_create)
+                data['Usuari'].append(command.user_create)
+                data['CECO'].append(command.cost_center)
+
+            return pd.DataFrame(data)
+
+        # Crear DataFrames per l'any actual
+        df_current_year = create_dataframe(select_row)
+
+        # Guardar el DataFrame en un archivo Excel
+        path = f"{main_dir_docs}/comandes_pendents.xlsx"
+
+        with pd.ExcelWriter(path, engine='openpyxl') as writer:
+            df_current_year.to_excel(writer, sheet_name="Comandes_pendents", index=False)
+
+        ##############################################################################
+        # ########################## ESTILS FULLS ####################################
+        ##############################################################################
+
+        # Ajustar automáticamente el ancho de las columnas
+        wb = load_workbook(path)
+        ws = wb.active
+
+        # --- Aplicar estilos al encabezado ---
+        header_fill = PatternFill(start_color="FFFF00", end_color="FFFF00", fill_type="solid")  # Fondo amarillo
+        header_font = Font(size=13, bold=True)  # Letra tamaño 13 y en negrita
+        for cell in ws[1]:  # Primera fila (encabezado)
+            cell.fill = header_fill
+            cell.font = header_font
+
+        # --- Ajustar el tamaño de las columnas automáticamente ---
+        for col in ws.columns:
+            max_length = 0
+            col_letter = col[0].column_letter  # Obtener la letra de la columna
+            for cell in col:
+                try:
+                    if cell.value:
+                        max_length = max(max_length, len(str(cell.value)))
+                except Exception:
+                    pass
+            ws.column_dimensions[col_letter].width = max_length + 2  # Ajustar ancho
+
+        ws.column_dimensions['I'].width = 7  # Ajustar ancho
+        ws.column_dimensions['D'].width = 11  # Ajustar ancho
+        ws.column_dimensions['E'].width = 11  # Ajustar ancho
+
+        # --- Ajustar altura de todas las filas (margen superior e inferior) ---
+        for row in ws.iter_rows():
+            ws.row_dimensions[row[0].row].height = 19  # Ajustar altura de fila
+            for cell in row:
+                cell.alignment = Alignment(vertical="center", horizontal="left")  # Alineación vertical centrada
+
+        wb.save(path)  # Guardar cambios
         return True
     except Exception:
         return False

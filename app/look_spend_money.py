@@ -8,6 +8,8 @@ from werkzeug.utils import secure_filename
 import os
 import pandas as pd
 import re
+from openpyxl import load_workbook
+from openpyxl.styles import Font, PatternFill, Alignment
 
 
 @app.route('/look_spend_money', methods=['POST'])
@@ -231,6 +233,41 @@ def download_template_price():
         # Guardar el DataFrame en un archivo Excel
         path = f"{main_dir_docs}/plantillas/preus_articles.xlsx"
         df.to_excel(path, index=False)
+
+        # Ajustar el tamaño de las columnas automáticamente
+        wb = load_workbook(path)  # Cargar el archivo Excel
+        ws = wb.active  # Obtener la hoja activa
+
+        # --- Aplicar estilos al encabezado ---
+        header_fill = PatternFill(start_color="FFFF00", end_color="FFFF00", fill_type="solid")  # Fondo amarillo
+        header_font = Font(size=13, bold=True)  # Letra tamaño 13 y en negrita
+        for cell in ws[1]:  # Primera fila (encabezado)
+            cell.fill = header_fill
+            cell.font = header_font
+
+        # --- Ajustar el tamaño de las columnas automáticamente ---
+        for col in ws.columns:
+            max_length = 0
+            col_letter = col[0].column_letter  # Obtener la letra de la columna
+            for cell in col:
+                try:
+                    if cell.value:
+                        max_length = max(max_length, len(str(cell.value)))
+                except Exception:
+                    pass
+            ws.column_dimensions[col_letter].width = max_length + 2  # Ajustar ancho
+
+        ws.column_dimensions['B'].width = 24  # Ajustar ancho
+        ws.column_dimensions['F'].width = 13  # Ajustar ancho
+        ws.column_dimensions['G'].width = 17  # Ajustar ancho
+
+        # --- Ajustar altura de todas las filas (margen superior e inferior) ---
+        for row in ws.iter_rows():
+            ws.row_dimensions[row[0].row].height = 19  # Ajustar altura de fila
+            for cell in row:
+                cell.alignment = Alignment(vertical="center", horizontal="left")  # Alineación vertical centrada
+
+        wb.save(path)  # Guardar cambios
         return send_file(path, as_attachment=True)
     except Exception:
         flash("Error inesperat, contacteu amb un administrador", "danger")
