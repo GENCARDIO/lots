@@ -2,12 +2,13 @@ from flask import request, session, render_template, flash, send_file
 from app import app
 from app.utils import instant_date, requires_auth, create_excel, save_log, to_dict, year_now, list_desciption_lots, list_cost_center
 from app.models import session1, Lots, Commands, Cost_center, Stock_lots
-from sqlalchemy import func
+from sqlalchemy import func, or_
 from config import main_dir_docs
 import json
 from datetime import datetime
 import pandas as pd
 from openpyxl import load_workbook
+from openpyxl.styles import Font, PatternFill, Alignment
 
 
 @app.route('/search_add_command', methods=['POST'])
@@ -223,8 +224,12 @@ def command_success():
         :return: Un missatge que indica si l'operació ha estat exitosa i, en cas afirmatiu, la info en format JSON.
         :rtype: str
     '''
+    year = year_now()
+    year_a = year - 1
+
     select_command = session1.query(Commands, Lots).join(Lots, Commands.id_lot == Lots.key)\
                                                    .filter(Commands.user_close != '')\
+                                                   .filter(or_(Commands.date_complete.like(f'%-{year}'), Commands.date_complete.like(f'%-{year_a}')))\
                                                    .filter(Commands.received == '1').all()
     if not select_command:
         return "False_//_No s'ha trobat cap comanda tramitada a l'historic"
@@ -270,7 +275,7 @@ def download_excel():
         flash("Error, no s'ha pogut crear el document", "danger")
         return render_template('home.html')
     else:
-        path = f"{main_dir_docs}/comandes_pendents.csv"
+        path = f"{main_dir_docs}/comandes_pendents.xlsx"
         return send_file(path, as_attachment=True)
 
 
@@ -459,14 +464,14 @@ def download_order_success():
                                                             .filter(Commands.received == '1').all()
 
         select_command_last_year = session1.query(Commands, Lots).join(Lots, Commands.id_lot == Lots.key)\
-                                                                .filter(Commands.user_close != '')\
-                                                                .filter(Commands.date_complete.like(f'%-{last_year}'))\
-                                                                .filter(Commands.received == '1').all()
+                                                                 .filter(Commands.user_close != '')\
+                                                                 .filter(Commands.date_complete.like(f'%-{last_year}'))\
+                                                                 .filter(Commands.received == '1').all()
 
         if not select_command_year and not select_command_last_year:
             flash("Error, No s'han trobat comandes a la BD", "danger")
             return render_template('home.html', list_desciption_lots=list_desciption_lots(),
-                                    list_cost_center=list_cost_center())
+                                   list_cost_center=list_cost_center())
 
         def create_dataframe(select_command):
             # Crear un DataFrame con los datos
@@ -483,10 +488,25 @@ def download_order_success():
                 'Usuari creació': [],
                 'Usuari tramitació': [],
                 'CECO': [],
-                'Preu ICS': []
+                'Preu ICS': [],
+                'Incidencies': [],
+                'Proveïdor': [],
+                'Id comanda ext.': []
             }
 
             for command, lot in select_command:
+                # Ejecutar la consulta y obtener los resultados
+                select_command_number = session1.query(Stock_lots.comand_number)\
+                    .filter(Stock_lots.reception_date == command.date_complete)\
+                    .filter(Stock_lots.id_lot == command.id_lot)\
+                    .distinct()  # Asegura que los valores sean únicos
+
+                # Extraer los valores únicos de command_number
+                command_numbers = [row.comand_number for row in select_command_number]
+
+                # Unir los valores en un solo string separados por //
+                command_numbers_str = " // ".join(command_numbers)
+
                 data['Id'].append(command.id)
                 data['Id lot'].append(command.id_lot)
                 data['Referencia Cataleg'].append(lot.catalog_reference)
@@ -500,6 +520,9 @@ def download_order_success():
                 data['Usuari tramitació'].append(command.user_close)
                 data['CECO'].append(command.cost_center)
                 data['Preu ICS'].append(lot.import_unit_ics)
+                data['Incidencies'].append(command.incidence_number)
+                data['Proveïdor'].append(lot.supplier)
+                data['Id comanda ext.'].append(command_numbers_str)
 
             return pd.DataFrame(data)
 
@@ -513,6 +536,82 @@ def download_order_success():
         with pd.ExcelWriter(path, engine='openpyxl') as writer:
             df_current_year.to_excel(writer, sheet_name=f"Comandes_{year}", index=False)
             df_last_year.to_excel(writer, sheet_name=f"Comandes_{last_year}", index=False)
+
+        ##############################################################################
+        # ########################## ESTILS FULLS 1 ##################################
+        ##############################################################################
+
+        # Ajustar el tamaño de las columnas automáticamente
+        wb = load_workbook(path)  # Cargar el archivo Excel
+        ws = wb.active  # Obtener la hoja activa
+
+        # --- Aplicar estilos al encabezado ---
+        header_fill = PatternFill(start_color="FFFF00", end_color="FFFF00", fill_type="solid")  # Fondo amarillo
+        header_font = Font(size=13, bold=True)  # Letra tamaño 13 y en negrita
+        for cell in ws[1]:  # Primera fila (encabezado)
+            cell.fill = header_fill
+            cell.font = header_font
+
+        # --- Ajustar el tamaño de las columnas automáticamente ---
+        for col in ws.columns:
+            max_length = 0
+            col_letter = col[0].column_letter  # Obtener la letra de la columna
+            for cell in col:
+                try:
+                    if cell.value:
+                        max_length = max(max_length, len(str(cell.value)))
+                except Exception:
+                    pass
+            ws.column_dimensions[col_letter].width = max_length + 2  # Ajustar ancho
+
+        ws.column_dimensions['C'].width = 21  # Ajustar ancho
+        ws.column_dimensions['E'].width = 13  # Ajustar ancho
+        ws.column_dimensions['D'].width = 80  # Ajustar ancho
+
+        # --- Ajustar altura de todas las filas (margen superior e inferior) ---
+        for row in ws.iter_rows():
+            ws.row_dimensions[row[0].row].height = 19  # Ajustar altura de fila
+            for cell in row:
+                cell.alignment = Alignment(vertical="center", horizontal="left")  # Alineación vertical centrada
+
+        wb.save(path)  # Guardar cambios
+
+        ##############################################################################
+        # ########################## ESTILS FULLS 2 ##################################
+        ##############################################################################
+
+        ws2 = wb.worksheets[1]
+
+        # --- Aplicar estilos al encabezado ---
+        header_fill = PatternFill(start_color="FFFF00", end_color="FFFF00", fill_type="solid")  # Fondo amarillo
+        header_font = Font(size=13, bold=True)  # Letra tamaño 13 y en negrita
+        for cell in ws2[1]:  # Primera fila (encabezado)
+            cell.fill = header_fill
+            cell.font = header_font
+
+        # --- Ajustar el tamaño de las columnas automáticamente ---
+        for col in ws2.columns:
+            max_length = 0
+            col_letter = col[0].column_letter  # Obtener la letra de la columna
+            for cell in col:
+                try:
+                    if cell.value:
+                        max_length = max(max_length, len(str(cell.value)))
+                except Exception:
+                    pass
+            ws2.column_dimensions[col_letter].width = max_length + 2  # Ajustar ancho
+
+        ws2.column_dimensions['C'].width = 21  # Ajustar ancho
+        ws2.column_dimensions['E'].width = 13  # Ajustar ancho
+        ws2.column_dimensions['D'].width = 80  # Ajustar ancho
+
+        # --- Ajustar altura de todas las filas (margen superior e inferior) ---
+        for row in ws2.iter_rows():
+            ws2.row_dimensions[row[0].row].height = 19  # Ajustar altura de fila
+            for cell in row:
+                cell.alignment = Alignment(vertical="center", horizontal="left")  # Alineación vertical centrada
+
+        wb.save(path)  # Guardar cambios
 
         return send_file(path, as_attachment=True)
     except Exception:
@@ -559,7 +658,8 @@ def download_follow_commands():
                 'Usuari tramitació': [],
                 'CECO': [],
                 'Preu ICS': [],
-                'N. Incidència': []
+                'N. Incidència': [],
+                'Gestió local': []
             }
 
             for command, lot in select_command:
@@ -577,6 +677,7 @@ def download_follow_commands():
                 data['CECO'].append(command.cost_center)
                 data['Preu ICS'].append(lot.import_unit_ics)
                 data['N. Incidència'].append(command.incidence_number)
+                data['Gestió local'].append(lot.local_management)
 
             return pd.DataFrame(data)
 
@@ -589,15 +690,44 @@ def download_follow_commands():
         with pd.ExcelWriter(path, engine='openpyxl') as writer:
             df_current_year.to_excel(writer, sheet_name="Seguiment_comanes", index=False)
 
+        ##############################################################################
+        # ########################## ESTILS FULLS ####################################
+        ##############################################################################
+
         # Ajustar automáticamente el ancho de las columnas
         wb = load_workbook(path)
         ws = wb.active
 
-        for col in ws.columns:
-            max_length = max((len(str(cell.value)) if cell.value else 0) for cell in col)
-            ws.column_dimensions[col[0].column_letter].width = max_length + 2  # Ajuste extra
+        # --- Aplicar estilos al encabezado ---
+        header_fill = PatternFill(start_color="FFFF00", end_color="FFFF00", fill_type="solid")  # Fondo amarillo
+        header_font = Font(size=13, bold=True)  # Letra tamaño 13 y en negrita
+        for cell in ws[1]:  # Primera fila (encabezado)
+            cell.fill = header_fill
+            cell.font = header_font
 
-        wb.save(path)
+        # --- Ajustar el tamaño de las columnas automáticamente ---
+        for col in ws.columns:
+            max_length = 0
+            col_letter = col[0].column_letter  # Obtener la letra de la columna
+            for cell in col:
+                try:
+                    if cell.value:
+                        max_length = max(max_length, len(str(cell.value)))
+                except Exception:
+                    pass
+            ws.column_dimensions[col_letter].width = max_length + 2  # Ajustar ancho
+
+        ws.column_dimensions['C'].width = 21  # Ajustar ancho
+        ws.column_dimensions['E'].width = 13  # Ajustar ancho
+        ws.column_dimensions['D'].width = 80  # Ajustar ancho
+
+        # --- Ajustar altura de todas las filas (margen superior e inferior) ---
+        for row in ws.iter_rows():
+            ws.row_dimensions[row[0].row].height = 19  # Ajustar altura de fila
+            for cell in row:
+                cell.alignment = Alignment(vertical="center", horizontal="left")  # Alineación vertical centrada
+
+        wb.save(path)  # Guardar cambios
 
         return send_file(path, as_attachment=True)
     except Exception:
