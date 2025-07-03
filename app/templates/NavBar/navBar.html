@@ -354,18 +354,19 @@
         <div class="modal-body">
             <div class="row">                                   
                 <div class="col-lg-12 col-md-12 col-sm-12">       
-                    <table id="table_search_all_year" class="display" style="width: 100%;">
+                    <table id="table_search_all_year" class="display" style="width: 100%; font-size: 0.8rem;"">
                         <thead>
                             <tr id="thcolor">
                                 <th style="min-width: 250px;">Descripció</th>
                                 <th>Proveïdor</th>
-                                <th>Ref. proveïdor</th>
-                                <th>Unitats Entr.</th>
-                                <th>Data arribada</th>
-                                <th>Data caducitat</th>
-                                <th>Data obertura</th>
-                                <th>Data tancament</th>
-                                <th>Num. Comanda</th>
+                                <th>Ref.proveïdor</th>
+                                <th>Unitats</th>
+                                <th>Lot</th>
+                                <th>Arribada</th>
+                                <th>Caducitat</th>
+                                <th>Obertura</th>
+                                <th>Tancament</th>
+                                <th>Num.Comanda</th>
                                 <th>CECO</th>
                                 <th>Preu</th>
                             </tr>
@@ -1049,10 +1050,11 @@
                             '<div class="text-center">' + item['manufacturer'] + '</div>',
                             '<div class="text-center">' + item['catalog_reference'] + '</div>',
                             '<div class="text-center">' + item['units_lot'] + '</div>',
+                            '<div class="text-center">' + item['internal_lot'] + '</div>',
                             '<div class="text-center">' + item['reception_date'] + '</div>',
                             '<div class="text-center">' + item['date_expiry'] + '</div>',
-                            '<div class="text-center">' + item['date_open'] + '</div>',
-                            '<div class="text-center">' + item['date_close'] + '</div>',
+                            '<div class="text-center">' + (item['date_open'] || '') + '</div>',
+                            '<div class="text-center">' + (item['date_close'] || '') + '</div>',
                             '<div class="text-center">' + item['comand_number'] + '</div>',
                             '<div class="text-center">' + item['cost_center_stock'] + '</div>',
                             '<div class="text-center">' + item['import_unit_ics'] + '</div>',
