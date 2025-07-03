@@ -2,7 +2,7 @@
 import os
 
 main_dir = os.path.dirname(os.path.abspath(__file__))
-ip_address = 'http://172.16.82.47'
+ip_address = 'http://172.16.82.46'
 main_dir = f'{main_dir}_db'
 main_dir_docs = f"{main_dir}/docs"
 

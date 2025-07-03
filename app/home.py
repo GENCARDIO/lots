@@ -248,25 +248,65 @@ def search_all_year():
         if search_data_code == '':
             return 'False_//_Es codi no pot estar buit.'
         else:
-            select_lots = session1.query(Stock_lots).filter(and_(Stock_lots.cost_center_stock == search_data_code,
-                                                                 or_(*[Stock_lots.reception_date.like(f'%{year}%') for year in list_year]))).all()
+            # select_lots = session1.query(Stock_lots).filter(and_(Stock_lots.cost_center_stock == search_data_code,
+            #                                                      or_(*[Stock_lots.reception_date.like(f'%{year}%') for year in list_year]))).all()
+            # if not select_lots:
+            #     select_lots = session1.query(Stock_lots).filter(and_(Stock_lots.catalog_reference == search_data_code,
+            #                                                          or_(*[Stock_lots.reception_date.like(f'%{year}%') for year in list_year]))).all()
+            # if not select_lots:
+            #     select_lots = session1.query(Stock_lots).filter(and_(Stock_lots.code_SAP == search_data_code,
+            #                                                          or_(*[Stock_lots.reception_date.like(f'%{year}%') for year in list_year]))).all()
+            # if not select_lots:
+            #     search_data_code = search_data_code.replace('/', '-')
+            #     select_lots = session1.query(Stock_lots).filter(Stock_lots.reception_date == search_data_code).all()
+
+            select_lots = session1.query(Stock_lots, Lot_consumptions).\
+                join(Lot_consumptions, Lot_consumptions.id_lot == Stock_lots.id).\
+                filter(
+                    and_(
+                        Stock_lots.cost_center_stock == search_data_code,
+                        or_(*[Stock_lots.reception_date.like(f'%{year}%') for year in list_year])
+                    )
+                ).all()
+
             if not select_lots:
-                select_lots = session1.query(Stock_lots).filter(and_(Stock_lots.catalog_reference == search_data_code,
-                                                                     or_(*[Stock_lots.reception_date.like(f'%{year}%') for year in list_year]))).all()
+                select_lots = session1.query(Stock_lots, Lot_consumptions).\
+                    join(Lot_consumptions, Lot_consumptions.id_lot == Stock_lots.id).\
+                    filter(
+                        and_(
+                            Stock_lots.catalog_reference == search_data_code,
+                            or_(*[Stock_lots.reception_date.like(f'%{year}%') for year in list_year])
+                        )
+                    ).all()
+
             if not select_lots:
-                select_lots = session1.query(Stock_lots).filter(and_(Stock_lots.code_SAP == search_data_code,
-                                                                     or_(*[Stock_lots.reception_date.like(f'%{year}%') for year in list_year]))).all()
+                select_lots = session1.query(Stock_lots, Lot_consumptions).\
+                    join(Lot_consumptions, Lot_consumptions.id_lot == Stock_lots.id).\
+                    filter(
+                        and_(
+                            Stock_lots.code_SAP == search_data_code,
+                            or_(*[Stock_lots.reception_date.like(f'%{year}%') for year in list_year])
+                        )
+                    ).all()
+
             if not select_lots:
                 search_data_code = search_data_code.replace('/', '-')
-                select_lots = session1.query(Stock_lots).filter(Stock_lots.reception_date == search_data_code).all()
+                select_lots = session1.query(Stock_lots, Lot_consumptions).\
+                    join(Lot_consumptions, Lot_consumptions.id_lot == Stock_lots.id).\
+                    filter(Stock_lots.reception_date == search_data_code).all()
 
         if not select_lots:
             return f"False_//_No s'ha trobat stock amb el codi {search_data_code}"
         else:
-            list_info_stock_aux = [to_dict(lot) for lot in select_lots]
+            list_info_stock_aux = [
+                {
+                    **to_dict(stock),
+                    **to_dict(consumption)
+                } for stock, consumption in select_lots
+            ]
             list_info_stock = json.dumps(list_info_stock_aux)
     except Exception:
-        return "False_//_Error, no s'ha pout realitzr la cerca"
+        return "False_//_Error, no s'ha pout realitzar la cerca"
 
     return f'True_//_{list_info_stock}'
 
