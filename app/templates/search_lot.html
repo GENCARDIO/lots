@@ -347,6 +347,49 @@
             xhr.send(form_data)
         }
 
+
+        function create_dic_value_excel(){
+            var table = $('#example').DataTable(); // DataTable ja inicialitzada
+            var allData = []; // Llista on guardarem tots els diccionaris
+
+            var pageCount = table.page.info().pages; // Nombre total de pàgines
+
+            // Recorrem cada pàgina
+            for (var p = 0; p < pageCount; p++) {
+                table.page(p).draw(false); // Canviem a la pàgina p sense redibuixar tota la taula
+
+                table.rows({ page: 'current' }).every(function (rowIdx, tableLoop, rowLoop) {
+                    var fila = this.node(); // <tr> actual
+                    var celdas = $(fila).find('td'); // Totes les <td> de la fila
+
+                    // Comprovem la cel·la 9 (índex 9) si conté el botó "Pujar"
+                    var cell8 = $(celdas[8]);
+                    var buttonText = cell8.find('button:contains("Pujar")').text().trim();
+
+                    if (buttonText === "Pujar") {
+                        // Si és "Pujar", guardem la fila
+                        var data = {};
+                        data['referencia_cataleg'] = $(celdas[10]).text().trim();
+                        data['descripcio'] = $(celdas[11]).text().trim();
+                        data['codi_subreferencia'] = $(celdas[12]).text().trim();
+                        data['descripcio_subref'] = $(celdas[13]).text().trim();
+                        data['lot'] = $(celdas[2]).text().trim();
+                        data['lot_intern'] = $(celdas[3]).text().trim();
+                        data['data_recepcio'] = $(celdas[4]).text().trim();
+                        data['data_caducitat'] = $(celdas[5]).text().trim();
+                        data['observacions_inspeccio'] = $(celdas[9]).text().trim();
+
+                        allData.push(data);
+                    }
+                });
+            }
+
+            console.log(allData);
+            json_data = JSON.stringify(allData)
+            document.getElementById('list_json').value = json_data;
+            document.getElementById('download_cert').submit();
+        }
+
     </script>
     <style>
         #example thead input[type="text"] {
@@ -357,12 +400,27 @@
 <body>
     <br>
     {% include 'NavBar/navBar.html' %}
-    <div class="jumbotron bg-grey text-black jomboton-imgae shadow d-flex justify-content-between align-items-center" style="width: 90%; height: 80px; margin: 0 auto; padding-top: 0px; padding-bottom: 0px;">
-        <h1 class="mb-0">
-            <span style="color: darkblue;">( 3 ) </span> - 
-            <span>Gestió documental</span>
-        </h1>
-    </div>
+        <div class="jumbotron bg-grey text-black jomboton-imgae shadow d-flex justify-content-between align-items-center"
+            style="width: 90%; height: 80px; margin: 0 auto; padding-top: 0px; padding-bottom: 0px;">
+
+            <h1 class="mb-0">
+                <span style="color: darkblue;">( 3 ) </span> - 
+                <span>Gestió documental</span>
+            </h1>
+
+            <!-- Contenidor pels botons alineats a la dreta -->
+            <div class="d-flex align-items-center">
+                <form action="/search_all_lots" method="post" class="me-2 mb-0">
+                    <button type="submit" class="btn btn-outline-primary"><i class="fa-solid fa-eye-dropper"></i> {{ type_no_search }}</button>
+                    <input type="hidden" id="type_search" name="type_search" value="{{ type_no_search }}" />
+                </form>
+                <button type="button" class="btn btn-outline-success" onclick="create_dic_value_excel()"><i class="fa-solid fa-file-arrow-down"></i> Certificats pendents</button>
+                <form action="/download_certificate_pending" method="post" class="mb-0" id="download_cert">
+                    <!-- <button type="submit" class="btn btn-outline-success"><i class="fa-solid fa-file-arrow-down"></i> Certificats pendents</button> -->
+                    <input type="hidden" id="list_json" name="list_json" value="" />
+                </form>
+            </div>
+        </div>
     {% if show_second_bar %}
         <br>
         <div class="jumbotron bg-grey text-black jomboton-imgae shadow d-flex justify-content-between align-items-center" style="width: 90%; height: 90px; margin: 0 auto; padding-top: 0px; padding-bottom: 0px;">
@@ -426,6 +484,10 @@
                             <th style="min-width: 60px; max-width: 100px;">Albarà</th>
                             <th style="min-width: 70px; max-width: 120px;">Certificat</th>
                             <th>Observacions</th>
+                            <th style="display: none;">ref</th>
+                            <th style="display: none;">description</th>
+                            <th style="display: none;">subref</th>
+                            <th style="display: none;">description_subref</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -489,8 +551,11 @@
                                         <button type="button" class="btn btn-outline-danger btn-sm" onclick="open_delete_documents(`{{lot.group_insert}}`, `{{lot.id}}`)"><i class="fa-solid fa-trash"></i></button>
                                         </div>
                                 </td>
-
                                 <td>{{lot.observations_inspection}}</td>
+                                <td style="display: none;">{{lot.catalog_reference}}</td>
+                                <td style="display: none;">{{lot.description}}</td>
+                                <td style="display: none;">{{lot.id_reactive}}</td>
+                                <td style="display: none;">{{lot.description_subreference}}</td>
                             </tr>
                         {% endfor %}
                     </tbody>

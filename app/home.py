@@ -1,4 +1,4 @@
-from flask import render_template, request, redirect, session, flash, jsonify
+from flask import render_template, request, redirect, session, flash, jsonify, send_file
 from app import app
 from app.utils import requires_auth, list_desciption_lots, list_cost_center, to_dict
 from app.models import IP_HOME, session1, Lots, Stock_lots, Lot_consumptions
@@ -8,6 +8,9 @@ from sqlalchemy import and_, or_, outerjoin
 from datetime import datetime
 from config import main_dir
 import pandas as pd
+from openpyxl import load_workbook
+from openpyxl.styles import Font, PatternFill, Alignment
+from config import main_dir_docs
 
 
 # Pagina incial i visualització
@@ -330,14 +333,122 @@ def search_all_lots():
         :return: La informació dels lots trobada i un int que és l'id de lot.
         :rtype: render_template, object, int
     '''
-    select_lot = session1.query(Stock_lots).group_by(Stock_lots.lot, Stock_lots.reception_date).all()
+    type_search = request.form['type_search']
+
+    if type_search == 'Fungible':
+        type_no_search = 'Reactiu'
+    else:
+        type_no_search = 'Fungible'
+
+    select_lot = session1.query(Stock_lots).filter(Stock_lots.react_or_fungible == type_search).group_by(Stock_lots.lot, Stock_lots.reception_date).all()
 
     if not select_lot:
         flash(f"Error, no hem trobat informació a la BD", "warning")
         return render_template('home.html', list_desciption_lots=list_desciption_lots(),
                                list_cost_center=list_cost_center())
 
-    return render_template('search_lot.html', select_lot=select_lot, show_second_bar='')
+    return render_template('search_lot.html', select_lot=select_lot, show_second_bar='', type_no_search=type_no_search)
+
+
+@app.route('/download_certificate_pending', methods=['POST'])
+@requires_auth
+def download_certificate_pending():
+    '''
+    '''
+    # try:
+    # select_lot = session1.query(Stock_lots).filter(Stock_lots.react_or_fungible == 'Reactiu').group_by(Stock_lots.lot, Stock_lots.reception_date).all()
+    # if not select_lot:
+    #     flash("No s'ha trobat informació a la BD", "danger")
+    #     return render_template('home.html', list_desciption_lots=list_desciption_lots(),
+    #                             list_cost_center=list_cost_center())
+
+
+    list_json = request.form['list_json']
+                        
+
+    # Crear un DataFrame con los datos
+    data = {
+        'Referencia Cataleg': [],
+        'Descripció': [],
+        'Codi subreferencia': [],
+        'Descripció subref.': [],
+        'Lot': [],
+        'Lot intern': [],
+        'Data recepció': [],
+        'Data caducitat': [],
+        'Observacions inspecció': []
+    }
+
+    # for row in select_lot:
+    #     if row.certificate != '':
+    #         data['Referencia Cataleg'].append(row.catalog_reference)
+    #         data['Descripció'].append(row.description)
+    #         data['Codi subreferencia'].append(row.id_reactive)
+    #         data['Descripció subref.'].append(row.description_subreference)
+    #         data['Lot'].append(row.lot)
+    #         data['Lot intern'].append(row.internal_lot)
+    #         data['Data recepció'].append(str(row.reception_date))
+    #         data['Data caducitat'].append(str(row.date_expiry))
+    #         data['Observacions inspecció'].append(row.observations_inspection)
+
+    list_data = json.loads(list_json)
+
+    for row in list_data:
+        data['Referencia Cataleg'].append(row['referencia_cataleg'])
+        data['Descripció'].append(row['descripcio'])
+        data['Codi subreferencia'].append(row['codi_subreferencia'])
+        data['Descripció subref.'].append(row['descripcio_subref'])
+        data['Lot'].append(row['lot'])
+        data['Lot intern'].append(row['lot_intern'])
+        data['Data recepció'].append(row['data_recepcio'])
+        data['Data caducitat'].append(row['data_caducitat'])
+        data['Observacions inspecció'].append(row['observacions_inspeccio'])
+
+    df = pd.DataFrame(data)
+
+    # Guardar el DataFrame en un archivo Excel
+    path = f"{main_dir_docs}/plantillas/preus_articles.xlsx"
+    df.to_excel(path, index=False)
+
+    # Ajustar el tamaño de las columnas automáticamente
+    wb = load_workbook(path)  # Cargar el archivo Excel
+    ws = wb.active  # Obtener la hoja activa
+
+    # --- Aplicar estilos al encabezado ---
+    header_fill = PatternFill(start_color="FFFF00", end_color="FFFF00", fill_type="solid")  # Fondo amarillo
+    header_font = Font(size=13, bold=True)  # Letra tamaño 13 y en negrita
+    for cell in ws[1]:  # Primera fila (encabezado)
+        cell.fill = header_fill
+        cell.font = header_font
+
+    # --- Ajustar el tamaño de las columnas automáticamente ---
+    for col in ws.columns:
+        max_length = 0
+        col_letter = col[0].column_letter  # Obtener la letra de la columna
+        for cell in col:
+            try:
+                if cell.value:
+                    max_length = max(max_length, len(str(cell.value)))
+            except Exception:
+                pass
+        ws.column_dimensions[col_letter].width = max_length + 2  # Ajustar ancho
+
+    ws.column_dimensions['B'].width = 24  # Ajustar ancho
+    ws.column_dimensions['F'].width = 16  # Ajustar ancho
+    ws.column_dimensions['G'].width = 17  # Ajustar ancho
+
+    # --- Ajustar altura de todas las filas (margen superior e inferior) ---
+    for row in ws.iter_rows():
+        ws.row_dimensions[row[0].row].height = 19  # Ajustar altura de fila
+        for cell in row:
+            cell.alignment = Alignment(vertical="center", horizontal="left")  # Alineación vertical centrada
+
+    wb.save(path)  # Guardar cambios
+    return send_file(path, as_attachment=True)
+    # except Exception:
+    #     flash("Error inesperat, contacteu amb un administrador", "danger")
+    #     return render_template('home.html', list_desciption_lots=list_desciption_lots(),
+    #                            list_cost_center=list_cost_center())
 
 
 '''@app.route('/charge_excel')
