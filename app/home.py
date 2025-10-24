@@ -362,10 +362,8 @@ def download_certificate_pending():
     #     return render_template('home.html', list_desciption_lots=list_desciption_lots(),
     #                             list_cost_center=list_cost_center())
 
-
     list_json = request.form['list_json']
                         
-
     # Crear un DataFrame con los datos
     data = {
         'Referencia Cataleg': [],
@@ -376,7 +374,8 @@ def download_certificate_pending():
         'Lot intern': [],
         'Data recepció': [],
         'Data caducitat': [],
-        'Observacions inspecció': []
+        'Observacions inspecció': [],
+        'Proveidor': []
     }
 
     # for row in select_lot:
@@ -403,6 +402,7 @@ def download_certificate_pending():
         data['Data recepció'].append(row['data_recepcio'])
         data['Data caducitat'].append(row['data_caducitat'])
         data['Observacions inspecció'].append(row['observacions_inspeccio'])
+        data['Proveidor'].append(row['manufacturer'])
 
     df = pd.DataFrame(data)
 

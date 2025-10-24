@@ -349,43 +349,37 @@
 
 
         function create_dic_value_excel(){
-            var table = $('#example').DataTable(); // DataTable ja inicialitzada
-            var allData = []; // Llista on guardarem tots els diccionaris
+            var table = $('#example').DataTable();
+            var allData = [];
 
-            var pageCount = table.page.info().pages; // Nombre total de pàgines
+            // Recorrem totes les files de totes les pàgines
+            table.rows().every(function () {
+                var fila = this.node();
+                var celdas = $(fila).find('td');
 
-            // Recorrem cada pàgina
-            for (var p = 0; p < pageCount; p++) {
-                table.page(p).draw(false); // Canviem a la pàgina p sense redibuixar tota la taula
+                // Comprovem la cel·la 9 (índex 9)
+                var cell8 = $(celdas[8]);
+                var buttonText = cell8.find('button:contains("Pujar")').text().trim();
 
-                table.rows({ page: 'current' }).every(function (rowIdx, tableLoop, rowLoop) {
-                    var fila = this.node(); // <tr> actual
-                    var celdas = $(fila).find('td'); // Totes les <td> de la fila
+                if (buttonText === "Pujar") {
+                    var data = {};
+                    data['referencia_cataleg'] = $(celdas[10]).text().trim();
+                    data['descripcio'] = $(celdas[11]).text().trim();
+                    data['codi_subreferencia'] = $(celdas[12]).text().trim();
+                    data['descripcio_subref'] = $(celdas[13]).text().trim();
+                    data['lot'] = $(celdas[2]).text().trim();
+                    data['lot_intern'] = $(celdas[3]).text().trim();
+                    data['data_recepcio'] = $(celdas[4]).text().trim();
+                    data['data_caducitat'] = $(celdas[5]).text().trim();
+                    data['observacions_inspeccio'] = $(celdas[9]).text().trim();
+                    data['manufacturer'] = $(celdas[14]).text().trim();
 
-                    // Comprovem la cel·la 9 (índex 9) si conté el botó "Pujar"
-                    var cell8 = $(celdas[8]);
-                    var buttonText = cell8.find('button:contains("Pujar")').text().trim();
-
-                    if (buttonText === "Pujar") {
-                        // Si és "Pujar", guardem la fila
-                        var data = {};
-                        data['referencia_cataleg'] = $(celdas[10]).text().trim();
-                        data['descripcio'] = $(celdas[11]).text().trim();
-                        data['codi_subreferencia'] = $(celdas[12]).text().trim();
-                        data['descripcio_subref'] = $(celdas[13]).text().trim();
-                        data['lot'] = $(celdas[2]).text().trim();
-                        data['lot_intern'] = $(celdas[3]).text().trim();
-                        data['data_recepcio'] = $(celdas[4]).text().trim();
-                        data['data_caducitat'] = $(celdas[5]).text().trim();
-                        data['observacions_inspeccio'] = $(celdas[9]).text().trim();
-
-                        allData.push(data);
-                    }
-                });
-            }
+                    allData.push(data);
+                }
+            });
 
             console.log(allData);
-            json_data = JSON.stringify(allData)
+            json_data = JSON.stringify(allData);
             document.getElementById('list_json').value = json_data;
             document.getElementById('download_cert').submit();
         }
@@ -488,6 +482,7 @@
                             <th style="display: none;">description</th>
                             <th style="display: none;">subref</th>
                             <th style="display: none;">description_subref</th>
+                            <th style="display: none;">manufacturer</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -556,6 +551,7 @@
                                 <td style="display: none;">{{lot.description}}</td>
                                 <td style="display: none;">{{lot.id_reactive}}</td>
                                 <td style="display: none;">{{lot.description_subreference}}</td>
+                                <td style="display: none;">{{lot.manufacturer}}</td>
                             </tr>
                         {% endfor %}
                     </tbody>
