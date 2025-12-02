@@ -232,7 +232,7 @@ def command_success():
                                                    .filter(or_(Commands.date_complete.like(f'%-{year}'), Commands.date_complete.like(f'%-{year_a}')))\
                                                    .filter(Commands.received == '1').all()
     if not select_command:
-        return "False_//_No s'ha trobat cap comanda tramitada a l'historic"
+        return "False_//_No s'ha trobat cap comanda tramitada a l'històric"
 
     list_commands = []
     for command, lot in select_command:

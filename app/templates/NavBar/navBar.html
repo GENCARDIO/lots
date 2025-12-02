@@ -12,7 +12,7 @@
                 <a class="navbar btn mr-1" style="color:white;padding:5px;" onclick="open_modal('open_history_lots')"><b><i class="fa-solid fa-book"></i>&nbsp;Historic lots</a></b>
             </li> -->
             <li class="nav-item">
-                <a class="navbar btn mr-1" style="color:white;padding:5px;" onclick="open_modal('search_all_year')"><b><i class="fa-solid fa-database"></i>&nbsp;Stock</a></b>
+                <a class="navbar btn mr-1" style="color:white;padding:5px;" onclick="open_modal('search_all_year')"><b><i class="fa-solid fa-database"></i>&nbsp;Històric</a></b>
             </li>
             <li class="nav-item">
                 <a class="navbar btn mr-1" style="color:white;padding:5px;" onclick="look_spend_money()"><b><i class="fa-solid fa-dollar-sign"></i>&nbsp;Indicadors</a></b>
@@ -108,7 +108,7 @@
     <div class="modal-dialog modal-xl" tabindex="-1" role="document">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title" id="title"> Historic dels lots</h5>
+          <h5 class="modal-title" id="title"> Històric dels lots</h5>
           <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="close_modal('modal_history_lots')"><span aria-hidden="true">&times;</span></button>
         </div>
         <div class="modal-body">
@@ -348,7 +348,7 @@
     <div class="modal-dialog modal-xl" tabindex="-1" role="document">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title" id="title"> Dades stock lots</h5>
+          <h5 class="modal-title" id="title"> Historic Stock lots</h5>
           <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="close_modal('modal_seach_all_year')"><span aria-hidden="true">&times;</span></button>
         </div>
         <div class="modal-body">
@@ -369,6 +369,7 @@
                                 <th>Num.Comanda</th>
                                 <th>CECO</th>
                                 <th>Preu</th>
+                                <th>Tècnica</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -1031,21 +1032,22 @@
             var alert_type = "danger"
             if (xhr.status === 200) {
                 var message = ''
-                var response = xhr.responseText;
-                split_response = response.split('_//_')
-                close_modal('search_all_year')
-                if (response.includes('False')){
-                    message = split_response[1]
+                var response = JSON.parse(xhr.responseText);
+
+                close_modal('search_all_year');
+
+                if (!response.success) {
+                    message = (response.message || "No s'ha trobat informació");
                 } else {
-                    open_modal('modal_seach_all_year')
+                    // Si hi ha resultats
+                    open_modal('modal_seach_all_year');
+
                     var table = $('#table_search_all_year').DataTable();
                     table.page.len(10).draw();
                     table.clear().draw();
 
-                    var response_list = JSON.parse(split_response[1]);
-
-                    response_list.forEach(function(item) {
-                        var newRow = table.row.add([
+                    response.data.forEach(function (item) {
+                        table.row.add([
                             '<div class="text-center">' + item['description'] + '</div>',
                             '<div class="text-center">' + item['manufacturer'] + '</div>',
                             '<div class="text-center">' + item['catalog_reference'] + '</div>',
@@ -1058,14 +1060,12 @@
                             '<div class="text-center">' + item['comand_number'] + '</div>',
                             '<div class="text-center">' + item['cost_center_stock'] + '</div>',
                             '<div class="text-center">' + item['import_unit_ics'] + '</div>',
-                        ]).draw(true).node(); // Dibuja la tabla sin volver a ordenar ni filtrar
-
-                        // Asigna un ID a la fila
-                        newRow.id = item['id_sample'];
-
-                        // Inserta la nueva fila en la primera posición
-                        $(table.row(newRow).node()).insertBefore($('#table_search_all_year tbody tr:first'));
+                            '<div class="text-center">' + item['analytical_technique'] + '</div>',
+                        ]);
                     });
+
+                    // Un sol dibuix
+                    table.draw(false);
                 }
             }
             else { message = `Error, No s'ha pogut realitzar l'operació.` }
