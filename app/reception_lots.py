@@ -1,4 +1,4 @@
-from flask import request, session
+from flask import request, session, jsonify
 from app import app
 from app.utils import instant_date, requires_auth, save_log, send_mail
 from app.models import session1, Lots, Stock_lots, Commands
@@ -475,3 +475,25 @@ def add_stock_lot():
     session1.commit()
     send_mail(list_info_excel)
     return f'True_{message_command}'
+
+
+@app.route('/search_article_pending', methods=['POST'])
+@requires_auth
+def search_article_pending():
+    select_commands = session1.query(Commands, Lots).join(Lots, Commands.id_lot == Lots.key).filter(Commands.received == 0).all()
+
+    data = []
+
+    for command, lot in select_commands:
+        data.append({
+            "units": command.units,
+            "num_received": command.num_received,
+            "code_command": command.code_command,
+            "observations": command.observations,
+            "incidence_number": command.incidence_number or "",
+
+            "catalog_reference": lot.catalog_reference,
+            "description": lot.description,
+        })
+
+    return jsonify({"success": True, "data": data})
