@@ -234,19 +234,19 @@ def send_mail(list_info_excel):
         msg['Subject'] = subject
 
         if list_info_excel[0]['analytical_technique'] == 'NGS':
-            emails = ['monicacoll.girona.ics@gencat.cat', 'llopez@gencardio.com', 'mcorona.girona.ics@gencat.cat', 'msoriano@idibgi.org', 'mpinsach.girona.ics@gencat.cat', 'asimon.girona.ics@gencat.cat', 'nneto.girona.ics@gencat.cat', 'ferran.pico@gencardio.com']
+            emails = ['monicacoll.girona.ics@gencat.cat', 'llopez@gencardio.com', 'mcorona.girona.ics@gencat.cat', 'msoriano@idibgi.org', 'mpinsach.girona.ics@gencat.cat', 'asimon.girona.ics@gencat.cat', 'nneto.girona.ics@gencat.cat']
             msg["To"] = ', '.join(emails)
         elif list_info_excel[0]['analytical_technique'] == 'Genotipat':
-            emails = ['nneto.girona.ics@gencat.cat', 'mpuigmule.girona.ics@gencat.cat']
+            emails = ['nneto.girona.ics@gencat.cat', 'mpuigmule.girona.ics@gencat.cat', 'asimon.girona.ics@gencat.cat']
             msg["To"] = ', '.join(emails)
         elif list_info_excel[0]['analytical_technique'] == 'Sanger':
-            emails = ['ferran.pico@gencardio.com', 'aardila@idibgi.org', 'nneto.girona.ics@gencat.cat', 'abatchelli.girona.ics@gencat.cat']
+            emails = ['aardila@idibgi.org', 'nneto.girona.ics@gencat.cat', 'abatchelli.girona.ics@gencat.cat', 'mpuigmule.girona.ics@gencat.cat', 'asimon.girona.ics@gencat.cat']
             msg["To"] = ', '.join(emails)
         elif list_info_excel[0]['analytical_technique'] == 'Extracció':
-            emails = ['abatchelli.girona.ics@gencat.cat', 'mcorona.girona.ics@gencat.cat', 'nneto.girona.ics@gencat.cat', 'ferran.pico@gencardio.com']
+            emails = ['abatchelli.girona.ics@gencat.cat', 'mcorona.girona.ics@gencat.cat', 'nneto.girona.ics@gencat.cat', 'asimon.girona.ics@gencat.cat']
             msg["To"] = ', '.join(emails)
         elif list_info_excel[0]['analytical_technique'] == 'qPCR':
-            emails = ['mpuigmule.girona.ics@gencat.cat', 'nneto.girona.ics@gencat.cat', 'ferran.pico@gencardio.com', 'abatchelli.girona.ics@gencat.cat']
+            emails = ['mpuigmule.girona.ics@gencat.cat', 'nneto.girona.ics@gencat.cat', 'abatchelli.girona.ics@gencat.cat', 'asimon.girona.ics@gencat.cat']
             msg["To"] = ', '.join(emails)
         else:
             # emails = ['asimon.girona.ics@gencat.cat', 'asimon@gencardio.com']
