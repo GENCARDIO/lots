@@ -206,10 +206,13 @@ def delete_command():
             select_command.user_id_close = session['idClient']
             select_command.code_command = code_command
 
-            select_lot = session1.query(Lots.description).filter(Lots.id == select_command.id_lot).first()
+            select_lot = session1.query(Lots.description).filter(Lots.key == select_command.id_lot).first()
             lot_description = select_lot[0] if select_lot else ""
             text_body = f"L'informem que s'han comprat el producte {lot_description} que heu solicitat"
-            send_mail_generic(select_command.user_email, text_body, 'UDMMP | Tramtició de producte')
+            try:
+                send_mail_generic(select_command.user_email, text_body, 'UDMMP | Tramtició de producte')
+            except Exception:
+                print("No s'ha enviat el correu electronic")
     except Exception:
         session1.rollback()
         return 'False'

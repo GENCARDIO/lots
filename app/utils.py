@@ -373,7 +373,7 @@ def send_mail_generic(emails, text_body, text_header):
 
                     <p>Benvolgut/da,</p>
 
-                    <p>${text_body}</p>
+                    <p>{text_body}</p>
 
                     <p><i>Per a qualsevol dubte, podeu contactar-nos a udmmp.tic.girona.ics@gencat.cat, asimon.girona.ics@gencat.cat, aperezp.girona.ics@gencat.cat.</i></p>
 

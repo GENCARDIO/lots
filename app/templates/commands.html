@@ -140,27 +140,32 @@
                             table.row(row).remove().draw(false);
                         }
 
-                        savedData.forEach(function(rowData) {
-                            var table_2 = document.getElementById('example');
-                            for (var i = 0, row; row = table_2.rows[i]; i++) {
-                                // Obtener la celda 0 de la fila actual
-                                var cellText = row.cells[1].textContent || row.cells[1].innerText;
-                                var cecoText = row.cells[8].textContent || row.cells[8].innerText;
+                        
+                        try {
+                            savedData.forEach(function(rowData) {
+                                var table_2 = document.getElementById('example');
+                                for (var i = 0, row; row = table_2.rows[i]; i++) {
+                                    // Obtener la celda 0 de la fila actual
+                                    var cellText = row.cells[1].textContent || row.cells[1].innerText;
+                                    var cecoText = row.cells[8].textContent || row.cells[8].innerText;
 
-                                // Comparar el contenido de la celda con ref_prov
-                                if (cellText === rowData[0] && cecoText == rowData[1]) {
-                                    // Cambiar el color de fondo de la fila
-                                    row.style.backgroundColor = "rgb(221, 127, 127)"; // Cambia a cualquier color que prefieras
-                                    var row_id = row.id;
-                                    
-                                    var checkbox = document.getElementById(`${row_id}_box`);
-                                    checkbox.checked = false;
-                                    checkbox.disabled = true;
+                                    // Comparar el contenido de la celda con ref_prov
+                                    if (cellText === rowData[0] && cecoText == rowData[1]) {
+                                        // Cambiar el color de fondo de la fila
+                                        row.style.backgroundColor = "rgb(221, 127, 127)"; // Cambia a cualquier color que prefieras
+                                        var row_id = row.id;
+                                        
+                                        var checkbox = document.getElementById(`${row_id}_box`);
+                                        checkbox.checked = false;
+                                        checkbox.disabled = true;
 
-                                    document.getElementById(`${row_id}_btn_del`).disabled = true;
+                                        document.getElementById(`${row_id}_btn_del`).disabled = true;
+                                    }
                                 }
-                            }
-                        });
+                            });
+                        } catch {
+                            console.log("No hi ha dades a la taula o no s'ha pogut bloquejar")
+                        }
 
                         message = "Comanda tramitada correctament."
                         alert_type = 'success'
