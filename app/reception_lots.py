@@ -1,6 +1,6 @@
-from flask import request, session, jsonify
+from flask import request, session, jsonify, flash, render_template, send_file
 from app import app
-from app.utils import instant_date, requires_auth, save_log, send_mail
+from app.utils import instant_date, requires_auth, save_log, send_mail, list_desciption_lots, list_cost_center
 from app.models import session1, Lots, Stock_lots, Commands
 from sqlalchemy import func, Integer, and_
 from sqlalchemy.sql import cast
@@ -8,6 +8,7 @@ from werkzeug.utils import secure_filename
 import os
 import json
 from config import main_dir_docs
+from openpyxl import Workbook
 
 
 @app.route('/search_add_lot', methods=['POST'])
@@ -249,6 +250,59 @@ def add_stock_lot():
         filename_certificate = ''
         type_doc_certificate = ''
 
+    try:
+        files = request.files.getlist("file_state_product")
+        if not files or (len(files) == 1 and files[0].filename == ""):
+            raise ValueError("No files selected")
+
+        # Obtener el último número UNA sola vez
+        rows = (
+            session1.query(Stock_lots.state_product)
+            .filter(Stock_lots.state_product.isnot(None))
+            .filter(func.length(Stock_lots.state_product) > 0)
+            .all()
+        )
+
+        max_state_product = 0
+
+        for (value,) in rows:
+            for part in value.split(";"):
+                part = part.strip()
+                if part.isdigit():
+                    max_state_product = max(max_state_product, int(part))
+
+        next_number = max_state_product + 1 if max_state_product > 0 else 1
+
+        dest_dir = os.path.join(main_dir_docs, "estat_productes")
+        os.makedirs(dest_dir, exist_ok=True)
+
+        filename_list = []
+        type_list = []
+
+        for f in files:
+            original_name = secure_filename(f.filename)
+            if not original_name:
+                continue
+
+            _, ext = os.path.splitext(original_name)
+            if not ext:
+                continue
+
+            new_filename = f"{next_number}{ext.lower()}"
+            f.save(os.path.join(dest_dir, new_filename))
+
+            filename_list.append(str(next_number))
+            type_list.append(ext.lower())
+
+            next_number += 1
+
+        # 🔗 convertir a texto separado por ;
+        filename_state_product = ";".join(filename_list)
+        type_doc_state_product = ";".join(type_list)
+    except Exception:
+        filename_state_product = ""
+        type_doc_state_product = ""
+
     list_lots = json.loads(list_lots_json)
 
     # for llo in list_lots:
@@ -293,15 +347,15 @@ def add_stock_lot():
                 return 'False_reactive'
             type_log = 'insert add stock'
             dict_info_excel = {'catalog_reference': lots['catalog_reference'],
-                                'description': lots['description'],
-                                'description_subreference': lots['description_subreference'],
-                                'id_reactive': lots['id_reactive'],
-                                'lot': lots['lot'],
-                                'internal_lot_value': lots['internal_lot'],
-                                'reception_date': lots['reception_date'],
-                                'date_expiry': lots['date_expiry'],
-                                'analytical_technique': lots['analytical_technique'],
-                                'user_add_command': lots['user_add_command']}
+                               'description': lots['description'],
+                               'description_subreference': lots['description_subreference'],
+                               'id_reactive': lots['id_reactive'],
+                               'lot': lots['lot'],
+                               'internal_lot_value': lots['internal_lot'],
+                               'reception_date': lots['reception_date'],
+                               'date_expiry': lots['date_expiry'],
+                               'analytical_technique': lots['analytical_technique'],
+                               'user_add_command': lots['user_add_command']}
             list_info_excel.append(dict_info_excel)
         else:
             type_log = 'insert new stock'
@@ -410,19 +464,22 @@ def add_stock_lot():
                                         maximum_amount=lots['maximum_amount'],
                                         purchase_format_supplier=lots['purchase_format_supplier'],
                                         units_format_supplier=lots['units_format_supplier'],
-                                        pb_oligos=pb_oligos)
+                                        pb_oligos=pb_oligos,
+                                        labels_print=1,
+                                        state_product=filename_state_product,
+                                        type_doc_state_product=type_doc_state_product)
                 session1.add(insert_lot)
 
                 dict_info_excel = {'catalog_reference': lots['catalog_reference'],
-                                    'description': lots['description'],
-                                    'description_subreference': lots['description_subreference'],
-                                    'id_reactive': lots['id_reactive'],
-                                    'lot': lots['lot'],
-                                    'internal_lot_value': internal_lot_value,
-                                    'reception_date': lots['reception_date'],
-                                    'date_expiry': lots['date_expiry'],
-                                    'analytical_technique': lots['analytical_technique'],
-                                    'user_add_command': lots['user_add_command']}
+                                   'description': lots['description'],
+                                   'description_subreference': lots['description_subreference'],
+                                   'id_reactive': lots['id_reactive'],
+                                   'lot': lots['lot'],
+                                   'internal_lot_value': internal_lot_value,
+                                   'reception_date': lots['reception_date'],
+                                   'date_expiry': lots['date_expiry'],
+                                   'analytical_technique': lots['analytical_technique'],
+                                   'user_add_command': lots['user_add_command']}
                 list_info_excel.append(dict_info_excel)
 
         select_lot = session1.query(Stock_lots).order_by(Stock_lots.id.desc()).first()
@@ -473,7 +530,7 @@ def add_stock_lot():
         message_command = ''
 
     session1.commit()
-    send_mail(list_info_excel)
+    send_mail(list_info_excel, select_command.user_email)
     return f'True_{message_command}'
 
 
@@ -494,6 +551,65 @@ def search_article_pending():
 
             "catalog_reference": lot.catalog_reference,
             "description": lot.description,
+            "code_panel": lot.code_panel,
         })
 
     return jsonify({"success": True, "data": data})
+
+
+@app.route('/list_labels', methods=['POST'])
+@requires_auth
+def list_labels():
+    selelect_stock = session1.query(Stock_lots).filter(Stock_lots.labels_print == 1).all()
+
+    data = []
+
+    for lot in selelect_stock:
+        data.append({
+            "id": lot.id,
+            "internal_lot": lot.internal_lot,
+        })
+
+    return jsonify({"success": True, "data": data})
+
+
+@app.route('/create_excel_labels', methods=['POST'])
+@requires_auth
+def create_excel_labels():
+    """
+        Crea i descarrega un arxiu Excel amb etiquetes d'ADN o batch.
+
+        :return: Fitxer Excel o missatge d'error.
+        :rtype: Response
+    """
+    try:
+        list_labels_str = request.form.get('list_labels')
+        if not list_labels_str:
+            flash("Error, no s'ha pogut crear l'arxiu, les dades no han arribat", "danger")
+            return render_template('home.html', list_desciption_lots=list_desciption_lots(),
+                                   list_cost_center=list_cost_center())
+
+        list_labels = json.loads(list_labels_str)
+
+        # --- Creació de l’Excel ---
+        wb = Workbook()
+        sheet = wb.active
+        sheet.title = "Lots etiquetas"
+
+        start = 1
+        for lot in list_labels:
+            select_stock = session1.query(Stock_lots).filter(Stock_lots.id == lot).first()
+            if select_stock is not None:
+                select_stock.labels_print = 0
+            sheet.cell(row=start, column=1, value=select_stock.internal_lot)
+            start += 1
+        session1.commit()
+
+        path = f"{main_dir_docs}/ETIQUETAS_LOT_INTERN.xlsx"
+        wb.save(path)
+
+        return send_file(path, as_attachment=True)
+    except Exception:
+        flash("Error, no s'ha trobat el l'stock a la BD", "danger")
+        return render_template('home.html', list_desciption_lots=list_desciption_lots(),
+                                list_cost_center=list_cost_center())

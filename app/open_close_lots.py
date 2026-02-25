@@ -1,6 +1,6 @@
 from flask import render_template, request, flash, session
 from app import app
-from app.utils import requires_auth, list_desciption_lots, list_cost_center
+from app.utils import requires_auth, list_desciption_lots, list_cost_center, save_log, instant_date
 from app.models import session1, Stock_lots, Lot_consumptions
 from sqlalchemy import func, or_
 import json
@@ -251,11 +251,41 @@ def delete_wrong_lot():
         :rtype: json
     '''
     id_lot = request.form.get("id_lot")
+    type = request.form.get("type")
+
     try:
         select_lots = session1.query(Stock_lots).filter_by(id=id_lot).first()
         if not select_lots:
             return "False_//_No hem trobat el l'article."
+
+        date = instant_date()
+        dict_save_info = {'id_lot': select_lots.id,
+                        'type': 'edit_stock',
+                        'user': session['acronim'],
+                        'id_user': session['idClient'],
+                        'date': date}
+
+        info_change = {"field": 'wrong_lots', "old_info": select_lots.wrong_lots, "new_info": 1}
+        dict_save_info['info'] = json.dumps(info_change)
+        save_log(dict_save_info)
+
         select_lots.wrong_lots = 1
+
+        if type == 'close':
+            info_change1 = {"field": 'spent', "old_info": select_lots.spent, "new_info": 1}
+            info_change2 = {"field": 'observations_inspection', "old_info": select_lots.observations_inspection, "new_info": 'Mostra tancada directamente desde No conforme'}
+
+            select_lots.spent = 1
+            if select_lots.observations_inspection == '':
+                select_lots.observations_inspection = "Mostra tancada directamente desde No conforme"
+            else:
+                select_lots.observations_inspection += " - Mostra tancada directamente desde No conforme"
+
+            dict_save_info['info'] = json.dumps(info_change1)
+            save_log(dict_save_info)
+            dict_save_info['info'] = json.dumps(info_change2)
+            save_log(dict_save_info)
+
         session1.commit()
     except Exception:
         return "False_//_No s'ha pogut accedir a la informació del l'article."

@@ -209,7 +209,7 @@ def create_excel(select_row):
         return False
 
 
-def send_mail(list_info_excel):
+def send_mail(list_info_excel, email):
     '''
         1 - Cridem a create excel info reception pero que ens crei un excel
         2 - Preparem totes les dades del correu
@@ -232,26 +232,27 @@ def send_mail(list_info_excel):
         msg = MIMEMultipart()
         msg['From'] = email_sender
         msg['Subject'] = subject
+        msg['to'] = email
 
-        if list_info_excel[0]['analytical_technique'] == 'NGS':
-            emails = ['monicacoll.girona.ics@gencat.cat', 'llopez@gencardio.com', 'mcorona.girona.ics@gencat.cat', 'msoriano@idibgi.org', 'mpinsach.girona.ics@gencat.cat', 'asimon.girona.ics@gencat.cat', 'nneto.girona.ics@gencat.cat']
-            msg["To"] = ', '.join(emails)
-        elif list_info_excel[0]['analytical_technique'] == 'Genotipat':
-            emails = ['nneto.girona.ics@gencat.cat', 'mpuigmule.girona.ics@gencat.cat', 'asimon.girona.ics@gencat.cat']
-            msg["To"] = ', '.join(emails)
-        elif list_info_excel[0]['analytical_technique'] == 'Sanger':
-            emails = ['aardila@idibgi.org', 'nneto.girona.ics@gencat.cat', 'abatchelli.girona.ics@gencat.cat', 'mpuigmule.girona.ics@gencat.cat', 'asimon.girona.ics@gencat.cat']
-            msg["To"] = ', '.join(emails)
-        elif list_info_excel[0]['analytical_technique'] == 'Extracció':
-            emails = ['abatchelli.girona.ics@gencat.cat', 'mcorona.girona.ics@gencat.cat', 'nneto.girona.ics@gencat.cat', 'asimon.girona.ics@gencat.cat']
-            msg["To"] = ', '.join(emails)
-        elif list_info_excel[0]['analytical_technique'] == 'qPCR':
-            emails = ['mpuigmule.girona.ics@gencat.cat', 'nneto.girona.ics@gencat.cat', 'abatchelli.girona.ics@gencat.cat', 'asimon.girona.ics@gencat.cat']
-            msg["To"] = ', '.join(emails)
-        else:
-            # emails = ['asimon.girona.ics@gencat.cat', 'asimon@gencardio.com']
-            # msg["To"] = ', '.join(emails)
-            return
+        # if list_info_excel[0]['analytical_technique'] == 'NGS':
+        #     emails = ['monicacoll.girona.ics@gencat.cat', 'llopez@gencardio.com', 'mcorona.girona.ics@gencat.cat', 'msoriano@idibgi.org', 'mpinsach.girona.ics@gencat.cat', 'asimon.girona.ics@gencat.cat', 'nneto.girona.ics@gencat.cat']
+        #     msg["To"] = ', '.join(emails)
+        # elif list_info_excel[0]['analytical_technique'] == 'Genotipat':
+        #     emails = ['nneto.girona.ics@gencat.cat', 'mpuigmule.girona.ics@gencat.cat', 'asimon.girona.ics@gencat.cat']
+        #     msg["To"] = ', '.join(emails)
+        # elif list_info_excel[0]['analytical_technique'] == 'Sanger':
+        #     emails = ['aardila@idibgi.org', 'nneto.girona.ics@gencat.cat', 'abatchelli.girona.ics@gencat.cat', 'mpuigmule.girona.ics@gencat.cat', 'asimon.girona.ics@gencat.cat']
+        #     msg["To"] = ', '.join(emails)
+        # elif list_info_excel[0]['analytical_technique'] == 'Extracció':
+        #     emails = ['abatchelli.girona.ics@gencat.cat', 'mcorona.girona.ics@gencat.cat', 'nneto.girona.ics@gencat.cat', 'asimon.girona.ics@gencat.cat']
+        #     msg["To"] = ', '.join(emails)
+        # elif list_info_excel[0]['analytical_technique'] == 'qPCR':
+        #     emails = ['mpuigmule.girona.ics@gencat.cat', 'nneto.girona.ics@gencat.cat', 'abatchelli.girona.ics@gencat.cat', 'asimon.girona.ics@gencat.cat']
+        #     msg["To"] = ', '.join(emails)
+        # else:
+        #     # emails = ['asimon.girona.ics@gencat.cat', 'asimon@gencardio.com']
+        #     # msg["To"] = ', '.join(emails)
+        #     return
 
         # Adjuntar el contenido del mensaje en formato HTML
         html = f"""
@@ -328,6 +329,76 @@ def send_mail(list_info_excel):
         #     file_data = file.read()
         #     file_name = 'recepcio_stock.csv'
         # em.add_attachment(file_data, maintype='application', subtype='octet-stream', filename=file_name)
+
+        with smtplib.SMTP("172.16.2.137", 25) as smtp:
+            # smtp.sendmail(email_sender, emails, msg.as_string())
+            smtp.send_message(msg)
+    except Exception:
+        return
+    return
+
+
+def send_mail_generic(emails, text_body, text_header):
+    '''
+        1 - Cridem a create excel info reception pero que ens crei un excel
+        2 - Preparem totes les dades del correu
+        3 - Adjuntem l'archiu al correu
+        3 - Enviem el correu amb totes les dades requerides.
+
+        :param list list_info_excel: llista de diccionaris amb la informació requerida
+
+        :return: None
+        :rtype: None
+    '''
+    try:
+        subject = text_header
+        email_sender = "udmmp.girona.ics@gencat.cat"
+        image_path = f'{main_dir}/logo.png'
+
+        # Crear el mensaje multipart
+        msg = MIMEMultipart()
+        msg['From'] = email_sender
+        msg['Subject'] = subject
+        # Els emials han d'estar separats per una ,
+        msg["To"] = emails
+        
+        # emails = ['asimon.girona.ics@gencat.cat', 'asimon@gencardio.com']
+        # msg["To"] = ', '.join(emails)
+
+        # Adjuntar el contenido del mensaje en formato HTML
+        html = f"""
+            <html>
+                <body>
+                    <p>=-=-=- No respongueu a aquest missatge, és un correu només d'informació =-=-=-=</p>
+
+                    <p>Benvolgut/da,</p>
+
+                    <p>${text_body}</p>
+
+                    <p><i>Per a qualsevol dubte, podeu contactar-nos a udmmp.tic.girona.ics@gencat.cat, asimon.girona.ics@gencat.cat, aperezp.girona.ics@gencat.cat.</i></p>
+
+                    <p>Moltes gràcies.</p>
+
+                    <div style="text-align: left;">
+                        <img src="cid:image1" style="width:250px; height:auto; display:block; margin:0;">
+                    </div>
+
+                    <p>--</p>
+                    <p>UDMMP | Unitat de Diagnóstic Molecular i Medicina Personalitzada<br>
+                    Institut Català de la Salut | Generalitat de Catalunya<br>
+                    Hospital Santa Caterina. Parc Hospitalari Martí i Julià<br>
+                    C/Dr. Castany s/n | 17190 Salt | Tel. 972189023 | Ext. 9929</p>
+                </body>
+            </html>
+        """
+        msg.attach(MIMEText(html, 'html'))
+
+        # Adjuntar la imagen
+        with open(image_path, 'rb') as img:
+            mime_image = MIMEImage(img.read())
+            mime_image.add_header('Content-ID', '<image1>')
+            mime_image.add_header('Content-Disposition', 'inline', filename=image_path)
+            msg.attach(mime_image)
 
         with smtplib.SMTP("172.16.2.137", 25) as smtp:
             # smtp.sendmail(email_sender, emails, msg.as_string())
