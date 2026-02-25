@@ -297,37 +297,6 @@ def search_all_year():
     return jsonify({"success": True, "data": list_info_stock_aux})
 
 
-@app.route('/search_all_lots', methods=['POST'])
-@requires_auth
-def search_all_lots():
-    '''
-        1 - Recollim la informació de l'html
-        2 - Busquem a la BD amb la informació que ens han facilitat
-        2.1 - Si no es troba coincidència retornem un missatge d'error a l'html
-        2.2 - Si es troba coincidència retornarem el que hem trobat a l'html.
-
-        :param str search_code: Codi a buscar.
-
-        :return: La informació dels lots trobada i un int que és l'id de lot.
-        :rtype: render_template, object, int
-    '''
-    type_search = request.form['type_search']
-
-    if type_search == 'Fungible':
-        type_no_search = 'Reactiu'
-    else:
-        type_no_search = 'Fungible'
-
-    select_lot = session1.query(Stock_lots).filter(Stock_lots.react_or_fungible == type_search).group_by(Stock_lots.lot, Stock_lots.reception_date).all()
-
-    if not select_lot:
-        flash(f"Error, no hem trobat informació a la BD", "warning")
-        return render_template('home.html', list_desciption_lots=list_desciption_lots(),
-                               list_cost_center=list_cost_center())
-
-    return render_template('search_lot.html', select_lot=select_lot, show_second_bar='', type_no_search=type_no_search)
-
-
 @app.route('/download_certificate_pending', methods=['POST'])
 @requires_auth
 def download_certificate_pending():
@@ -427,6 +396,25 @@ def download_certificate_pending():
     #     flash("Error inesperat, contacteu amb un administrador", "danger")
     #     return render_template('home.html', list_desciption_lots=list_desciption_lots(),
     #                            list_cost_center=list_cost_center())
+
+
+@app.route("/info_description_lots")
+@requires_auth
+def info_description_lots():
+    lots = list_desciption_lots()
+
+    data = [
+        {
+            "catalog_reference": x.catalog_reference,
+            "description": x.description,
+            "analytical_technique": x.analytical_technique,
+            "id_reactive": x.id_reactive,
+            "description_subreference": x.description_subreference,
+            "code_panel": x.code_panel,
+        }
+        for x in lots
+    ]
+    return jsonify(data)
 
 
 '''@app.route('/charge_excel')

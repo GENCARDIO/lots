@@ -5,9 +5,11 @@ from app.models import session1, Lots, Stock_lots
 from sqlalchemy import func, cast, Integer
 from werkzeug.utils import secure_filename
 import os
+import io
 from config import main_dir_docs
 from docxtpl import DocxTemplate, R
 import subprocess
+import zipfile
 
 
 @app.route('/search_lots', methods=['POST'])
@@ -71,27 +73,95 @@ def search_lots():
                                list_cost_center=list_cost_center())
 
     return render_template('search_lot.html', select_lot=select_lot, lot=select_lot[0],
-                           list_desciption_lots=list_desciption_lots(), show_second_bar='True')
+                           list_desciption_lots=list_desciption_lots(), show_second_bar='True', type_no_search="Reactiu")
+
+
+@app.route('/search_all_lots', methods=['POST'])
+@requires_auth
+def search_all_lots():
+    '''
+        1 - Recollim la informació de l'html
+        2 - Busquem a la BD amb la informació que ens han facilitat
+        2.1 - Si no es troba coincidència retornem un missatge d'error a l'html
+        2.2 - Si es troba coincidència retornarem el que hem trobat a l'html.
+
+        :param str search_code: Codi a buscar.
+
+        :return: La informació dels lots trobada i un int que és l'id de lot.
+        :rtype: render_template, object, int
+    '''
+    type_search = request.form['type_search']
+
+    if type_search == 'Fungible':
+        type_no_search = 'Reactiu'
+    else:
+        type_no_search = 'Fungible'
+
+    select_lot = session1.query(Stock_lots).filter(Stock_lots.react_or_fungible == type_search).group_by(Stock_lots.lot, Stock_lots.reception_date).all()
+
+    if not select_lot:
+        flash(f"Error, no hem trobat informació a la BD", "warning")
+        return render_template('home.html', list_desciption_lots=list_desciption_lots(),
+                               list_cost_center=list_cost_center())
+
+    return render_template('search_lot.html', select_lot=select_lot, show_second_bar='', type_no_search=type_no_search)
 
 
 @app.route("/download_docs", methods=["POST"])
 @requires_auth
 def download_docs():
     """
-        1 - Recollim la informació
-        2 - Preparem la ruta on estan els documents
-        3 - Descarreguem el document i li formatem el nom.
+        Descarrega documents. Si el directori és `estat_productes`, genera un ZIP amb tots els documents.
 
-        :param str dir_name: Nom de la carpeta on hi ha el document.
-        :param str name_doc: Nom del document.
-
-        :return: Retorna l'arxiu que ha estat carregat previament
+        :return: Fitxer (individual) o ZIP amb múltiples fitxers.
         :rtype: archive
     """
     dir_name = request.form["dir_name"]
     name_doc = request.form["name_doc"]
 
-    path = f"{main_dir_docs}/{dir_name}/{name_doc}"
+    base_dir = os.path.join(main_dir_docs, dir_name)
+
+    # Cas multi-fitxer: estat_productes
+    if dir_name == "estat_productes":
+        # Esperem: "1;2;3_//_.pdf;.jpg;.png"
+        parts = name_doc.split("_//_")
+        if len(parts) != 2:
+            return "Format de name_doc incorrecte", 400
+
+        list_names = parts[0].split(";")
+        list_exts = parts[1].split(";")
+
+        if len(list_names) != len(list_exts):
+            return "Noms i extensions no coincideixen", 400
+
+        zip_buffer = io.BytesIO()
+
+        with zipfile.ZipFile(zip_buffer, "w", compression=zipfile.ZIP_DEFLATED) as zf:
+            for n, ext in zip(list_names, list_exts):
+                n = n.strip()
+                ext = ext.strip()
+
+                if not n or not ext:
+                    continue
+
+                filename = f"{n}{ext}"  # ext ja inclou el punt: ".pdf"
+                path = os.path.join(base_dir, filename)
+
+                if os.path.exists(path):
+                    # Nom dins del ZIP (el que veurà l’usuari)
+                    zf.write(path, arcname=filename)
+
+        zip_buffer.seek(0)
+
+        return send_file(
+            zip_buffer,
+            as_attachment=True,
+            download_name=f"{dir_name}_docs.zip",
+            mimetype="application/zip"
+        )
+
+    # Cas normal: 1 fitxer
+    path = os.path.join(base_dir, name_doc)
     return send_file(path, as_attachment=True, download_name=f"{dir_name}_{name_doc}")
 
 
@@ -113,43 +183,107 @@ def upload_docs():
         :return: Retorna True o False, si és True també enviem diverses dades que es necessiten.
         :rtype: json
     '''
+    print("incii python")
     dir_name = request.form.get("dir_name")
     group_insert = request.form.get("group_insert")
-
+    print(dir_name)
+    print(group_insert)
     if dir_name == 'certificate':
         select_lots = session1.query(Stock_lots).filter_by(id=group_insert).first()
         if select_lots is None:
             return 'False'
     else:
+        print("deveiaraadlkfjañdfklj")
         select_lots = session1.query(Stock_lots).filter_by(group_insert=group_insert).all()
         if not select_lots:
             return 'False'
+    print("fins aqui be")
+    # try:
+    # f = request.files["file"]
+    # filename = secure_filename(f.filename)
+    # split_dirname = filename.split(".")
 
-    try:
-        f = request.files["file"]
+    files = request.files.getlist("file")
+
+    if dir_name == 'delivery_note':
+        max_number_filename = session1.query(func.max(cast(Stock_lots.delivery_note, Integer))).scalar()
+        dirname = 'albarans'
+        f = files[0]
         filename = secure_filename(f.filename)
         split_dirname = filename.split(".")
+    elif dir_name == 'certificate':
+        max_number_filename = session1.query(func.max(cast(Stock_lots.certificate, Integer))).scalar()
+        dirname = 'certificats'
+        f = files[0]
+        filename = secure_filename(f.filename)
+        split_dirname = filename.split(".")
+    elif dir_name == 'state_product':
+        # Obtener el último número UNA sola vez
+        rows = (
+            session1.query(Stock_lots.state_product)
+            .filter(Stock_lots.state_product.isnot(None))
+            .filter(func.length(Stock_lots.state_product) > 0)
+            .all()
+        )
 
-        if dir_name == 'delivery_note':
-            max_number_filename = session1.query(func.max(cast(Stock_lots.delivery_note, Integer))).scalar()
-            dirname = 'albarans'
-        elif dir_name == 'certificate':
-            max_number_filename = session1.query(func.max(cast(Stock_lots.certificate, Integer))).scalar()
-            dirname = 'certificats'
-        else:
-            return 'False'
+        max_state_product = 0
 
+        for (value,) in rows:
+            for part in value.split(";"):
+                part = part.strip()
+                if part.isdigit():
+                    max_state_product = max(max_state_product, int(part))
+
+        next_number = max_state_product + 1 if max_state_product > 0 else 1
+
+        dest_dir = os.path.join(main_dir_docs, "estat_productes")
+        os.makedirs(dest_dir, exist_ok=True)
+
+        filename_list = []
+        type_list = []
+
+        for f in files:
+            original_name = secure_filename(f.filename)
+            if not original_name:
+                continue
+
+            _, ext = os.path.splitext(original_name)
+            if not ext:
+                continue
+
+            new_filename = f"{next_number}{ext.lower()}"
+            f.save(os.path.join(dest_dir, new_filename))
+
+            filename_list.append(str(next_number))
+            type_list.append(ext.lower())
+
+            next_number += 1
+
+        # 🔗 convertir a texto separado por ;
+        new_filename = ";".join(filename_list)
+        type_doc = ";".join(type_list)
+
+        # max_number_filename = session1.query(func.max(cast(Stock_lots.certificate, Integer))).scalar()
+        # dirname = 'certificats'
+        # f = files[0]
+        # filename = secure_filename(f.filename)
+        # split_dirname = filename.split(".")
+    else:
+        return 'False'
+
+    if dir_name != 'state_product':
         if max_number_filename is not None and max_number_filename == '':
             new_filename = 1
             type_doc = f'.{split_dirname[1]}'
+            f.save(os.path.join(f"{main_dir_docs}/{dirname}/", f'{new_filename}.{split_dirname[1]}'))
         elif max_number_filename is not None:
             new_filename = int(max_number_filename) + 1
             type_doc = f'.{split_dirname[1]}'
+            f.save(os.path.join(f"{main_dir_docs}/{dirname}/", f'{new_filename}.{split_dirname[1]}'))
         else:
             return 'False'
-        f.save(os.path.join(f"{main_dir_docs}/{dirname}/", f'{new_filename}.{split_dirname[1]}'))
-    except Exception:
-        return "False"
+    # except Exception:
+    #     return "False"
 
     if dir_name == 'certificate':
         select_lots.certificate = new_filename
@@ -166,6 +300,10 @@ def upload_docs():
             elif dir_name == 'certificate':
                 lots.certificate = new_filename
                 lots.type_doc_certificate = type_doc
+            elif dir_name == 'state_product':
+                lots.state_product = new_filename
+                lots.type_doc_state_product = type_doc
+
         session1.commit()
         if id_lots[-1] == ';':
             id_lots = id_lots[:-1]

@@ -73,14 +73,14 @@
      * També es fan comprobacions de que el que ens ha entrat per paràmetre sigui correcta.
      * 
      */
-    function info_add_lot(acronim, rol){
+    function info_add_lot(acronim, rol, code_search = '', code_panel = ''){
         document.getElementById('unit_lots').value = 1;
         // Crear form data
         var form_data = new FormData();
         
         // Carregar dades al form de l'html
-        const code_search = document.getElementById('code_search').value
-        const code_panel = document.getElementById('code_panel').value
+        // const code_search = document.getElementById('code_search').value
+        // const code_panel = document.getElementById('code_panel').value
 
         var regex = /^\s*$/;
         var only_space = regex.test(code_search);
@@ -90,7 +90,11 @@
         form_data.append('code_search', code_search)
         form_data.append('code_panel', code_panel)
 
-        $('#add_lot').modal('hide');
+        console.log(code_search)
+        console.log(code_panel)
+
+        // $('#add_lot').modal('hide');
+        $('#modal_article_pending').modal('hide');
 
         // Creeem l'objecte per l'ajax
         var xhr = new XMLHttpRequest();
@@ -291,7 +295,7 @@
                         var formated_date = day + '-' + month + '-' + year;
                         var internal_lot = `${year}${month}${day}`
 
-                        show_div_product('product_reception', 'qc_reception', 'btn_1', 'btn_2')
+                        show_div_product('qc_reception', 'product_reception', 'btn_2', 'btn_1', '--')
                         document.getElementById('transport_conditions').value = ''
                         document.getElementById('inspected_by').value = acronim
                         document.getElementById('packaging').value = ''
@@ -314,6 +318,9 @@
                         document.getElementById('price_coriells').value = 0
                         document.getElementById('number_total_lot_discount').value = 0
                         document.getElementById('subreference_active').value = 'False'
+                        document.getElementById('file_state_product').value = ''
+                        document.getElementById('add_div').style.display = 'none';
+
 
                         // Eliminar tots els div amb el name divs_subproduct
                         var elementosAEliminar = document.querySelectorAll('div[name="divs_subproducts"], input[name="divs_subproducts"]');
@@ -1560,6 +1567,13 @@
         form_data.append('list_lots', jsonData)
         form_data.append('file_delivery_note', file_delivery_note)
         form_data.append('file_certificate', file_certificate)
+        
+        // 👇 ESTA es la parte importante
+        const file_state_product_input = document.getElementById('file_state_product');
+        [...file_state_product_input.files].forEach(file => {
+            form_data.append('file_state_product', file);
+        });
+
         form_data.append('unit_total_command', unit_total_command)
         form_data.append('id_substract_command', id_substract_command)
         form_data.append('pb_oligos', pb_oligos)
@@ -1652,6 +1666,36 @@
     }
 
 
+    function check_show_div_product(){
+        var transport_conditions = document.getElementById("transport_conditions").value
+        var packaging = document.getElementById("packaging").value
+        var date_inspected = document.getElementById("date_inspected").value
+        var inspected_by = document.getElementById("inspected_by").value
+        var revised_by = document.getElementById("revised_by").value
+        var date_revised = document.getElementById("date_revised").value
+        var comand_number = document.getElementById("comand_number").value
+
+        if ( !is_valid_field(transport_conditions) || !is_valid_field(packaging) || !is_valid_field(date_inspected) || !is_valid_field(inspected_by) || !is_valid_field(revised_by) || !is_valid_field(date_revised) || !is_valid_field(comand_number)) {
+            alert("No es pot canviar de pestanya si no s'omplen bé tots els camps requerits.");
+            return;
+        } else {
+            show_div_product('product_reception', 'qc_reception', 'btn_1', 'btn_2', 'show')
+        }
+    }
+
+
+    /**
+     * Valida que un campo no esté vacío, no contenga solo espacios
+     * y tenga más de 3 caracteres.
+     * @param {string} value
+     * @returns {boolean}
+     */
+    function is_valid_field(value) {
+        return value !== null &&
+            value.trim().length > 2;
+    }
+
+
     /**
      * Mostrar o oculta un div
      * 
@@ -1729,13 +1773,13 @@
      * Si es troba una coincidència, les dades associades es posen en un diccionari i es presenten als
      * camps de l'HTML. Si es produeix qualsevol error durant el procés es mostra un missatge d'error.
      */
-    function info_add_comand(acroni, rol){
+    function info_add_comand(acroni, rol, code_search, code_panel){
         // Crear form data
         var form_data = new FormData();
         
         // Carregar dades al form de l'html
-        const code_search = document.getElementById('code_search_command').value
-        const code_panel = document.getElementById('code_panel_command').value
+        // const code_search = document.getElementById('code_search_command').value
+        // const code_panel = document.getElementById('code_panel_command').value
 
         var regex = /^\s*$/;
         var only_space = regex.test(code_search);
@@ -2227,7 +2271,7 @@
     }
 
 
-    function search_article_pending(){
+    function search_article_pending(acronim, rol){
         // Crear form data
         var form_data = new FormData();
                             
@@ -2239,6 +2283,7 @@
         xhr.open('POST', '/search_article_pending', true);
         xhr.onload = function(){
             if (xhr.status === 200) {
+                message = ''
                 const response = JSON.parse(xhr.responseText);
 
                 if (!response.success) {
@@ -2257,7 +2302,8 @@
                         `<div class="text-center">${item.units}</div>`,
                         `<div class="text-center">${item.num_received}</div>`,
                         `<div class="text-center">${item.observations}</div>`,
-                        `<div class="text-center">${item.incidence_number}</div>`
+                        `<div class="text-center">${item.incidence_number}</div>`,
+                        `<div class="text-center"><button class="btn btn-sm btn-primary" title="Recepcionar" onclick="info_add_lot('${acronim}', '${rol}', '${item.catalog_reference}', '${item.code_panel}')"><i class="fa-solid fa-hand-pointer"></i></button></div>`
                     ]);
                 });
 
@@ -2299,7 +2345,41 @@
     }
 
 
+    function check_all_labels(headerCheckbox) {
+        const checked = headerCheckbox.checked;
+        const table = $('#table_labels').DataTable();
 
+        // Recorre TOTES les files (totes les pàgines)
+        table.rows().every(function () {
+            const node = this.node(); // <tr> al DOM
+            const cb = node.querySelector('.label-checkbox');
+            if (cb) cb.checked = checked;
+        });
+    }
+
+
+    function download_excel_labels(){
+        // Crear una llista buida on guardarem els valors seleccionats
+        const table = $('#table_labels').DataTable();
+        const checked = [];
+
+        table.rows().every(function () {
+            const node = this.node();
+            const cb = node.querySelector('.label-checkbox');
+            if (cb && cb.checked) checked.push(cb.value);
+        });
+
+        if (checked.length === 0) {
+            alert("Has de seleccionar almenys una etiqueta");
+            return;
+        }
+
+        document.getElementById('list_labels').value = JSON.stringify(checked);
+        document.getElementById('form_create_excels_labels').submit();
+
+        close_modal('modal_labels')
+    }
+    
 </script>
 <style>
     #add_lot_info {
@@ -2327,7 +2407,7 @@
     {% include 'NavBar/navBar.html' %}
     {% include 'ErrorFlash/errorFlash.html' %}
     <div class="jumbotron bg-grey text-black jomboton-imgae shadow" style="width: 90%; margin: 0 auto;">
-        <h1 class='mb-4' style="color: rgb(70, 70, 70); text-align: center;">Registre de rectius<hr></h1>
+        <h1 class='mb-4' style="color: rgb(70, 70, 70); text-align: center;">Comandes<hr></h1>
         <div class="d-flex justify-content-center">
             <div class="row">
                 <div class="col-lg-3 col-md-6 col-sm-12">
@@ -2335,16 +2415,13 @@
                         <div class="col-6" style="padding-top: 10px;">
                             <div class="card" style="width: 19rem;height:100%">
                                 <div class="card-body">
-                                    <h5 class="card-title"><b>1 - Comandes</b></h5>
+                                    <h5 class="card-title"><b>1 - Registre comandes</b></h5>
                                     <p class="card-text" style="font-size: 14px;">Inserir comanda nova, veure les pendents, poder eliminar-les</p>
+                                    <!-- <button type="button" onclick="open_modal('search_command')" class="btn btn-outline-primary btn-sm"><i class="fa-solid fa-file-circle-plus"></i> Inserir</button> -->
                                     <button type="button" onclick="open_modal('search_command')" class="btn btn-outline-primary btn-sm"><i class="fa-solid fa-file-circle-plus"></i> Inserir</button>
-                                    {% if session['rol'] == 'admin' %}
-                                        <form action="/search_commands" style="display: inline;">
-                                            <button type="submit" class="btn btn-outline-success btn-sm"><i class="fa-solid fa-magnifying-glass"></i> Consultar</button>
-                                        </form>
-                                    {% else %}
-                                        <button class="btn btn-outline-success btn-sm" onclick="order_tracking_no_admin()"><i class="fa-solid fa-truck-arrow-right"></i> Seg. Comandes</button>
-                                    {% endif %}
+                                    <form action="/search_commands" style="display: inline;">
+                                        <button type="submit" class="btn btn-outline-success btn-sm"><i class="fa-solid fa-magnifying-glass"></i> Consultar</button>
+                                    </form>
                                 </div>
                             </div>
                         </div>
@@ -2353,12 +2430,16 @@
                 <div class="col-lg-3 col-md-6 col-sm-12">
                     <div class="row">
                         <div class="col-6" style="padding-top: 10px;">
-                            <div class="card" style="width: 19rem;height:100%">
+                            <div class="card" style="width: 23rem;height:100%">
                                 <div class="card-body">
-                                    <h5 class="card-title"><b>2 - Recepcionar articles </b></h5>
+                                    <h5 class="card-title"><b>2 - Recepcionar comanda </b></h5>
                                     <p class="card-text" style="font-size: 14px;">Afegir stock d'articles a la BD que ja tinguem registrats.</p>
-                                    <button class="btn btn-outline-primary btn-sm" onclick="insert(`{{session['acronim']}}`)"><i class="fa-solid fa-list-check"></i> Recepcionar</button>
-                                    <button class="btn btn-outline-success btn-sm" onclick="search_article_pending()"><i class="fa-solid fa-list-check"></i> Pendents</button>
+                                    <!-- <button class="btn btn-outline-primary btn-sm" onclick="insert(`{{session['acronim']}}`)"><i class="fa-solid fa-list-check"></i> Recepcionar</button> -->
+                                    <button class="btn btn-outline-primary btn-sm" onclick="search_article_pending(`{{ session['acronim'] }}`,`{{ session['rol'] }}`)"><i class="fa-solid fa-list-check"></i> Recepcionar</button>
+                                    <button class="btn btn-outline-success btn-sm" onclick="open_modal('modal_labels')"><i class="fa-solid fa-tag"></i> Etiquetas</button>
+                                    <form action="/not_according" method="post" style="display: inline;">
+                                        <button type="submit" class="btn btn-outline-danger btn-sm"><i class="fa-solid fa-book"></i> No conforme</button>
+                                    </form>
                                 </div>
                             </div>
                         </div>
@@ -2366,10 +2447,10 @@
                 </div>
                 <div class="col-lg-3 col-md-6 col-sm-12">
                     <div class="row">
-                        <div class="col-6" style="padding-top: 10px;">
-                            <div class="card" style="width: 19rem;height:100%">
+                        <div class="col-6" style="padding-top: 10px; margin-left: 60px;">
+                            <div class="card" style="width: 19rem; height:100%">
                                 <div class="card-body">
-                                    <h5 class="card-title"><b>3 - Documents reactius</b></h5>
+                                    <h5 class="card-title"><b>3 - Gestió documental</b></h5>
                                     <p class="card-text" style="font-size: 14px;">Descarregar-te un pdf amb els QC o introduir l'albarà i el certificat.</p>
                                     <button type="button" onclick="open_modal('search_lot')" class="btn btn-outline-primary btn-sm"><i class="fa-solid fa-magnifying-glass"></i> Documents</button>
                                     <form action="/search_all_lots" method="post" style="display: inline;">
@@ -2383,16 +2464,14 @@
                 </div>
                 <div class="col-lg-3 col-md-6 col-sm-12">
                     <div class="row">
-                        <div class="col-6" style="padding-top: 10px;">
-                            <div class="card" style="width: 21rem;height:100%">
+                        <div class="col-6" style="padding-top: 10px; margin-left: 60px;">
+                            <div class="card" style="width: 19rem;height:100%">
                                 <div class="card-body">
                                     <h5 class="card-title"><b>4 - Gestió d'articles</b></h5>
                                     <p class="card-text" style="font-size: 14px;">Obrir / tancar lots i consultar registres tant de reactiu com de fungibles</p>
                                     <button type="button" data-toggle="modal" data-target="#open_close_lot" class="btn btn-outline-primary btn-sm"><i class="fa-solid fa-vial"></i> Reactiu</button>
                                     <button type="button" data-toggle="modal" data-target="#modal_search_fungible" class="btn btn-outline-success btn-sm"><i class="fa-solid fa-eye-dropper"></i> Fungible</button>
-                                    <form action="/not_according" method="post" style="display: inline;">
-                                        <button type="submit" class="btn btn-outline-danger btn-sm"><i class="fa-solid fa-book"></i> No conforme</button>
-                                    </form>
+
                                 </div>
                             </div>
                         </div>
@@ -2542,8 +2621,8 @@
             <div class="modal-header">
                 <div class="d-flex justify-content-center w-100">
                     <!-- <div class="text-center"> -->
-                    <button type="button" class="btn btn-primary" id="btn_1" onclick="show_div_product('product_reception', 'qc_reception', 'btn_1', 'btn_2', '--')" style="margin-right: 10px;">Recepció producte</button>
-                    <button type="button" class="btn btn-secondary" id="btn_2" onclick="show_div_product('qc_reception', 'product_reception', 'btn_2', 'btn_1', 'show')">QC recepció</button>
+                    <button type="button" class="btn btn-primary" id="btn_2" onclick="show_div_product('qc_reception', 'product_reception', 'btn_2', 'btn_1', '--')"  style="margin-right: 10px;">1 - QC recepció</button>
+                    <button type="button" class="btn btn-secondary" id="btn_1" onclick="check_show_div_product()">2 - Recepció producte</button>
                 </div>
             </div>
             <div class="modal-body">
@@ -2630,7 +2709,7 @@
                     
                     <div id="div_info_lot"></div>
 
-                    <center><button type="button" class="btn btn-primary btn-sm" onclick="add_stock_lot()" id="add_div" style="display: none;">Afegir</button></center>
+                    <center><button type="button" class="btn btn-primary btn-sm" onclick="add_stock_lot()" style="margin-top: 15px;">Afegir</button></center>
                 </div>
                 <div class="row d-none" id="qc_reception">
                     <div class="col-lg-6 col-md-12 col-sm-12">       
@@ -2729,6 +2808,15 @@
                         </div>
                     </div>
 
+                    <div class="col-lg-12 col-md-12 col-sm-12">
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 185px;"><b>Estat producte :</b></span>
+                            <div class="flex-grow-1">
+                                <input type="file" id="file_state_product" name="file_state_product" class="btn" style="border: 1px solid black; outline: none; width: 100%;" multiple>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="col-lg-6 col-md-12 col-sm-12">       
                         <div class="input-group mb-3">
                             <span class="input-group-text" id="basic-addon1" style="width: 185px;"><b>Revisat per :</b></span>
@@ -2742,7 +2830,7 @@
                         </div>
                     </div>
 
-                    <center><button type="button" class="btn btn-primary btn-sm" onclick="add_stock_lot()">Afegir</button></center>
+                    <center><button type="button" class="btn btn-primary btn-sm" onclick="add_stock_lot()" style="display: none;" id="add_div">Afegir</button></center>
                 </div>
                 <input type="hidden" id="id_command" value="" />
                 <input type="hidden" id="user_add_command" value="" />
@@ -2799,7 +2887,7 @@
     </div>
     
 
-    <div class="modal fade"  id="search_command" tabindex="-1" role="dialog" aria-labelledby="editRegister" aria-hidden="true">
+    <!-- <div class="modal fade"  id="search_command" tabindex="-1" role="dialog" aria-labelledby="editRegister" aria-hidden="true">
         <div class="modal-dialog modal-lg" tabindex="-1" role="document">
           <div class="modal-content">
             <div class="modal-header">
@@ -2810,7 +2898,6 @@
                 <div class="row">
                     <div class="col-lg-12 col-md-12 col-sm-12">       
                         <div class="input-group mb-3">
-                            <!-- <span class="input-group-text" id="basic-addon1"><b>Ref. proveïdor, SAP o LOG:</b></span> -->
                             <span class="input-group-text" id="basic-addon1" style="width: 235px;"><b>Ref. proveïdor o descripció:</b></span>
                             <input type="text" class="form-control" id='code_search_command' list="datalist-codes2" aria-label="TTN" aria-describedby="basic-addon1">
                             <datalist id="datalist-codes2">
@@ -2832,6 +2919,40 @@
                         </div>
                     </div>
                     <center><button type="button" class="btn btn-primary btn-sm" onclick="info_add_comand(`{{session['acronim']}}`, `{{session['rol']}}`)">Accepta</button></center>
+                </div>
+            </div>
+          </div>
+        </div>
+    </div> -->
+
+    <div class="modal fade modal-custom4"  id="search_command" tabindex="-1" role="dialog" aria-labelledby="editRegister" aria-hidden="true">
+        <div class="modal-dialog" tabindex="-1" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="title">Comandes</h5>
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="close_modal('search_command')"><span aria-hidden="true">&times;</span></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-lg-12 col-md-12 col-sm-12">       
+                        <table id="table_commands" class="display" style="width: 100%;">
+                            <thead>
+                                <tr id="thcolor">
+                                    <th>Ref. Proveïdor</th>
+                                    <th>Descripció</th>
+                                    <th>Subreferncia</th>
+                                    <th>Descripció Sub.</th>
+                                    <th>Próces</th>
+                                    <th>Panell</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table>
+                    </div> 
+                    <!-- <form action="/download_follow_commands" method="post" id="down_excel_follow_commands">
+                    </form> -->
                 </div>
             </div>
           </div>
@@ -2998,7 +3119,7 @@
     </div>
 
 
-    <div class="modal fade modal-custom"  id="modal_article_pending" tabindex="-1" role="dialog" aria-labelledby="editRegister" aria-hidden="true">
+    <div class="modal fade modal-custom2"  id="modal_article_pending" tabindex="-1" role="dialog" aria-labelledby="editRegister" aria-hidden="true">
         <div class="modal-dialog modal-xl" tabindex="-1" role="document">
         <div class="modal-content">
             <div class="modal-header">
@@ -3018,6 +3139,7 @@
                                     <th>U.rebudes</th>
                                     <th>Observacions</th>
                                     <th>Incidencies</th>
+                                    <th></th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -3035,7 +3157,7 @@
         <div class="modal-dialog modal-xl" tabindex="-1" role="document">
           <div class="modal-content">
             <div class="modal-header">
-              <h5 class="modal-title" id="title"> Seguiment Comandes</h5>
+              <h5 class="modal-title" id="title"> Tramitades</h5>
               <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="close_modal('modal_order_tracking_no_admin')"><span aria-hidden="true">&times;</span></button>
             </div>
             <div class="modal-body">
@@ -3069,6 +3191,42 @@
           </div>
         </div>
     </div>
+
+
+    <div class="modal fade"  id="modal_labels" tabindex="-1" role="dialog" aria-labelledby="editRegister" aria-hidden="true">
+        <div class="modal-dialog modal-md" tabindex="-1" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="title">Etiquetas</h5>
+                <div class="d-flex ml-auto">
+                    <button type="button" class="btn btn-outline-success btn-sm" onclick="download_excel_labels()" style="margin-right: 10px;"><i class="fa-solid fa-file-arrow-down"></i> Descarregar</button>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="close_modal('modal_labels')"><span aria-hidden="true">&times;</span></button>
+                </div>
+            </div>
+            <div class="modal-body">
+                <div class="row">                                   
+                    <div class="col-lg-12 col-md-12 col-sm-12" id="div_table_look_lots">       
+                        <table id="table_labels" class="display" style="width: 100%;">
+                            <thead>
+                                <tr id="thcolor">
+                                    <th>Id</th>
+                                    <th>Lot</th>
+                                    <th><div class="form-check text-center"><input type="checkbox" class="form-check-input" onclick="check_all_labels(this)" value="${item.id}"></div></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table>
+                    </div> 
+                </div>
+                <form id="form_create_excels_labels" method="POST" action="/create_excel_labels" style="display:none;">
+                    <input type="hidden" name="list_labels" id="list_labels">
+                </form>
+            </div>
+        </div>
+        </div>
+    </div>
+
     <script src="/static/js/bootstrap.js"></script>
 </body>    
 <script>
@@ -3076,6 +3234,26 @@
         var table = $('#table_article_pending').DataTable( {
             order: [ 0, 'desc' ],
             autoWidth: true
+        } );
+    });
+
+
+    $(document).ready(function () {
+        var table = $('#table_commands').DataTable( {
+            order: [ 0, 'desc' ],
+            autoWidth: true
+        } );
+    });
+
+
+    $(document).ready(function () {
+        var table = $('#table_labels').DataTable( {
+            order: [ 0, 'desc' ],
+            autoWidth: true,
+            columnDefs: [
+                    { targets: [0], visible: false },      // amaga ID
+                    { targets: -1, orderable: false }      // ❌ no ordenar l'última (checkbox)
+                ]
         } );
     });
 </script>                

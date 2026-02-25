@@ -6,11 +6,13 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     {% include 'Header/header.html' %}
     <script>
-        // Taula seguiment comandes
+        // Taula seguiment comandes (Tramitades)
         // Les seguents funcions fan que si al tocar un tr de la taula order tracking sobri un modal per poder editar.
         document.addEventListener("DOMContentLoaded", function() {
-            const tbody = document.querySelector("#table_order_tracking tbody");
+            const userRole = document.body.dataset.userRole;
+            if (userRole !== 'admin'){ return }
 
+            const tbody = document.querySelector("#table_order_tracking tbody");
 
             // Delegación de eventos para abrir el modal al hacer clic en las filas con la clase "open-modal"
             tbody.addEventListener("click", function(event) {
@@ -47,8 +49,10 @@
         // Taula Comadnes tramitades
         // Les seguents funcions fan que si al tocar un tr de la taula order tracking sobri un modal per poder editar.
         document.addEventListener("DOMContentLoaded", function() {
-            const tbody_com = document.querySelector("#table_info_command_success tbody");
+            const userRole = document.body.dataset.userRole;
+            if (userRole !== 'admin'){ return }
 
+            const tbody_com = document.querySelector("#table_info_command_success tbody");
 
             // Delegación de eventos para abrir el modal al hacer clic en las filas con la clase "open-modal"
             tbody_com.addEventListener("click", function(event) {
@@ -972,7 +976,7 @@
         }
     </style>
 </head>
-<body>
+<body data-user-role="{{ session['rol'] }}">
     <br>
     {% include 'NavBar/navBar.html' %}
     <div class="jumbotron bg-grey text-black jomboton-imgae shadow d-flex justify-content-between align-items-center" style="width: 90%; height: 80px; margin: 0 auto; padding-top: 0px; padding-bottom: 0px;">
@@ -981,8 +985,8 @@
             <span>Comandes pendents</span>
         </h1>
         <div class="d-flex align-items-center">
-            <button type="button" class="btn btn-link btn-sm" onclick="order_tracking()"><i class="fa-solid fa-truck-arrow-right"></i> Seguiment Comandes</button>
-            <button type="button" class="btn btn-link btn-sm" onclick="commands_success()"><i class="fa-solid fa-table-list"></i> Comandes tramitades</button>
+            <button type="button" class="btn btn-link btn-sm" onclick="order_tracking()"><i class="fa-solid fa-truck-arrow-right"></i> Tramitades</button>
+            <button type="button" class="btn btn-link btn-sm" onclick="commands_success()"><i class="fa-solid fa-database"></i>&nbsp;Històric Comandes</button>
             <button type="button" class="btn btn-link btn-sm" onclick="download_excel()"><i class="fa-solid fa-file-arrow-down"></i> Excel Comandes pendents</button>
             <form action="/download_excel" method="post" id="down_excel"></form>
         </div>
@@ -1019,7 +1023,10 @@
                             {% endif %}
                                 <td>
                                     <div class="form-check d-flex align-items-center">
-                                        {% if command.bloqued_recived == 'False' %} 
+                                        {% if session['rol'] != 'admin' %}
+                                            <input class="form-check-input" type="checkbox" value="{{command.id}}" id="{{command.id}}_box" name="selection_multiple" disabled>
+                                            <button type="button" class="btn btn-link btn-sm" id="{{command.id}}_btn_del" onclick="delete_command(`{{command.id}}`)" disabled>Tramitar</button>
+                                        {% elif command.bloqued_recived == 'False' %} 
                                             <!-- <input class="form-check-input" type="checkbox" value="{{command.id}}" id="{{command.id}}_box" name="selection_multiple" checked> -->
                                             <input class="form-check-input" type="checkbox" value="{{command.id}}" id="{{command.id}}_box" name="selection_multiple">
                                             <button type="button" class="btn btn-link btn-sm" id="{{command.id}}_btn_del" onclick="delete_command(`{{command.id}}`)">Tramitar</button>
@@ -1027,7 +1034,9 @@
                                             <input class="form-check-input" type="checkbox" value="{{command.id}}" id="{{command.id}}_box" name="selection_multiple" disabled>
                                             <button type="button" class="btn btn-link btn-sm" id="{{command.id}}_btn_del" onclick="delete_command(`{{command.id}}`)" disabled>Tramitar</button>
                                         {% endif %} 
-                                        <button type="button" class="btn btn-warning btn-sm" id="{{command.id}}_btn_edit" onclick="open_edit_command(`{{command.id}}`,`{{command.units}}`, `{{command.observations}}`)"><i class="fa-solid fa-pen-to-square" style="color: green;"></i> <i class="fa-solid fa-trash-can" style="color: red;"></i></button>
+                                        {% if session['rol'] == 'admin' %}
+                                            <button type="button" class="btn btn-warning btn-sm" id="{{command.id}}_btn_edit" onclick="open_edit_command(`{{command.id}}`,`{{command.units}}`, `{{command.observations}}`)"><i class="fa-solid fa-pen-to-square" style="color: green;"></i> <i class="fa-solid fa-trash-can" style="color: red;"></i></button>
+                                        {% endif %}   
                                     </div>
                                 </td>
                                 <td>{{lot.catalog_reference}}</td>
@@ -1168,9 +1177,9 @@
         <div class="modal-dialog modal-xl" tabindex="-1" role="document">
           <div class="modal-content">
             <div class="modal-header">
-              <h5 class="modal-title" id="title"> Seguiment Comandes</h5>
+              <h5 class="modal-title" id="title"> Tramitades</h5>
               <div>
-                <button type="button" class="btn btn-link" onclick="download_follow_commands()"><i class="fa-solid fa-file-arrow-down"></i> Excel seguiment comandes</button>
+                <button type="button" class="btn btn-link" onclick="download_follow_commands()"><i class="fa-solid fa-file-arrow-down"></i> Excel tramitades</button>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="close_modal('modal_order_tracking')"><span aria-hidden="true">&times;</span></button>
               </div>
             </div>

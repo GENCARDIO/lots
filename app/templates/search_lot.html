@@ -24,7 +24,11 @@
          * document corresponent.
          */
         function download_doc(dir_name, name_doc, type_doc){
-            document.getElementById("name_doc").value = name_doc + type_doc;
+            if (dir_name == 'estat_productes' || dir_name == 'state_product'){
+                document.getElementById("name_doc").value = name_doc + '_//_' + type_doc;
+            } else {
+                document.getElementById("name_doc").value = name_doc + type_doc;
+            }
             document.getElementById("dir_name").value = dir_name;
             document.getElementById("down_doc").submit();
         }
@@ -75,12 +79,42 @@
             const dir_name = document.getElementById('dir_name_upload').value
             const group_insert = document.getElementById('group_insert').value
             
-            const file_input = document.getElementById('file')
-            const file = file_input.files[0];
+            // const file_input = document.getElementById('file')
+            // const file = file_input.files[0];
 
-            form_data.append('dir_name', dir_name)
-            form_data.append('group_insert', group_insert)
-            form_data.append('file', file)
+            const file_input = document.getElementById('file');
+            const files = file_input.files; // FileList (0..N)
+
+            // ✅ 1) Validar que haya al menos 1 archivo
+            if (!files || files.length === 0) {
+                alert("Has de seleccionar com a mínim un document.");
+                return;
+            }
+
+            // ✅ 2) Validar cantidad según dir_name
+            const allowMultiple = (dir_name === "state_product");
+
+            if (!allowMultiple && files.length > 1) {
+                alert("Només es pot pujar un document per aquest apartat.");
+                return;
+            }
+
+            // ✅ 3) Append campos extra
+            form_data.append('dir_name', dir_name);
+            form_data.append('group_insert', group_insert);
+
+            // ✅ 4) Append archivos
+            if (allowMultiple) {
+                [...files].forEach(f => {
+                    form_data.append('file', f); // mismo nombre repetido => backend getlist("file")
+                });
+            } else {
+                form_data.append('file', files[0]);
+            }
+
+            // form_data.append('dir_name', dir_name)
+            // form_data.append('group_insert', group_insert)
+            // form_data.append('file', file)
 
             $('#upload_doc').modal('hide');
 
@@ -114,8 +148,10 @@
                                 buttonElement.innerHTML = '<i class="fa-solid fa-file-arrow-down"></i> Baixar';
 
                                 if (dir_name == 'delivery_note'){
-                                    buttonElement.setAttribute("onclick", "download_doc('albarans', `" + split_response[2] + "`, `" + split_response[3] + "`)");
-                                } else {
+                                    buttonElement.setAttribute("onclick", "download_doc('albarans', `" + split_response[2] + "`, `" + split_response[3] + "`)"); }
+                                else if (dir_name == 'state_product'){
+                                    buttonElement.setAttribute("onclick", "download_doc('estat_productes', `" + split_response[2] + "`, `" + split_response[3] + "`)"); }
+                                else {
                                     buttonElement.setAttribute("onclick", "download_doc('certificats', `" + split_response[2] + "`, `" + split_response[3] + "`)");
                                 }
                             }
@@ -363,16 +399,16 @@
 
                 if (buttonText === "Pujar") {
                     var data = {};
-                    data['referencia_cataleg'] = $(celdas[10]).text().trim();
-                    data['descripcio'] = $(celdas[11]).text().trim();
-                    data['codi_subreferencia'] = $(celdas[12]).text().trim();
-                    data['descripcio_subref'] = $(celdas[13]).text().trim();
+                    data['referencia_cataleg'] = $(celdas[11]).text().trim();
+                    data['descripcio'] = $(celdas[12]).text().trim();
+                    data['codi_subreferencia'] = $(celdas[13]).text().trim();
+                    data['descripcio_subref'] = $(celdas[14]).text().trim();
                     data['lot'] = $(celdas[2]).text().trim();
                     data['lot_intern'] = $(celdas[3]).text().trim();
                     data['data_recepcio'] = $(celdas[4]).text().trim();
                     data['data_caducitat'] = $(celdas[5]).text().trim();
-                    data['observacions_inspeccio'] = $(celdas[9]).text().trim();
-                    data['manufacturer'] = $(celdas[14]).text().trim();
+                    data['observacions_inspeccio'] = $(celdas[10]).text().trim();
+                    data['manufacturer'] = $(celdas[15]).text().trim();
 
                     allData.push(data);
                 }
@@ -450,9 +486,9 @@
     {% endif %}
     {% include 'ErrorFlash/errorFlash.html' %} 
     
-    <div class="d-flex justify-content-center pt-3 mt-3 rounded">
+    <div id="table_container" class="d-flex justify-content-center pt-3 mt-3 rounded d-none">
         <div class="container-fluid rounded table-responsive" style="width: 90%; text-align: center; margin-top: -30px;">
-            <div id="table1" name="table1">
+            <div id="table1" name="table1" style="width: 100%;">
                 <table id="example" class="display">
                     <thead>
                         <tr id="thcolor">
@@ -477,6 +513,7 @@
                             <!-- <th style="max-width: 220px;">Docs.</th> -->
                             <th style="min-width: 60px; max-width: 100px;">Albarà</th>
                             <th style="min-width: 70px; max-width: 120px;">Certificat</th>
+                            <th style="min-width: 70px; max-width: 120px;">Estat Prod.</th>
                             <th>Observacions</th>
                             <th style="display: none;">ref</th>
                             <th style="display: none;">description</th>
@@ -536,11 +573,18 @@
                                     {% endif %}
                                 </td>
                                 <td>
+                                    {% if lot.certificate == '' %}
+                                        <button type="button" class="btn btn-outline-danger btn-sm" id='{{lot.id}}_certificate' onclick="open_upload_documents(`certificate`, `{{lot.id}}`)"><i class="fa-solid fa-file-arrow-up"></i> Pujar</button>
+                                    {% else %}
+                                        <button type="button" class="btn btn-outline-success btn-sm" id='{{lot.id}}_certificate' onclick="download_doc('certificats', `{{lot.certificate}}`, `{{lot.type_doc_certificate}}`)"><i class="fa-solid fa-file-arrow-down"></i> Baixar</button>
+                                    {% endif %}
+                                </td>
+                                <td>
                                     <div style=" display: inline;">
-                                        {% if lot.certificate == '' %}
-                                            <button type="button" class="btn btn-outline-danger btn-sm" id='{{lot.id}}_certificate' onclick="open_upload_documents(`certificate`, `{{lot.id}}`)"><i class="fa-solid fa-file-arrow-up"></i> Pujar</button>
+                                        {% if lot.state_product == '' %}
+                                            <button type="button" class="btn btn-outline-danger btn-sm" id='{{lot.id}}_state_product' onclick="open_upload_documents(`state_product`, `{{lot.group_insert}}`)"><i class="fa-solid fa-file-arrow-up"></i> Pujar</button>
                                         {% else %}
-                                            <button type="button" class="btn btn-outline-success btn-sm" id='{{lot.id}}_certificate' onclick="download_doc('certificats', `{{lot.certificate}}`, `{{lot.type_doc_certificate}}`)"><i class="fa-solid fa-file-arrow-down"></i> Baixar</button>
+                                            <button type="button" class="btn btn-outline-success btn-sm" id='{{lot.id}}_state_product' onclick="download_doc('estat_productes', `{{lot.state_product}}`, `{{lot.type_doc_state_product}}`)"><i class="fa-solid fa-file-arrow-down"></i> Baixar</button>
                                         {% endif %}
 
                                         <button type="button" class="btn btn-outline-danger btn-sm" onclick="open_delete_documents(`{{lot.group_insert}}`, `{{lot.id}}`)"><i class="fa-solid fa-trash"></i></button>
@@ -579,7 +623,7 @@
                             <div class="input-group mb-3">
                                 <span class="input-group-text" id="basic-addon1"><b>Document :</b></span>
                                 <div class="flex-grow-1">
-                                    <input type="file" id="file" name="file" class="btn" style="border: 1px solid black; outline: none; width: 100%;">
+                                    <input type="file" id="file" name="file" class="btn" style="border: 1px solid black; outline: none; width: 100%;" multiple>
                                 </div>
                             </div>
                         </div>
@@ -677,6 +721,9 @@
                     },
                 ],
                 order: [[4, 'desc']],
+                initComplete: function () {
+                    $('#table_container').removeClass('d-none');
+                }
             } );
 
             // Adjust column widths to content

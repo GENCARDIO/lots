@@ -25,11 +25,12 @@
          * esgotat completament. Si s'esgota completament eliminarem la linia i totes les linies que
          * estigun associades a ella.
          */
-        function delete_wrong_lot(id_lot){
+        function delete_wrong_lot(id_lot, type){
             // Crear form data
             var form_data = new FormData();
 
             form_data.append('id_lot', id_lot)
+            form_data.append('type', type)
 
             // Creeem l'objecte per l'ajax
             var xhr = new XMLHttpRequest();
@@ -121,7 +122,8 @@
                                 <td>{{stock_lot.observations_inspection}}</td>
                                 <td>{{stock_lot.state}}</td>
                                 <td>
-                                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="delete_wrong_lot(`{{stock_lot.id}}`)"><i class="fa-solid fa-trash"></i> Eliminar</button>
+                                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="delete_wrong_lot(`{{stock_lot.id}}`, 'close')"><i class="fa-solid fa-trash"></i> Tancar</button>
+                                    <button type="button" class="btn btn-outline-success btn-sm" onclick="delete_wrong_lot(`{{stock_lot.id}}`, 'release_to_stock')"><i class="fa-solid fa-arrow-rotate-right"></i> Utilitzar</button>
                                 </td>
                             </tr>
                         {% endfor %}

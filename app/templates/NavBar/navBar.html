@@ -6,7 +6,7 @@
                 <a class="navbar btn mr-1" style="color:white;padding:5px;" data-toggle="modal" data-target="#open_close_lot"><b><i class="fa-solid fa-plus-minus"></i>&nbsp;Obri/tancar lot</a></b>
             </li> -->
             <li class="nav-item">
-                <a class="navbar btn mr-1" style="color:white;padding:5px;" onclick="search_lots_db(`{{ session['rol'] }}`)"><b><i class="fa-solid fa-eye"></i>&nbsp;Articles</a></b>
+                <a class="navbar btn mr-1" style="color:white;padding:5px;" onclick="search_lots_db(`{{ session['rol'] }}`)"><b><i class="fa-solid fa-eye"></i>&nbsp;Productes</a></b>
             </li>
             <!-- <li class="nav-item">
                 <a class="navbar btn mr-1" style="color:white;padding:5px;" onclick="open_modal('open_history_lots')"><b><i class="fa-solid fa-book"></i>&nbsp;Historic lots</a></b>
@@ -22,7 +22,7 @@
                     <a class="navbar btn mr-1" style="color:white;padding:5px;" onclick="open_modal('open_update_price')"><b><i class="fa-solid fa-money-check-dollar"></i>&nbsp;Preus</a></b>
                 </li>
             {% endif %}
-            {% if session['rol'] == 'admin' and session['user'] == 'adria' %}
+            {% if session['rol'] == 'admin' and session['user'] == 'Adria' %}
                 <li class="nav-item">
                     <form action="/show_recover_data" id="show_recover">
                         <a class="navbar btn mr-1" style="color:white;padding:5px;" onclick="document.getElementById('show_recover').submit(); return false;">
@@ -668,25 +668,157 @@
      * @param {string} modal_id És l'identificador únic del modal
      * @returns {void} No retorna cap valor.
      */
-    function open_modal(modal_id){
+    async function open_modal(modal_id, acronim = '', rol = ''){
         if (modal_id == 'search_lot'){
             document.getElementById('code_panel_search').value = ''
             document.getElementById('div_panel_search').style.display = 'none';}
         else if (modal_id == 'search_command'){
-            document.getElementById('code_search_command').value = ''
-            document.getElementById("catalog_reference_command").value = ''
-            document.getElementById("code_sap_command").value = ''
-            document.getElementById("code_loc_command").value = ''
-            document.getElementById("description_command").value = ''
-            document.getElementById("key_lot_command").value = ''
-            document.getElementById("units_command").value = '0'
-            document.getElementById("observations_command").value = ''}
+            // document.getElementById('code_search_command').value = ''
+            // document.getElementById("catalog_reference_command").value = ''
+            // document.getElementById("code_sap_command").value = ''
+            // document.getElementById("code_loc_command").value = ''
+            // document.getElementById("description_command").value = ''
+            // document.getElementById("key_lot_command").value = ''
+            // document.getElementById("units_command").value = '0'
+            // document.getElementById("observations_command").value = ''
+            const res = await fetch("/info_description_lots");
+            const rows = await res.json();
+
+            const table = $('#table_commands').DataTable();
+            table.clear();
+
+            for (const r of rows) {
+            // table.row.add([
+            //     escapeHtml(r.catalog_reference ?? ""),
+            //     escapeHtml(r.description ?? ""),
+            //     escapeHtml(r.id_reactive ?? ""),
+            //     escapeHtml(r.description_subreference ?? ""),
+            //     escapeHtml(r.analytical_technique ?? ""),
+            //     escapeHtml(r.code_panel ?? ""),
+            //     `<button class="btn btn-sm btn-primary" onclick="info_add_comand('${acronim}', '${rol}', '${r.catalog_reference}', '${r.code_panel}')">Sel.</button>`
+            // ]);
+                table.row.add([
+                    `<div class="text-center">${r.catalog_reference}</div>`,
+                    `<div class="text-center">${r.description}</div>`,
+                    `<div class="text-center">${r.id_reactive}</div>`,
+                    `<div class="text-center">${r.description_subreference}</div>`,
+                    `<div class="text-center">${r.analytical_technique}</div>`,
+                    `<div class="text-center">${r.code_panel}</div>`,
+                    `<button class="btn btn-sm btn-primary" title="Seleccionar" onclick="info_add_comand('${acronim}', '${rol}', '${r.catalog_reference}', '${r.code_panel}')"><i class="fa-solid fa-hand-pointer"></i></button>`
+                ]);
+            }
+
+            // 1️⃣ Hacemos invisible el modal antes de mostrarlo
+            $('#search_command').css({ 'visibility': 'hidden', 'display': 'block' });
+
+            // 2️⃣ Dibujamos la tabla
+            table.draw(false);
+
+            // 3️⃣ Ajustamos las columnas
+            table.columns.adjust();
+
+            // 4️⃣ Una vez ajustado todo, hacemos visible el modal y usamos tu open_modal para los estilos de Bootstrap
+            $('#search_command').css('visibility', 'visible');
+
+            // Mostrem el modal i després ajustem columnes (important en modals)
+            $('#search_command').modal('show');
+            // setTimeout(() => table.columns.adjust().draw(false), 50);
+
+            return;
+            }
         else if (modal_id == 'modal_edit_lot'){
-            $('#info_lots_bd').modal('hide');
-        } else if (modal_id == 'open_update_price'){
-            document.getElementById('file_template').value = ''
+            $('#info_lots_bd').modal('hide'); }
+        else if (modal_id == 'open_update_price'){
+            document.getElementById('file_template').value = '' }
+        else if (modal_id == 'modal_labels'){
+            error = false
+            // Crear form data
+            var form_data = new FormData();
+                                
+            // Creeem l'objecte per l'ajax
+            var xhr = new XMLHttpRequest();
+            // 1er argument si es pots o get
+            // 2n argument url o ruta
+            // 3r argumemt true sempre
+            xhr.open('POST', '/list_labels', true);
+            xhr.onload = function(){
+                if (xhr.status === 200) {
+                    message = ''
+                    const response = JSON.parse(xhr.responseText);
+                    if (!response.success) {
+                        message = "Error, no hem pogut accedir a la BD";
+                        alert_type = "danger"
+                        error = true
+                    }
+
+                    if (!response.data || response.data.length === 0) {
+                        message = "No hi ha etiquetes pendents";
+                        alert_type = "warning"
+                        error = true
+                    }
+                    console.log(error)
+                    if (!error){
+                        console.log("aqui entra")
+                        let table = $('#table_labels').DataTable();
+                        table.clear();
+
+                        response.data.forEach(item => {
+                            table.row.add([
+                                `<div class="text-center">${item.id}</div>`,
+                                `<div class="text-center">${item.internal_lot}</div>`,
+                                `<div class="form-check text-center"><input class="form-check-input label-checkbox" type="checkbox" value="${item.id}"></div>`
+                            ]);
+                        });
+
+                        // 1️⃣ Hacemos invisible el modal antes de mostrarlo
+                        $('#modal_labels').css({ 'visibility': 'hidden', 'display': 'block' });
+
+                        // 2️⃣ Dibujamos la tabla
+                        table.draw(false);
+
+                        // 3️⃣ Ajustamos las columnas
+                        table.columns.adjust();
+
+                        // 4️⃣ Una vez ajustado todo, hacemos visible el modal y usamos tu open_modal para los estilos de Bootstrap
+                        $('#modal_labels').css('visibility', 'visible');
+
+                        $(`#${modal_id}`).modal('show');
+                        return}
+                    }
+                else {
+                    message = "Error, No s'ha pogut realitzar l'operació."
+                    alert_type = 'danger' }
+
+                if (message !== ''){
+                    var flashContainer = document.querySelector(".d-flex.justify-content-center .row");
+                    // Eliminar la alerta anterior, si existe
+                    if (flashContainer.children.length > 0) {
+                        flashContainer.removeChild(flashContainer.children[0]); }
+
+                    var newFlash = document.createElement("div");
+                    newFlash.className = "alert alert-" + alert_type + " alert-dismissible fade show ml-3";
+                    newFlash.role = "alert";
+                    newFlash.innerHTML = "<span>" + message + "</span>" + 
+                                        '<button type="button" class="close" data-dismiss="alert" aria-label="Close">' +
+                                        '<span aria-hidden="true">&times;</span>' +
+                                        '</button>';
+                    flashContainer.appendChild(newFlash);
+                    flashContainer.style.paddingTop = "20px";}            
+            }
+            xhr.send(form_data)
+            return
         }
         $(`#${modal_id}`).modal('show');
+    }
+
+
+    function escapeHtml(s) {
+        return String(s)
+            .replaceAll("&", "&amp;")
+            .replaceAll("<", "&lt;")
+            .replaceAll(">", "&gt;")
+            .replaceAll('"', "&quot;")
+            .replaceAll("'", "&#039;");
     }
 
 

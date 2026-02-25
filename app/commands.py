@@ -1,6 +1,6 @@
 from flask import request, session, render_template, flash, send_file
 from app import app
-from app.utils import instant_date, requires_auth, create_excel, save_log, to_dict, year_now, list_desciption_lots, list_cost_center
+from app.utils import instant_date, requires_auth, create_excel, save_log, to_dict, year_now, list_desciption_lots, list_cost_center, send_mail_generic
 from app.models import session1, Lots, Commands, Cost_center, Stock_lots
 from sqlalchemy import func, or_
 from config import main_dir_docs
@@ -119,7 +119,8 @@ def add_command():
                                   num_received=0,
                                   code_command='',
                                   observations=observations_command,
-                                  date_complete='')
+                                  date_complete='',
+                                  user_email=session['email'])
         session1.add(insert_command)
 
         select_stock_lot = session1.query(Stock_lots).filter_by(id_lot=key_lot, spent=0, react_or_fungible='Fungible').all()
@@ -204,6 +205,11 @@ def delete_command():
             select_command.user_close = session['acronim']
             select_command.user_id_close = session['idClient']
             select_command.code_command = code_command
+
+            select_lot = session1.query(Lots.description).filter(Lots.id == select_command.id_lot).first()
+            lot_description = select_lot[0] if select_lot else ""
+            text_body = f"L'informem que s'han comprat el producte {lot_description} que heu solicitat"
+            send_mail_generic(select_command.user_email, text_body, 'UDMMP | Tramtició de producte')
     except Exception:
         session1.rollback()
         return 'False'

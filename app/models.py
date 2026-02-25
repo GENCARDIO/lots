@@ -97,6 +97,10 @@ class Stock_lots(Base):
     purchase_format_supplier = Column(String())
     units_format_supplier = Column(Integer())
     pb_oligos = Column(Integer())
+    labels_print = Column(Integer())
+    state_product = Column(String())
+    type_doc_state_product = Column(String())
+
 
 
 class Logs(Base):
@@ -143,6 +147,7 @@ class Commands(Base):
     observations = Column(String())
     incidence_number = Column(String())
     date_complete = Column(String())
+    user_email = Column(String())
 
 
 class Cost_center(Base):
