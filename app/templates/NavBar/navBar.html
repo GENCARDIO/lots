@@ -1,5 +1,5 @@
 <nav class="navbar shadow-sm navbar-expand-sm fixed-top mb-3" rel="preload" style="background-image: linear-gradient(15deg, #357ca5 0%, #60cec1 100%);">
-    <a class="navbar-brand" style="color:white;" href="/"><b>REACTIUS</b></a>
+    <a class="navbar-brand" style="color:white;" href="/"><b>COMANDES</b></a>
     <div class="collapse navbar-collapse" id="navbarNavDarkDropdown">
         <ul class="navbar-nav mr-auto"> 
             <!-- <li class="nav-item">
@@ -15,7 +15,8 @@
                 <a class="navbar btn mr-1" style="color:white;padding:5px;" onclick="open_modal('search_all_year')"><b><i class="fa-solid fa-database"></i>&nbsp;Històric</a></b>
             </li>
             <li class="nav-item">
-                <a class="navbar btn mr-1" style="color:white;padding:5px;" onclick="look_spend_money()"><b><i class="fa-solid fa-dollar-sign"></i>&nbsp;Indicadors</a></b>
+                <!-- <a class="navbar btn mr-1" style="color:white;padding:5px;" onclick="look_spend_money()"><b><i class="fa-solid fa-dollar-sign"></i>&nbsp;Indicadors</a></b> -->
+                <a class="navbar btn mr-1" style="color:white;padding:5px;" onclick="open_modal('search_year_spend_money')"><b><i class="fa-solid fa-dollar-sign"></i>&nbsp;Indicadors</a></b>
             </li>
             {% if session['rol'] == 'admin' %}
                 <li class="nav-item">
@@ -26,7 +27,7 @@
                 <li class="nav-item">
                     <form action="/show_recover_data" id="show_recover">
                         <a class="navbar btn mr-1" style="color:white;padding:5px;" onclick="document.getElementById('show_recover').submit(); return false;">
-                            <b><i class="fa-solid fa-rotate-left"></i>&nbsp;Recuperar articles</b>
+                            <b><i class="fa-solid fa-rotate-left"></i>&nbsp;Recuperar productes</b>
                         </a>
                     </form>  
                 </li>
@@ -53,8 +54,8 @@
     <div class="modal-dialog modal-xl" tabindex="-1" role="document">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title" id="title"> Articles</h5>
-          <button type="button" class="btn btn-link btn-sm" onclick="show_new_article()" style="margin-left: 10px; margin-top: 2px;"><i class="fa-solid fa-plus"></i> Nou article</button>
+          <h5 class="modal-title" id="title"> Productes</h5>
+          <button type="button" class="btn btn-link btn-sm" onclick="show_new_article()" style="margin-left: 10px; margin-top: 2px;"><i class="fa-solid fa-plus"></i> Nou producte</button>
           <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="close_modal('info_lots_bd')"><span aria-hidden="true">&times;</span></button>
         </div>
         <div class="modal-body">
@@ -323,7 +324,7 @@
 
 
 <div class="modal fade"  id="search_all_year" tabindex="-1" role="dialog" aria-labelledby="editRegister" aria-hidden="true">
-    <div class="modal-dialog modal-lg" tabindex="-1" role="document">
+    <div class="modal-dialog modal-md" tabindex="-1" role="document">
       <div class="modal-content">
         <div class="modal-header">
           <h5 class="modal-title" id="title"> Cercar dades:</h5>
@@ -333,11 +334,38 @@
             <div class="row">                                   
                 <div class="col-lg-12 col-md-12 col-sm-12">       
                     <div class="input-group mb-3">
-                        <span class="input-group-text" id="basic-addon1"><b>Introdueix CECO, ref. proveidor, SAP o data_recepció:</b></span>
-                        <input type="text" class="form-control" id='search_data_code' name="search_data_code" aria-label="TTN" aria-describedby="basic-addon1" required>
+                        <span class="input-group-text" id="basic-addon1"><b>Selecciona any</b></span>
+                        <!-- <input type="text" class="form-control" id='search_data_code' name="search_data_code" aria-label="TTN" aria-describedby="basic-addon1" required> -->
+                        <select class="form-control" id="search_data_code" name="search_data_code">
+                        </select>
                     </div>
                 </div>
                 <center><button type="button" class="btn btn-success btn-sm" onclick="search_all_year()">Cercar</button></center>
+            </div>
+        </div>
+      </div>
+    </div>
+</div>
+
+
+<div class="modal fade"  id="search_year_spend_money" tabindex="-1" role="dialog" aria-labelledby="editRegister" aria-hidden="true">
+    <div class="modal-dialog modal-md" tabindex="-1" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="title"> Diners gastat:</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="close_modal('search_year_spend_money')"><span aria-hidden="true">&times;</span></button>
+        </div>
+        <div class="modal-body">
+            <div class="row">                                   
+                <div class="col-lg-12 col-md-12 col-sm-12">       
+                    <div class="input-group mb-3">
+                        <span class="input-group-text" id="basic-addon1"><b>Selecciona any</b></span>
+                        <!-- <input type="text" class="form-control" id='search_data_code' name="search_data_code" aria-label="TTN" aria-describedby="basic-addon1" required> -->
+                        <select class="form-control" id="search_data_spend_mmoney" name="search_data_spend_mmoney">
+                        </select>
+                    </div>
+                </div>
+                <center><button type="button" class="btn btn-success btn-sm" onclick="look_spend_money()">Cercar</button></center>
             </div>
         </div>
       </div>
@@ -1149,7 +1177,7 @@
      * si l'operació és exitosa, actualitza la taula amb les dades obtingudes. Si hi ha un error, 
      * mostra un missatge d'error a l'usuari.
      */
-    function search_all_year(rol){
+    function search_all_year(){
         const search_data_code = document.getElementById('search_data_code').value
 
         // Crear form data
@@ -1172,7 +1200,7 @@
                 close_modal('search_all_year');
 
                 if (!response.success) {
-                    message = (response.message || "No s'ha trobat informació");
+                    message = (response.data || "No s'ha trobat informació");
                 } else {
                     // Si hi ha resultats
                     open_modal('modal_seach_all_year');
@@ -1228,9 +1256,12 @@
 
 
     function look_spend_money(){
+        const search_data_spend_mmoney = document.getElementById('search_data_spend_mmoney').value
+
         // Crear form data
         var form_data = new FormData();
         
+        form_data.append('search_data_spend_mmoney', search_data_spend_mmoney)        
         // Creeem l'objecte per l'ajax
         var xhr = new XMLHttpRequest();
         // 1er argument si es pots o get
@@ -1690,9 +1721,11 @@
         table.columns.adjust().draw();
     });
 
+
     $('#modal_seach_all_year').on('hidden.bs.modal', function () {
         $('body').css('overflow', 'auto'); // Restablecer el desplazamiento del cuerpo
     });
+
 
     $(document).ready(function() {
         $('#table_lost_description_lots').DataTable({
@@ -1700,5 +1733,57 @@
             "searching": true,
             "info": false
         });
+    });
+
+
+    document.addEventListener("DOMContentLoaded", function () {
+        const select = document.getElementById("search_data_code");
+        const currentYear = new Date().getFullYear();
+        const startYear = 2023;
+
+        // 🔹 Opció "Tots"
+        const optionAll = document.createElement("option");
+        optionAll.value = "Tots";
+        optionAll.textContent = "Tots";
+        select.appendChild(optionAll);
+
+        // 🔹 Anys del 2023 fins l'actual (ordre descendent)
+        for (let year = currentYear; year >= startYear; year--) {
+            const option = document.createElement("option");
+            option.value = year;
+            option.textContent = year;
+
+            if (year === currentYear) {
+                option.selected = true;
+            }
+
+            select.appendChild(option);
+        }
+    });
+
+
+    document.addEventListener("DOMContentLoaded", function () {
+        const select = document.getElementById("search_data_spend_mmoney");
+        const currentYear = new Date().getFullYear();
+        const startYear = 2023;
+
+        // 🔹 Opció "Tots"
+        const optionAll = document.createElement("option");
+        optionAll.value = "Tots";
+        optionAll.textContent = "Tots";
+        select.appendChild(optionAll);
+
+        // 🔹 Anys del 2023 fins l'actual (ordre descendent)
+        for (let year = currentYear; year >= startYear; year--) {
+            const option = document.createElement("option");
+            option.value = year;
+            option.textContent = year;
+
+            if (year === currentYear) {
+                option.selected = true;
+            }
+
+            select.appendChild(option);
+        }
     });
 </script>

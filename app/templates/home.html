@@ -112,7 +112,7 @@
                     message = ''
                     if (split_response[1] === 'new'){
                         if (rol === 'admin'){
-                            message = `L'article ${code_search} no està registrat. Ves a Articles i allà ho podràs registrar.`
+                            message = `El proucte ${code_search} no està registrat. Ves a Productes i allà ho podràs registrar.`
                             alert_type = 'warning'
                             // show_reactive('')
                             // document.getElementById("code_log").value = '';
@@ -1806,7 +1806,7 @@
                 if (split_response[0] === 'True'){
                     if (split_response[1] === 'new'){
                         if (rol === 'admin'){
-                            message = `L'article ${code_search} no està registrat. Ves a Articles i allà ho podràs registrar.`
+                            message = `El producte ${code_search} no està registrat. Ves a Productes i allà ho podràs registrar.`
                             alert_type = 'warning'
                             // show_reactive('')
 
@@ -2287,7 +2287,7 @@
                 const response = JSON.parse(xhr.responseText);
 
                 if (!response.success) {
-                    alert("No s'han trobat articles pendents");
+                    alert("No s'han trobat productes pendents");
                     return;
                 }
 
@@ -2433,7 +2433,7 @@
                             <div class="card" style="width: 23rem;height:100%">
                                 <div class="card-body">
                                     <h5 class="card-title"><b>2 - Recepcionar comanda </b></h5>
-                                    <p class="card-text" style="font-size: 14px;">Afegir stock d'articles a la BD que ja tinguem registrats.</p>
+                                    <p class="card-text" style="font-size: 14px;">Afegir stock de productes a la BD que ja tinguem registrats.</p>
                                     <!-- <button class="btn btn-outline-primary btn-sm" onclick="insert(`{{session['acronim']}}`)"><i class="fa-solid fa-list-check"></i> Recepcionar</button> -->
                                     <button class="btn btn-outline-primary btn-sm" onclick="search_article_pending(`{{ session['acronim'] }}`,`{{ session['rol'] }}`)"><i class="fa-solid fa-list-check"></i> Recepcionar</button>
                                     <button class="btn btn-outline-success btn-sm" onclick="open_modal('modal_labels')"><i class="fa-solid fa-tag"></i> Etiquetas</button>
@@ -2467,7 +2467,7 @@
                         <div class="col-6" style="padding-top: 10px; margin-left: 60px;">
                             <div class="card" style="width: 19rem;height:100%">
                                 <div class="card-body">
-                                    <h5 class="card-title"><b>4 - Gestió d'articles</b></h5>
+                                    <h5 class="card-title"><b>4 - Gestió de productes</b></h5>
                                     <p class="card-text" style="font-size: 14px;">Obrir / tancar lots i consultar registres tant de reactiu com de fungibles</p>
                                     <button type="button" data-toggle="modal" data-target="#open_close_lot" class="btn btn-outline-primary btn-sm"><i class="fa-solid fa-vial"></i> Reactiu</button>
                                     <button type="button" data-toggle="modal" data-target="#modal_search_fungible" class="btn btn-outline-success btn-sm"><i class="fa-solid fa-eye-dropper"></i> Fungible</button>

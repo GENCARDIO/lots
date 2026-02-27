@@ -149,7 +149,7 @@ def download_docs():
 
                 if os.path.exists(path):
                     # Nom dins del ZIP (el que veurà l’usuari)
-                    zf.write(path, arcname=filename)
+                    zf.write(path, arcname=f'{dir_name}_{filename}')
 
         zip_buffer.seek(0)
 
@@ -162,6 +162,9 @@ def download_docs():
 
     # Cas normal: 1 fitxer
     path = os.path.join(base_dir, name_doc)
+    if dir_name == 'qc':
+        return send_file(path, as_attachment=True, download_name=f"{name_doc}")
+
     return send_file(path, as_attachment=True, download_name=f"{dir_name}_{name_doc}")
 
 
@@ -458,7 +461,8 @@ def create_qc():
         }
         doc.render(context)
 
-        name = 'LDG_REG_INS_generic_draft'
+        # name = 'LDG_REG_INS_generic_draft'
+        name = 'LDG_REG11_008_inspecció recepció'
         filepath = os.path.join(f'{main_dir_docs}/qc', f'{name}.docx')
         doc.save(filepath)
 
@@ -495,7 +499,7 @@ def delete_documents():
         3 - ELiminem el registre que necesitem
         4 - Retorem true o false més un text explicatiu si fa falta.
 
-        :param str group_insert_delete: Identificador de grup dels articles.
+        :param str group_insert_delete: Identificador de grup dels productes.
         :param str delivery_note: string que indica si s'ha de borrar o no l'arxiu de comandes
         :param str certificate: string que indica si s'ha de borrar o no l'arxiu del certificat
 

@@ -243,11 +243,11 @@ def search_all_year():
     '''
     search_data_code = request.form['search_data_code']
 
-    date = datetime.now()
-    year = date.strftime("-%Y")
-    list_year = [year, int(year)+1, int(year)+2, int(year)+3, int(year)+4]
-    print(year)
-    print(list_year)
+    # date = datetime.now()
+    # year = date.strftime("-%Y")
+    # list_year = [year, int(year)+1, int(year)+2, int(year)+3, int(year)+4]
+    # print(year)
+    # print(list_year)
     # try:
     if search_data_code == '':
         return 'False_//_Es codi no pot estar buit.'
@@ -267,21 +267,37 @@ def search_all_year():
         #     .all()
         # )
 
-        select_lots = (
-            session1.query(Stock_lots, Lot_consumptions)
-            .outerjoin(Lot_consumptions, Lot_consumptions.id_lot == Stock_lots.id)
-            .filter(
-                or_(
-                    Stock_lots.cost_center_stock == search_data_code,
-                    Stock_lots.catalog_reference == search_data_code,
-                    Stock_lots.code_SAP == search_data_code,
-                    Stock_lots.reception_date == search_data_code.replace('/', '-')
-                )
-            ).all()
-        )
+        # select_lots = (
+        #     session1.query(Stock_lots, Lot_consumptions)
+        #     .outerjoin(Lot_consumptions, Lot_consumptions.id_lot == Stock_lots.id)
+        #     .filter(
+        #         or_(
+        #             Stock_lots.cost_center_stock == search_data_code,
+        #             Stock_lots.catalog_reference == search_data_code,
+        #             Stock_lots.code_SAP == search_data_code,
+        #             Stock_lots.reception_date == search_data_code.replace('/', '-')
+        #         )
+        #     ).all()
+        # )
 
+        if search_data_code != 'Tots':
+            select_lots = (
+                session1.query(Stock_lots, Lot_consumptions)
+                .outerjoin(Lot_consumptions, Lot_consumptions.id_lot == Stock_lots.id)
+                .filter(Stock_lots.reception_date.like(f'%{search_data_code}'))
+                .all()
+            )
+        else:
+            select_lots = (
+                session1.query(Stock_lots, Lot_consumptions)
+                .outerjoin(Lot_consumptions, Lot_consumptions.id_lot == Stock_lots.id)
+                .all()
+            )
+
+    print(len(select_lots))
     if not select_lots:
-        return f"False_//_No s'ha trobat stock amb el codi {search_data_code}"
+        # return f"False_//_No s'ha trobat stock amb el codi {search_data_code}"
+        return jsonify({"success": False, "data": f"No s'ha trobat stock de l'any {search_data_code}"})
     else:
         list_info_stock_aux = [
             {

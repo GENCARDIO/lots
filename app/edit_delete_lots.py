@@ -622,7 +622,7 @@ def show_recover_data():
     '''
     select_log = session1.query(Logs).all()
     if not select_log:
-        flash("No hi ha articles que és puguin recuperar")
+        flash("No hi ha productes que és puguin recuperar")
         return render_template('home.html', list_desciption_lots=list_desciption_lots(),
                                list_cost_center=list_cost_center())
 

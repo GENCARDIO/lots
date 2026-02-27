@@ -23,8 +23,13 @@ def look_spend_money():
         :return: json amb un True o un False i la informació requerida.
         :rtype: json
     '''
-    year = year_now()
-    select_stock_lots = session1.query(Stock_lots).filter(Stock_lots.reception_date.like(f'%-{year}')).all()
+    year = request.form['search_data_spend_mmoney']
+
+    # year = year_now()
+    if year == 'Tots':
+        select_stock_lots = session1.query(Stock_lots).all()
+    else:
+        select_stock_lots = session1.query(Stock_lots).filter(Stock_lots.reception_date.like(f'%-{year}')).all()
     if not select_stock_lots:
         return "False_//_Error, No hem trobat dades de l'stock"
     print("------------------------------------ INICI -------------------------------------------")
