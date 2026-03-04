@@ -45,6 +45,10 @@ class Lots(Base):
     maximum_amount = Column(Integer())
     purchase_format_supplier = Column(String())
     units_format_supplier = Column(Integer())
+    name_logaritme = Column(String())
+    units_for_discount = Column(Integer())
+    units_measurement = Column(String())
+    observations = Column(String())
 
 
 class Stock_lots(Base):
@@ -100,7 +104,10 @@ class Stock_lots(Base):
     labels_print = Column(Integer())
     state_product = Column(String())
     type_doc_state_product = Column(String())
-
+    name_logaritme = Column(String())
+    units_for_discount = Column(Integer())
+    units_measurement = Column(String())
+    observations = Column(String())
 
 
 class Logs(Base):

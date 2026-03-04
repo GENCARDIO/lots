@@ -182,7 +182,11 @@
                 <div class="col-lg-6 col-md-12 col-sm-12">       
                     <div class="input-group mb-3">
                         <span class="input-group-text" id="basic-addon1" style="width: 180px;"><b>Actiu</b></span>
-                        <input type="text" class="form-control" id='active_edit' aria-label="TTN" aria-describedby="basic-addon1">
+                        <!-- <input type="text" class="form-control" id='active_edit' aria-label="TTN" aria-describedby="basic-addon1"> -->
+                        <select class="form-select" id="active_edit">
+                            <option value="1">Actiu</option>
+                            <option value="0">Inactiu</option>
+                        </select>
                     </div>
                 </div>
                 <div class="col-lg-12 col-md-12 col-sm-12">       
@@ -195,6 +199,12 @@
                     <div class="input-group mb-3">
                         <span class="input-group-text" id="basic-addon1" style="width: 180px;"><b>Descripció Subref.</b></span>
                         <input type="text" class="form-control" id='description_subref_edit' aria-label="TTN" aria-describedby="basic-addon1">
+                    </div>
+                </div>
+                <div class="col-lg-12 col-md-12 col-sm-12">       
+                    <div class="input-group mb-3">
+                        <span class="input-group-text" id="basic-addon1" style="width: 180px;"><b>Nom logaritme</b></span>
+                        <input type="text" class="form-control" id='name_logaritme_edit' aria-label="TTN" aria-describedby="basic-addon1">
                     </div>
                 </div>
                 <div class="col-lg-6 col-md-12 col-sm-12">       
@@ -290,6 +300,32 @@
                         <input type="text" class="form-control" id='maximum_amount_edit' aria-label="TTN" aria-describedby="basic-addon1">
                     </div>
                 </div>
+                <div class="col-lg-6 col-md-12 col-sm-12">       
+                    <div class="input-group mb-3">
+                    </div>
+                </div>
+
+
+                <div class="col-lg-6 col-md-12 col-sm-12">       
+                    <div class="input-group mb-3">
+                        <span class="input-group-text" id="basic-addon1" style="width: 180px;"><b>Unitats</b></span>
+                        <input type="number" class="form-control" id='units_for_discount_edit' aria-label="TTN" aria-describedby="basic-addon1">
+                    </div>
+                </div>
+                <div class="col-lg-6 col-md-12 col-sm-12">       
+                    <div class="input-group mb-3">
+                        <span class="input-group-text" id="basic-addon1" style="width: 180px;"><b>Unitats mesura</b></span>
+                        <input type="text" class="form-control" id='units_measurement_edit' aria-label="TTN" aria-describedby="basic-addon1">
+                    </div>
+                </div>
+
+                <div class="col-lg-12 col-md-12 col-sm-12">       
+                    <div class="input-group mb-3">
+                        <span class="input-group-text" id="basic-addon1" style="width: 180px;"><b>Observacions</b></span>
+                        <input type="text" class="form-control" id='observations_edit' aria-label="TTN" aria-describedby="basic-addon1">
+                    </div>
+                </div>
+
                 <input type="hidden" id="id_lot_edit"/>
                 <center></centere><button type="button" class="btn btn-primary btn-sm" onclick="edit_lot()"><i class="fa-solid fa-circle-plus"></i> Editar </button></center>
             </div>
@@ -732,6 +768,7 @@
                     `<div class="text-center">${r.description_subreference}</div>`,
                     `<div class="text-center">${r.analytical_technique}</div>`,
                     `<div class="text-center">${r.code_panel}</div>`,
+                    `<div class="text-center">${r.name_logaritme}</div>`,
                     `<button class="btn btn-sm btn-primary" title="Seleccionar" onclick="info_add_comand('${acronim}', '${rol}', '${r.catalog_reference}', '${r.code_panel}')"><i class="fa-solid fa-hand-pointer"></i></button>`
                 ]);
             }
@@ -911,6 +948,10 @@
         document.getElementById('maximum_amount_edit').value = list_info_article[22];
         document.getElementById('purchase_format_supplier_edit').value = list_info_article[23];
         document.getElementById('units_format_supplier_edit').value = list_info_article[24];
+        document.getElementById('name_logaritme_edit').value = list_info_article[25];
+        document.getElementById('units_for_discount_edit').value = list_info_article[26];
+        document.getElementById('units_measurement_edit').value = list_info_article[27];
+        document.getElementById('observations_edit').value = list_info_article[28];
 
         if (list_info_article[11] === ''){ document.getElementById('div_desc_subref').style.display = 'none'}
         else { document.getElementById('div_desc_subref').style.display = 'block'}
@@ -1002,6 +1043,11 @@
         let purchase_format = document.getElementById('purchase_format_edit').value
         let units_format = document.getElementById('units_format_edit').value
 
+        let name_logaritme = document.getElementById('name_logaritme_edit').value
+        let units_for_discount = document.getElementById('units_for_discount_edit').value
+        let units_measurement = document.getElementById('units_measurement_edit').value
+        let observations = document.getElementById('observations_edit').value
+
         // Crear form data
         var form_data = new FormData();
 
@@ -1029,6 +1075,10 @@
         form_data.append('units_format_supplier', units_format_supplier)
         form_data.append('purchase_format', purchase_format)
         form_data.append('units_format', units_format)
+        form_data.append('name_logaritme', name_logaritme)
+        form_data.append('units_for_discount', units_for_discount)
+        form_data.append('units_measurement', units_measurement)
+        form_data.append('observations', observations)
 
         // Creeem l'objecte per l'ajax
         var xhr = new XMLHttpRequest();
@@ -1474,15 +1524,16 @@
         // alert_type = "warning"
         message = ''
         alert_type = ""
-    
+
         document.getElementById("code_log").value = '';
         document.getElementById("code_sap").value = '';
         document.getElementById("manufacturer").value = '';
         document.getElementById("analytical_technique").value = '';
         document.getElementById("description").value = '';
-        document.getElementById('num_lots').value = 0;            
+        document.getElementById('num_lots').value = 0;
         document.getElementById('reference_catalog').value = '';
-        document.getElementById("supplier").value = '';  
+        document.getElementById("supplier").value = '';
+        document.getElementById("name_logaritme").value = '';
 
         // Eliminar tots els divs amb el name divs_new_lots
         var elementosAEliminar = document.querySelectorAll('div[name="divs_new_lots"]');

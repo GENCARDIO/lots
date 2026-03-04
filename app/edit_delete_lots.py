@@ -71,6 +71,10 @@ def edit_lot():
     units_format_supplier = request.form.get("units_format_supplier")
     purchase_format = request.form.get("purchase_format")
     units_format = request.form.get("units_format")
+    name_logaritme = request.form.get("name_logaritme")
+    units_for_discount = request.form.get("units_for_discount")
+    units_measurement = request.form.get("units_measurement")
+    observations = request.form.get("observations")
 
     import_unit_ics = import_unit_ics.replace(',', '.')
     import_unit_idibgi = import_unit_idibgi.replace(',', '.')
@@ -252,6 +256,34 @@ def edit_lot():
                 save_log(dict_save_info)
                 change_confirmed = True
 
+            if select_lot.name_logaritme != name_logaritme:
+                info_change = {"field": 'name_logaritme', "old_info": select_lot.name_logaritme, "new_info": name_logaritme}
+                select_lot.name_logaritme = name_logaritme
+                dict_save_info['info'] = json.dumps(info_change)
+                save_log(dict_save_info)
+                change_confirmed = True
+
+            if str(select_lot.units_for_discount) != str(units_for_discount):
+                info_change = {"field": 'units_for_discount', "old_info": select_lot.units_for_discount, "new_info": units_for_discount}
+                select_lot.units_format = units_for_discount
+                dict_save_info['info'] = json.dumps(info_change)
+                save_log(dict_save_info)
+                change_confirmed = True
+
+            if select_lot.units_measurement != units_measurement:
+                info_change = {"field": 'units_measurement', "old_info": select_lot.units_measurement, "new_info": units_measurement}
+                select_lot.units_measurement = units_measurement
+                dict_save_info['info'] = json.dumps(info_change)
+                save_log(dict_save_info)
+                change_confirmed = True
+
+            if select_lot.observations != observations:
+                info_change = {"field": 'observations', "old_info": select_lot.observations, "new_info": observations}
+                select_lot.observations = observations
+                dict_save_info['info'] = json.dumps(info_change)
+                save_log(dict_save_info)
+                change_confirmed = True
+
             if not change_confirmed and not change_confirmed_price:
                 return "False_//_No has fet cap canvi respecte l'original."
 
@@ -321,6 +353,18 @@ def edit_lot():
                         
                         if lot_stock.units_format != units_format:
                             lot_stock.units_format = units_format
+
+                        if lot_stock.name_logaritme != name_logaritme:
+                            lot_stock.name_logaritme = name_logaritme
+
+                        if lot_stock.units_for_discount != units_for_discount:
+                            lot_stock.units_for_discount = units_for_discount
+
+                        if lot_stock.units_measurement != units_measurement:
+                            lot_stock.units_measurement = units_measurement
+
+                        if lot_stock.observations != observations:
+                            lot_stock.observations = observations
 
                     if len(id_stock_lots_change) > 2:
                         id_stock_lots_change = id_stock_lots_change[:-2]
