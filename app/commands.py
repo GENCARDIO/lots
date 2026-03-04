@@ -27,11 +27,11 @@ def search_add_command():
     code_search = request.form.get("code_search")
     code_panel = request.form.get("code_panel")
 
-    select_lot = session1.query(Lots).filter(func.lower(Lots.catalog_reference) == code_search.lower()).all()
-    if not select_lot:
-        select_lot = session1.query(Lots).filter(func.lower(Lots.description) == code_search.lower()).all()
-
-    if not select_lot and code_panel != '':
+    if code_panel == '':
+        select_lot = session1.query(Lots).filter(func.lower(Lots.catalog_reference) == code_search.lower()).all()
+        if not select_lot:
+            select_lot = session1.query(Lots).filter(func.lower(Lots.description) == code_search.lower()).all()
+    else:
         select_lot = session1.query(Lots).filter(func.lower(Lots.catalog_reference) == code_search.lower()).filter(func.lower(Lots.code_panel) == code_panel.lower()).all()
         if not select_lot:
             select_lot = session1.query(Lots).filter(func.lower(Lots.description) == code_search.lower()).filter(func.lower(Lots.code_panel) == code_panel.lower()).all()

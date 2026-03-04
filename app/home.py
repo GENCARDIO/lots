@@ -1,6 +1,6 @@
 from flask import render_template, request, redirect, session, flash, jsonify, send_file
 from app import app
-from app.utils import requires_auth, list_desciption_lots, list_cost_center, to_dict
+from app.utils import requires_auth, list_desciption_lots, list_cost_center, to_dict, save_log
 from app.models import IP_HOME, session1, Lots, Stock_lots, Lot_consumptions
 import jwt
 import json
@@ -11,6 +11,7 @@ import pandas as pd
 from openpyxl import load_workbook
 from openpyxl.styles import Font, PatternFill, Alignment
 from config import main_dir_docs
+import os
 
 
 # Pagina incial i visualització
@@ -109,7 +110,7 @@ def search_lot_db():
             dict_lots['code_SAP'] = lot.code_SAP
             dict_lots['code_LOG'] = lot.code_LOG
             dict_lots['catalog_reference'] = lot.catalog_reference
-            dict_lots['info_article'] = f"{lot.key}/-/{lot.catalog_reference}/-/{lot.manufacturer}/-/{lot.description}/-/{lot.analytical_technique}/-/{lot.reference_units}/-/{lot.id_reactive}/-/{lot.code_SAP}/-/{lot.code_LOG}/-/{lot.active}/-/{lot.temp_conservation}/-/{lot.description_subreference}/-/{lot.react_or_fungible}/-/{lot.code_panel}/-/{lot.location}/-/{lot.supplier}/-/{lot.purchase_format}/-/{lot.units_format}/-/{lot.import_unit_ics}/-/{lot.import_unit_idibgi}/-/{lot.local_management}/-/{lot.plataform_command_preferent}/-/{lot.maximum_amount}/-/{lot.purchase_format_supplier}/-/{lot.units_format_supplier}"
+            dict_lots['info_article'] = f"{lot.key}/-/{lot.catalog_reference}/-/{lot.manufacturer}/-/{lot.description}/-/{lot.analytical_technique}/-/{lot.reference_units}/-/{lot.id_reactive}/-/{lot.code_SAP}/-/{lot.code_LOG}/-/{lot.active}/-/{lot.temp_conservation}/-/{lot.description_subreference}/-/{lot.react_or_fungible}/-/{lot.code_panel}/-/{lot.location}/-/{lot.supplier}/-/{lot.purchase_format}/-/{lot.units_format}/-/{lot.import_unit_ics}/-/{lot.import_unit_idibgi}/-/{lot.local_management}/-/{lot.plataform_command_preferent}/-/{lot.maximum_amount}/-/{lot.purchase_format_supplier}/-/{lot.units_format_supplier}/-/{lot.name_logaritme}/-/{lot.units_for_discount}/-/{lot.units_measurement}/-/{lot.observations}"
             dict_lots['description'] = lot.description
             dict_lots['description_subreference'] = lot.description_subreference
             dict_lots['active'] = lot.active
@@ -427,10 +428,353 @@ def info_description_lots():
             "id_reactive": x.id_reactive,
             "description_subreference": x.description_subreference,
             "code_panel": x.code_panel,
+            "name_logaritme": x.name_logaritme,
         }
         for x in lots
     ]
     return jsonify(data)
+
+
+@app.route("/upadate_bd")
+@requires_auth
+def upadate_bd():
+    """
+        Llegeix un fitxer Excel des del directori principal i processa les files per actualitzar la BD.
+
+        El fitxer Excel s'espera que tingui capçaleres (noms de columna) a la primera fila.
+        Es recorre fila a fila i es crea un diccionari amb tots els camps per a cada fila.
+
+        :return: Resposta JSON amb el resultat del procés.
+        :rtype: flask.wrappers.Response
+
+        :raises ValueError: Si no es troba el fitxer o si falten columnes esperades.
+    """
+    modify = 0
+    not_found = ''
+    found = 0
+    # --- Config ---
+    # Comentari en català: ruta del fitxer Excel dins el directori principal del projecte
+    csv_filename = "new_db.xlsx"  # <-- canvia-ho pel nom real
+    csv_path = os.path.join(main_dir, csv_filename)
+
+    if not os.path.exists(csv_path):
+        return jsonify({"result": False, "message": f"No s'ha trobat l'Excel a: {csv_path}"}), 404
+
+    print(csv_path)
+
+    # try:
+    df = pd.read_excel(csv_path)
+    # except Exception as exc:
+    #     return "Error al lleguir el document"
+
+    # Comentari en català: neteja bàsica (files buides i NaN)
+    df = df.dropna(how="all").fillna("")
+
+    # (Opcional però recomanat) validar que tens les 11 columnes esperades
+    # expected_cols = ["ID Petició", "...", "..."]  # posa aquí les 11 columnes reals
+    # missing = [c for c in expected_cols if c not in df.columns]
+    # if missing:
+    #     return jsonify({"result": False, "message": f"Falten columnes: {missing}"}), 400
+
+    not_match: list[str] = []
+    updated: int = 0
+
+    # Comentari en català: iteració fila a fila; cada fila és un dict amb totes les columnes
+    for row_dict in df.to_dict(orient="records"):
+        dict_log = {}
+        # Exemple: obtenir un camp concret
+        key_raw = row_dict.get("key", "")
+        key = str(key_raw).strip()
+
+        catalog_reference_raw = row_dict.get("catalog_reference", "")
+        catalog_reference = str(catalog_reference_raw).strip()
+
+        manufacturer_raw = row_dict.get("manufacturer", "")
+        manufacturer = str(manufacturer_raw).strip()
+
+        description_raw = row_dict.get("description", "")
+        description = str(description_raw).strip()
+
+        analytical_technique_raw = row_dict.get("analytical_technique", "")
+        analytical_technique = str(analytical_technique_raw).strip()
+
+        reference_units_raw = row_dict.get("reference_units", "")
+        reference_units = str(reference_units_raw).strip()
+
+        id_reactive_raw = row_dict.get("id_reactive", "")
+        id_reactive = str(id_reactive_raw).strip()
+
+        code_SAP_raw = row_dict.get("code_SAP", "")
+        code_SAP = str(code_SAP_raw).strip()
+
+        code_LOG_raw = row_dict.get("code_LOG", "")
+        code_LOG = str(code_LOG_raw).strip()
+
+        active_raw = row_dict.get("active", "")
+        active = str(active_raw).strip()
+
+        temp_conservation_raw = row_dict.get("temp_conservation", "")
+        temp_conservation = str(temp_conservation_raw).strip()
+
+        description_subreference_raw = row_dict.get("description_subreference", "")
+        description_subreference = str(description_subreference_raw).strip()
+
+        react_or_fungible_raw = row_dict.get("react_or_fungible", "")
+        react_or_fungible = str(react_or_fungible_raw).strip()
+
+        code_panel_raw = row_dict.get("code_panel", "")
+        code_panel = str(code_panel_raw).strip()
+
+        location_raw = row_dict.get("location", "")
+        location = str(location_raw).strip()
+
+        supplier_raw = row_dict.get("supplier", "")
+        supplier = str(supplier_raw).strip()
+
+        purchase_format_raw = row_dict.get("purchase_format", "")
+        purchase_format = str(purchase_format_raw).strip()
+
+        units_format_raw = row_dict.get("units_format", "")
+        units_format = str(units_format_raw).strip()
+
+        import_unit_ics_raw = row_dict.get("import_unit_ics", "")
+        import_unit_ics = str(import_unit_ics_raw).strip()
+
+        import_unit_idibgi_raw = row_dict.get("import_unit_idibgi", "")
+        import_unit_idibgi = str(import_unit_idibgi_raw).strip()
+
+        local_management_raw = row_dict.get("local_management", "")
+        local_management = str(local_management_raw).strip()
+
+        plataform_command_preferent_raw = row_dict.get("plataform_command_preferent", "")
+        plataform_command_preferent = str(plataform_command_preferent_raw).strip()
+
+        maximum_amount_raw = row_dict.get("maximum_amount", "")
+        maximum_amount = str(maximum_amount_raw).strip()
+
+        purchase_format_supplier_raw = row_dict.get("purchase_format_supplier", "")
+        purchase_format_supplier = str(purchase_format_supplier_raw).strip()
+
+        units_format_supplier_raw = row_dict.get("units_format_supplier", "")
+        units_format_supplier = str(units_format_supplier_raw).strip()
+
+        nom_logaritme_raw = row_dict.get("Nom logaritme", "")
+        name_logaritme = str(nom_logaritme_raw).strip()
+
+        ubicació_raw = row_dict.get("Ubicació", "")
+        ubicació = str(ubicació_raw).strip()
+
+        unitats_raw = row_dict.get("Unitats", "")
+        units = str(unitats_raw).strip()
+
+        unitats_de_mesuta_raw = row_dict.get("Unitats de Mesuta", "")
+        units_measurement = str(unitats_de_mesuta_raw).strip()
+
+        observacions_raw = row_dict.get("Observacions", "")
+        observations = str(observacions_raw).strip()
+
+        select_lot = session1.query(Lots).filter(Lots.key == key).first()
+        if not select_lot:
+            not_found += f"<br>{key}"
+        else:
+            found += 1
+            if select_lot.catalog_reference != catalog_reference:
+                select_lot.catalog_reference = catalog_reference
+                dict_log['catalog_reference_new'] = catalog_reference
+                dict_log['catalog_reference_old'] = select_lot.catalog_reference
+
+            if select_lot.manufacturer != manufacturer:
+                select_lot.manufacturer = manufacturer
+                dict_log['manufacturer_new'] = manufacturer
+                dict_log['manufacturer_old'] = select_lot.manufacturer
+
+            if select_lot.description != description:
+                select_lot.description = description
+                dict_log['description_new'] = description
+                dict_log['description_old'] = select_lot.description
+
+            if select_lot.analytical_technique != analytical_technique:
+                select_lot.analytical_technique = analytical_technique
+                dict_log['analytical_technique_new'] = analytical_technique
+                dict_log['analytical_technique_old'] = select_lot.analytical_technique
+
+            if select_lot.reference_units != reference_units:
+                select_lot.reference_units = reference_units
+                dict_log['reference_units_new'] = reference_units
+                dict_log['reference_units_old'] = select_lot.reference_units
+
+            if select_lot.id_reactive != id_reactive:
+                select_lot.id_reactive = id_reactive
+                dict_log['id_reactive_new'] = id_reactive
+                dict_log['id_reactive_old'] = select_lot.id_reactive
+
+            if select_lot.code_SAP != code_SAP:
+                select_lot.code_SAP = code_SAP
+                dict_log['code_SAP_new'] = code_SAP
+                dict_log['code_SAP_old'] = select_lot.code_SAP
+
+            if select_lot.code_LOG != code_LOG:
+                select_lot.code_LOG = code_LOG
+                dict_log['code_LOG_new'] = code_LOG
+                dict_log['code_LOG_old'] = select_lot.code_LOG
+
+            if select_lot.active != int(active):
+                select_lot.active = int(active)
+                dict_log['active_new'] = active
+                dict_log['active_old'] = select_lot.active
+
+            if select_lot.temp_conservation != temp_conservation:
+                select_lot.temp_conservation = temp_conservation
+                dict_log['temp_conservation_new'] = temp_conservation
+                dict_log['temp_conservation_old'] = select_lot.temp_conservation
+
+            if select_lot.description_subreference != description_subreference:
+                select_lot.description_subreference = description_subreference
+                dict_log['description_subreference_new'] = description_subreference
+                dict_log['description_subreference_old'] = select_lot.description_subreference
+
+            if select_lot.react_or_fungible != react_or_fungible:
+                select_lot.react_or_fungible = react_or_fungible
+                dict_log['react_or_fungible_new'] = react_or_fungible
+                dict_log['react_or_fungible_old'] = select_lot.react_or_fungible
+
+            if select_lot.code_panel != code_panel:
+                select_lot.code_panel = code_panel
+                dict_log['code_panel_new'] = code_panel
+                dict_log['code_panel_old'] = select_lot.code_panel
+                
+            if select_lot.location != location:
+                select_lot.location = location
+                dict_log['location_new'] = location
+                dict_log['location_old'] = select_lot.location
+
+            if select_lot.supplier != supplier:
+                select_lot.supplier = supplier
+                dict_log['supplier_new'] = supplier
+                dict_log['supplier_old'] = select_lot.supplier
+
+            if select_lot.purchase_format != purchase_format:
+                select_lot.purchase_format = purchase_format
+                dict_log['purchase_format_new'] = purchase_format
+                dict_log['purchase_format_old'] = select_lot.purchase_format
+
+            if select_lot.units_format != int(units_format):
+                select_lot.units_format = int(units_format)
+                dict_log['units_format_new'] = units_format
+                dict_log['units_format_old'] = select_lot.units_format
+
+            if select_lot.import_unit_ics != import_unit_ics:
+                select_lot.import_unit_ics = import_unit_ics
+                dict_log['import_unit_ics_new'] = import_unit_ics
+                dict_log['import_unit_ics_old'] = select_lot.import_unit_ics
+
+            if select_lot.import_unit_idibgi != import_unit_idibgi:
+                select_lot.import_unit_idibgi = import_unit_idibgi
+                dict_log['import_unit_idibgi_new'] = import_unit_idibgi
+                dict_log['import_unit_idibgi_old'] = select_lot.import_unit_idibgi
+
+            if select_lot.local_management != local_management:
+                select_lot.local_management = local_management
+                dict_log['local_management_new'] = local_management
+                dict_log['local_management_old'] = select_lot.local_management
+
+            if select_lot.plataform_command_preferent != plataform_command_preferent:
+                select_lot.plataform_command_preferent = plataform_command_preferent
+                dict_log['plataform_command_preferent_new'] = plataform_command_preferent
+                dict_log['plataform_command_preferent_old'] = select_lot.plataform_command_preferent
+
+            try:
+                if select_lot.maximum_amount != int(maximum_amount):
+                    select_lot.maximum_amount = int(maximum_amount)
+                    dict_log['maximum_amount_new'] = maximum_amount
+                    dict_log['maximum_amount_old'] = select_lot.maximum_amount
+            except:
+                print(select_lot.maximum_amount)
+
+            if select_lot.purchase_format_supplier != purchase_format_supplier:
+                select_lot.purchase_format_supplier = purchase_format_supplier
+                dict_log['purchase_format_supplier_new'] = purchase_format_supplier
+                dict_log['purchase_format_supplier_old'] = select_lot.purchase_format_supplier
+
+            try:
+                if select_lot.units_format_supplier != int(units_format_supplier):
+                    select_lot.units_format_supplier = int(units_format_supplier)
+                    dict_log['units_format_supplier_new'] = units_format_supplier
+                    dict_log['units_format_supplier_old'] = select_lot.units_format_supplier
+            except:
+                print(select_lot.units_format_supplier)
+
+            # if select_lot.name_logaritme != name_logaritme:
+            select_lot.name_logaritme = name_logaritme
+            #     dict_log['name_logaritme_new'] = name_logaritme
+            #     dict_log['name_logaritme_old'] = select_lot.name_logaritme
+
+            # if select_lot.units_for_discount != units:
+            select_lot.units_for_discount = units
+            #     dict_log['units_new'] = units
+            #     dict_log['units_old'] = select_lot.units
+
+            # if select_lot.units_measurement != units_measurement:
+            select_lot.units_measurement = units_measurement
+            #     dict_log['units_measurement_new'] = units_measurement
+            #     dict_log['units_measurement_old'] = select_lot.units_measurement
+
+            # if select_lot.observations != observations:
+            select_lot.observations = observations
+            #     dict_log['observations_new'] = observations
+            #     dict_log['observations_old'] = select_lot.observations
+
+            if ubicació != '':
+                select_lot.location = ubicació
+                dict_log['location_new'] = location
+                dict_log['location_old'] = select_lot.location
+
+            select_stock = session1.query(Stock_lots).filter(Stock_lots.id_lot == key).all()
+            for stock in select_stock:
+                stock.catalog_reference = catalog_reference
+                stock.manufacturer = manufacturer
+                stock.description = description
+                stock.analytical_technique = analytical_technique
+                stock.reference_units = reference_units
+                stock.id_reactive = id_reactive
+                stock.code_SAP = code_SAP
+                stock.code_LOG = code_LOG
+                stock.active = active
+                stock.temp_conservation = temp_conservation
+                stock.description_subreference = description_subreference
+                stock.react_or_fungible = react_or_fungible
+                stock.code_panel = code_panel
+                stock.location = location
+                stock.supplier = supplier
+                stock.purchase_format = purchase_format
+                stock.units_format = units_format
+                stock.local_management = local_management
+                stock.plataform_command_preferent = plataform_command_preferent
+                stock.maximum_amount = maximum_amount
+                stock.purchase_format_supplier = purchase_format_supplier
+                stock.units_format_supplier = units_format_supplier
+                stock.name_logaritme = name_logaritme
+                stock.units_for_discount = units
+                stock.units_measurement = units_measurement
+                stock.observations = observations
+                
+                if ubicació != '':
+                    stock.location = ubicació
+
+            if dict_log:
+                modify += 1
+                dict_save_info = {'id_lot': key,
+                                  'type': 'update_bd_excel',
+                                  'user': session['acronim'],
+                                  'info': json.dumps(dict_log),
+                                  'id_user': session['idClient'],
+                                  'date': '03-03-2025'}
+
+                save_log(dict_save_info)
+
+        session1.commit()
+
+    return f"True<br>trobats ->{found}<br>Modificats ->{modify}<br>No trobats -> {not_found}"
 
 
 '''@app.route('/charge_excel')
