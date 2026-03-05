@@ -278,6 +278,7 @@
             document.getElementById('lot_id_delete').value = lot_id;
             document.getElementById('inlineCheckbox1').checked = false;
             document.getElementById('inlineCheckbox2').checked = false;
+            document.getElementById('inlineCheckbox3').checked = false;
             open_modal('modal_delete_documents')
         }
 
@@ -305,14 +306,16 @@
             const lot_id_delete = document.getElementById('lot_id_delete').value
             const delivery_note = document.getElementById('inlineCheckbox1').checked
             const certificate = document.getElementById('inlineCheckbox2').checked
-            
+            const state_product = document.getElementById('inlineCheckbox3').checked
+
             form_data.append('group_insert_delete', group_insert_delete)
             form_data.append('delivery_note', delivery_note)
             form_data.append('certificate', certificate)
+            form_data.append('state_product', state_product)
             form_data.append('lot_id_delete', lot_id_delete)
             
-            if (delivery_note == false && certificate == false){
-                alert("S'ha de seleccionar com a mínim una de les 2 opcions")
+            if (delivery_note == false && certificate == false && state_product == false){
+                alert("S'ha de seleccionar com a mínim una de les 3 opcions")
                 return
             }
 
@@ -353,6 +356,16 @@
                                 buttonElement.classList.add("btn-outline-danger");
                                 buttonElement.innerHTML = '<i class="fa-solid fa-file-arrow-up"></i> Pujar';
                                 buttonElement.setAttribute("onclick", "open_upload_documents('certificate', `" + lot_id_delete + "`)");
+                            }
+                        }
+
+                        if (state_product){
+                            var buttonElement = document.getElementById(`${lot_id_delete}_state_product`);
+                            if (buttonElement) {
+                                buttonElement.classList.remove("btn-outline-success");
+                                buttonElement.classList.add("btn-outline-danger");
+                                buttonElement.innerHTML = '<i class="fa-solid fa-file-arrow-up"></i> Pujar';
+                                buttonElement.setAttribute("onclick", "open_upload_documents('state_product', `" + lot_id_delete + "`)");
                             }
                         }
                     } else {
@@ -638,7 +651,7 @@
     </div>
 
 
-    <div class="modal fade"  id="modal_delete_documents" tabindex="-1" role="dialog" aria-labelledby="editRegister" aria-hidden="true">
+    <div class="modal fade modal-custom5"  id="modal_delete_documents" tabindex="-1" role="dialog" aria-labelledby="editRegister" aria-hidden="true">
         <div class="modal-dialog" tabindex="-1" role="document">
           <div class="modal-content">
             <div class="modal-header">
@@ -658,6 +671,10 @@
                             <div class="form-check form-check-inline" style="padding-top: 9px;">
                                 <input class="form-check-input" type="checkbox" id="inlineCheckbox2" value="certificat">
                                 <label class="form-check-label" for="inlineCheckbox2">Certificat</label>
+                            </div>
+                            <div class="form-check form-check-inline" style="padding-top: 9px;">
+                                <input class="form-check-input" type="checkbox" id="inlineCheckbox3" value="state_product">
+                                <label class="form-check-label" for="inlineCheckbox3">Estat Prod.</label>
                             </div>
                         </div>
                     </div>

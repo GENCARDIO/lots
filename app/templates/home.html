@@ -73,8 +73,15 @@
      * També es fan comprobacions de que el que ens ha entrat per paràmetre sigui correcta.
      * 
      */
-    function info_add_lot(acronim, rol, code_search = '', code_panel = ''){
+    // function info_add_lot(acronim, rol, code_search = '', code_panel = ''){
+    function info_add_lot(button){
         document.getElementById('unit_lots').value = 1;
+        
+        const acronim = button.dataset.acronim;
+        const rol = button.dataset.rol;
+        const code_search = button.dataset.description;
+        const code_panel = button.dataset.panel;
+        
         // Crear form data
         var form_data = new FormData();
         
@@ -1216,7 +1223,8 @@
         const code_log = document.getElementById('code_log').value
         let analytical_technique = document.getElementById('analytical_technique').value
         let manufacturer = document.getElementById('manufacturer').value
-        const description = document.getElementById(`description`).value
+        let description = document.getElementById(`description`).value
+        description = description.replace(/"/g, "'");
         const supplier = document.getElementById(`supplier`).value
         const name_logaritme = document.getElementById(`name_logaritme`).value
         const units_for_discount = document.getElementById(`units_for_discount`).value
@@ -1297,6 +1305,7 @@
         for (var x = 0; x < num_lots; x++){
             var id_reactiu = document.getElementById(`id_reactiu${x}`).value
             var description_subreference = document.getElementById(`description_subreference${x}`).value
+            description_subreference = description_subreference.replace(/"/g, "'");
             var temp_conservation = document.getElementById(`temp_conservation${x}`).value
             var react_or_fungible = document.getElementById(`react_or_fungible${x}`).value
             var code_panel = document.getElementById(`code_panel${x}`).value
@@ -1799,7 +1808,16 @@
      * Si es troba una coincidència, les dades associades es posen en un diccionari i es presenten als
      * camps de l'HTML. Si es produeix qualsevol error durant el procés es mostra un missatge d'error.
      */
-    function info_add_comand(acroni, rol, code_search, code_panel){
+    // function info_add_comand(acroni, rol, code_search, code_panel){
+    function info_add_comand(button){
+
+        const acronim = button.dataset.acronim;
+        const rol = button.dataset.rol;
+        const description = button.dataset.description;
+        const panel = button.dataset.panel;
+
+        console.log(acronim, rol, description, panel);
+
         // Crear form data
         var form_data = new FormData();
         
@@ -1812,8 +1830,8 @@
         if (only_space){alert("El camp no pot estar buït"); return}
         if (code_search.length < 3){alert("El codi no to tenir menys de 3 caràcters."); return }
                     
-        form_data.append('code_search', code_search)
-        form_data.append('code_panel', code_panel)
+        form_data.append('code_search', description)
+        form_data.append('code_panel', panel)
 
         // Creeem l'objecte per l'ajax
         var xhr = new XMLHttpRequest();
@@ -2330,7 +2348,7 @@
                         `<div class="text-center">${item.observations}</div>`,
                         `<div class="text-center">${item.incidence_number}</div>`,
                         `<div class="text-center">${item.name_logaritme}</div>`,
-                        `<div class="text-center"><button class="btn btn-sm btn-primary" title="Recepcionar" onclick="info_add_lot('${acronim}', '${rol}', '${item.catalog_reference}', '${item.code_panel}')"><i class="fa-solid fa-hand-pointer"></i></button></div>`
+                        `<div class="text-center"><button class="btn btn-sm btn-primary" title="Recepcionar" data-acronim="${acronim}" data-rol="${rol}" data-description="${item.description}" data-panel="${item.code_panel}" onclick="info_add_lot(this)"><i class="fa-solid fa-hand-pointer"></i></button></div>`
                     ]);
                 });
 

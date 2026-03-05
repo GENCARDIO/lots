@@ -761,6 +761,7 @@
             //     escapeHtml(r.code_panel ?? ""),
             //     `<button class="btn btn-sm btn-primary" onclick="info_add_comand('${acronim}', '${rol}', '${r.catalog_reference}', '${r.code_panel}')">Sel.</button>`
             // ]);
+
                 table.row.add([
                     `<div class="text-center">${r.catalog_reference}</div>`,
                     `<div class="text-center">${r.description}</div>`,
@@ -769,7 +770,7 @@
                     `<div class="text-center">${r.analytical_technique}</div>`,
                     `<div class="text-center">${r.code_panel}</div>`,
                     `<div class="text-center">${r.name_logaritme}</div>`,
-                    `<button class="btn btn-sm btn-primary" title="Seleccionar" onclick="info_add_comand('${acronim}', '${rol}', '${r.catalog_reference}', '${r.code_panel}')"><i class="fa-solid fa-hand-pointer"></i></button>`
+                    `<button class="btn btn-sm btn-primary" title="Seleccionar" data-acronim="${acronim}" data-rol="${rol}" data-description='${r.description}' data-panel="${r.code_panel}" onclick="info_add_comand(this)"><i class="fa-solid fa-hand-pointer"></i></button>`
                 ]);
             }
 

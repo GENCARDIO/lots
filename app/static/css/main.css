@@ -64,6 +64,12 @@
     margin: 1.75rem auto; /* Centra el modal verticalmente y le da un pequeño margen superior */
 }
 
+.modal-custom5 .modal-dialog {
+    max-width: 30%; /* Ajusta el ancho máximo del modal */
+    max-height: 30%; /* Ajusta la altura máxima del modal */
+    margin: 1.75rem auto; /* Centra el modal verticalmente y le da un pequeño margen superior */
+}
+
 #modal_seach_all_year .modal-dialog {
     max-width: 90%; /* Ajusta el ancho máximo del modal según sea necesario */
     margin: 1.75rem auto; /* Centra el modal verticalmente y le da un pequeño margen superior */

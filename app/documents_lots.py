@@ -1,6 +1,6 @@
-from flask import render_template, request, flash, send_file
+from flask import render_template, request, flash, send_file, session
 from app import app
-from app.utils import requires_auth, list_desciption_lots, list_cost_center
+from app.utils import requires_auth, list_desciption_lots, list_cost_center, instant_date, save_log
 from app.models import session1, Lots, Stock_lots
 from sqlalchemy import func, cast, Integer
 from werkzeug.utils import secure_filename
@@ -10,6 +10,7 @@ from config import main_dir_docs
 from docxtpl import DocxTemplate, R
 import subprocess
 import zipfile
+import json
 
 
 @app.route('/search_lots', methods=['POST'])
@@ -509,21 +510,63 @@ def delete_documents():
     group_insert_delete = request.form.get("group_insert_delete")
     delivery_note = request.form.get("delivery_note")
     certificate = request.form.get("certificate")
+    state_product = request.form.get("state_product") 
     lot_id_delete = request.form.get("lot_id_delete")
 
+    date = instant_date()
+    dict_save_info = {'id_lot': '',
+                      'type': 'delete docs',
+                      'user': session['acronim'],
+                      'id_user': session['idClient'],
+                      'date': date}
     try:
         if delivery_note == 'true':
             select_stock_lot = session1.query(Stock_lots).filter(Stock_lots.group_insert == group_insert_delete).all()
             for stock_lot in select_stock_lot:
                 # if delivery_note == 'true':
+                dict_save_info['id_lot'] = stock_lot.id
+                info_change = {"field": 'delivery_note', "old_info": stock_lot.delivery_note, "new_info": ''}
+                dict_save_info['info'] = json.dumps(info_change)
+                save_log(dict_save_info)
+
+                info_change = {"field": 'type_doc_delivery', "old_info": stock_lot.type_doc_delivery, "new_info": ''}
+                dict_save_info['info'] = json.dumps(info_change)
+                save_log(dict_save_info)
+
                 stock_lot.delivery_note = ''
-                stock_lot.type_doc_delivery_note = ''
+                stock_lot.type_doc_delivery = ''
 
         if certificate == 'true':
             select_stock_lot = session1.query(Stock_lots).filter(Stock_lots.id == lot_id_delete).first()
             if select_stock_lot is not None:
+                dict_save_info['id_lot'] = select_stock_lot.id
+                info_change = {"field": 'certificate', "old_info": select_stock_lot.certificate, "new_info": ''}
+                dict_save_info['info'] = json.dumps(info_change)
+                save_log(dict_save_info)
+
+                info_change = {"field": 'type_doc_certificate', "old_info": select_stock_lot.type_doc_certificate, "new_info": ''}
+                dict_save_info['info'] = json.dumps(info_change)
+                save_log(dict_save_info)
+
                 select_stock_lot.certificate = ''
                 select_stock_lot.type_doc_certificate = ''
+
+        if state_product == 'true':
+            select_stock_lot_product = session1.query(Stock_lots).filter(Stock_lots.id == lot_id_delete).first()
+            if select_stock_lot_product is not None:
+                dict_save_info['id_lot'] = select_stock_lot_product.id
+                info_change = {"field": 'state_product', "old_info": select_stock_lot_product.state_product, "new_info": ''}
+                dict_save_info['info'] = json.dumps(info_change)
+                save_log(dict_save_info)
+
+                info_change = {"field": 'type_doc_state_product', "old_info": select_stock_lot_product.type_doc_state_product, "new_info": ''}
+                dict_save_info['info'] = json.dumps(info_change)
+                save_log(dict_save_info)
+
+                select_stock_lot_product.state_product = ''
+                select_stock_lot_product.type_doc_state_product = ''
+
+            save_log(dict_save_info)
 
         session1.commit()
     except Exception:
