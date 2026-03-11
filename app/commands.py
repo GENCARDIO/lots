@@ -451,6 +451,64 @@ def delete_order_tracking():
     return 'True_//_Comanda eliminada correctament'
 
 
+@app.route('/revert_order_tracking', methods=['POST'])
+@requires_auth
+def revert_order_tracking():
+    '''
+        Reverteix la tamitació d'una comanda i guaradem un log de l'acció
+
+        :param str id_command: Identificador únic del la comanda
+
+        :function: save_log(dict)
+
+        :return: True o False i un missatge de confirmació per l'usauri
+        :rtype: str
+    '''
+    id_command = request.form.get("id_command")
+
+    date = instant_date()
+    dict_save_info = {'id_lot': id_command,
+                      'type': 'revert_command',
+                      'user': session['acronim'],
+                      'id_user': session['idClient'],
+                      'date': date}
+
+    select_command = session1.query(Commands).filter_by(id=id_command).first()
+    if not select_command:
+        return "False_//_Error, No s'ha trobat la comanda a la BD_//_error_//_error"
+
+    try:
+        dict_command = {'code_command': select_command.code_command,
+                        'code_command_new': '',
+                        'date_close': select_command.date_close,
+                        'date_close_new': '',
+                        'user_close': select_command.user_close,
+                        'user_close_new': '',
+                        'user_id_close': select_command.user_id_close,
+                        'user_id_close_new': ''}
+
+        dict_save_info['info'] = json.dumps(dict_command)
+        save_log(dict_save_info)
+
+        select_command.code_command = ''
+        select_command.date_close = ''
+        select_command.user_close = ''
+        select_command.user_id_close = ''
+        session1.commit()
+
+        select_commands = session1.query(Commands, Lots).join(Lots, Commands.id_lot == Lots.key)\
+                                                        .filter(Commands.id == id_command).first()
+
+        select_command, select_lot = select_commands
+
+        dict_command_html = to_dict(select_command)
+        dict_lot = to_dict(select_lot)
+    except Exception:
+        return "False_//_Error, No hem pogut eliminar la comanda de la BD_//_error_//_error"
+
+    return f'True_//_Comanda eliminada correctament_//_{json.dumps(dict_command_html)}_//_{json.dumps(dict_lot)}'
+
+
 @app.route('/download_order_success', methods=['POST'])
 @requires_auth
 def download_order_success():

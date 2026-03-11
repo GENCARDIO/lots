@@ -95,3 +95,31 @@ table tbody tr:hover td {
     background-color: #ffeb99 !important; /* Amarillo claro */
     color: #000 !important; /* Texto negro para contraste */
 }
+
+/* Spinner */
+.loading-modal{
+    display:none;
+    position:fixed;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    background:rgba(0,0,0,0.25);
+    z-index:3000;
+    align-items:center;
+    justify-content:center;
+}
+
+.loading-box{
+    background:white;
+    padding:25px 35px;
+    border-radius:8px;
+    box-shadow:0 5px 15px rgba(0,0,0,0.3);
+    text-align:center;
+}
+
+.loading-text{
+    margin-top:10px;
+    font-size:14px;
+    color:#555;
+}

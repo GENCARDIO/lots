@@ -207,6 +207,8 @@
         * Si ens retorna error mostrarem un missatge d'informació amb el resultat.
          */
         function commands_success(){
+            $('#loading_modal').css('display','flex');
+
             // Crear form data
             var form_data = new FormData();
 
@@ -226,7 +228,10 @@
                         message = split_response[1] }
                     else if (split_response[0] === 'True'){
                         show_message = false
+                        $('#modal_command_success').css('visibility', 'hidden');
+
                         $('#modal_command_success').modal('show');
+                        $('.modal-backdrop').css('opacity', '0');
 
                         var list_lots = JSON.parse(split_response[1]);
 
@@ -253,6 +258,14 @@
                             if (j !== 1) {
                                 table.column(j).nodes().to$().addClass('text-center');}
                         }
+
+                        $('#modal_command_success').off('shown.bs.modal.adjustTable').on('shown.bs.modal.adjustTable', function () {
+                            table.columns.adjust().draw(false);
+                            $('#loading_modal').hide();
+                            // Mostrar el modal cuando todo esté ajustado
+                            $('.modal-backdrop').css('opacity', '');
+                            $('#modal_command_success').css('visibility', 'visible');
+                        });
                     } else {
                         message = `Error inesperat. Si persisteix l'error contacta amb un administrador`
                     }
@@ -324,8 +337,14 @@
                         message = split_response[1]
                         alert_type = 'danger'}
                     else if (split_response[0] === 'True'){
-                        $('#modal_order_tracking').modal('show');
+                        // Ocultamos la tabla antes de abrir el modal
+                        // $('#modal_order_tracking .modal-content').css('visibility', 'hidden');
+                        $('#modal_order_tracking').css('visibility', 'hidden');
 
+                        $('#modal_order_tracking').modal('show');
+                        $('.modal-backdrop').css('opacity', '0');
+
+                        
                         var list_lots = JSON.parse(split_response[1]);
 
                         var table = $('#table_order_tracking').DataTable();
@@ -350,6 +369,14 @@
                             if (j !== 1) {
                                 table.column(j).nodes().to$().addClass('text-center');}
                         }
+
+                        $('#modal_order_tracking').off('shown.bs.modal.adjustTable').on('shown.bs.modal.adjustTable', function () {
+                            table.columns.adjust().draw(false);
+
+                            // Mostrar el modal cuando todo esté ajustado
+                            $('.modal-backdrop').css('opacity', '');
+                            $('#modal_order_tracking').css('visibility', 'visible');
+                        });
                     } else {
                         message = `Error inesperat. Si persisteix l'error contacta amb un administrador`
                         alert_type = 'danger'
@@ -663,6 +690,112 @@
         }
     
     
+        function revert_order_tracking(){
+            id = document.getElementById('id_command_order_tracking').value;
+
+            // Crear form data
+            var form_data = new FormData();
+
+            form_data.append('id_command', id)
+
+            // Creeem l'objecte per l'ajax
+            var xhr = new XMLHttpRequest();
+            // 1er argument si es pots o get
+            // 2n argument url o ruta
+            // 3r argumemt true sempre
+            xhr.open('POST', '/revert_order_tracking', true);
+            xhr.onload = function(){
+                show_message = true
+                alert_type = ''
+                $('#modal_edit_order_tracking').modal('hide');
+                if (xhr.status === 200) {
+                    var response = xhr.responseText;
+                    var split_response = response.split('_//_')
+                    message = split_response[1]
+                    if (split_response[0] === 'False'){ alert_type = 'danger' }
+                    else if (split_response[0] === 'True'){
+                        alert_type = 'success'
+
+                        // Convertim la resposta a objecte JS
+                        let dict_command_html = JSON.parse(split_response[2]);
+                        let dict_lots_html = JSON.parse(split_response[3]);
+
+                        // Obtenemos la instancia de DataTables
+                        let table = $('#example').DataTable();
+
+                        // Añadimos la fila
+                        let newRow = table.row.add([
+                            `
+                            <input class="form-check-input"
+                                type="checkbox"
+                                value="${dict_command_html.id}"
+                                id="${dict_command_html.id}_box"
+                                name="selection_multiple">
+
+                            <button type="button"
+                                    class="btn btn-link btn-sm"
+                                    id="${dict_command_html.id}_btn_del"
+                                    onclick="delete_command('${dict_command_html.id}')">
+                                Tramitar
+                            </button>
+
+                            <button type="button" class="btn btn-warning btn-sm"
+                                id="${dict_command_html.id}_btn_edit"
+                                onclick="open_edit_command('${dict_command_html.id}','${dict_command_html.units}','${dict_command_html.observations || ''}')">
+                                <i class="fa-solid fa-pen-to-square" style="color: green;"></i>
+                                <i class="fa-solid fa-trash-can" style="color: red;"></i>
+                            </button>
+                            `,
+                            dict_lots_html.catalog_reference || '',
+                            dict_lots_html.description || '',
+                            dict_lots_html.code_SAP || '',
+                            dict_lots_html.code_LOG || '',
+                            dict_command_html.units || '',
+                            dict_command_html.date_create || '',
+                            dict_command_html.user_create || '',
+                            dict_command_html.cost_center || '',
+                            dict_command_html.observations || '',
+                            dict_command_html.plataform_command_preferent || '',
+                        ]).draw(false);
+
+                        // Obtener el nodo <tr> creado
+                        let rowNode = newRow.node();
+
+                        // Poner id y color
+                        rowNode.id = dict_command_html.id;
+                        rowNode.style.backgroundColor = '#fff3cd';
+
+                        // Mover la fila a la primera posición
+                        $('#example tbody').prepend(rowNode);
+                    }
+                    else {
+                        message = `Error inesperat. Si persisteix l'error contacta amb un administrador`
+                        alert_type = 'danger'
+                    }
+                }
+                else {
+                    message = `Error, No s'ha pogut realitzar l'operació. Si persisteix l'error contacta amb un administrador`
+                    alert_type = 'danger' }
+            
+                $('#modal_order_tracking').modal('hide');
+                var flashContainer = document.querySelector(".d-flex.justify-content-center .row");
+                // Eliminar la alerta anterior, si existe
+                if (flashContainer.children.length > 0) {
+                    flashContainer.removeChild(flashContainer.children[0]); }
+                var newFlash = document.createElement("div");
+                newFlash.className = "alert alert-" + alert_type + " alert-dismissible fade show ml-3";
+                newFlash.role = "alert";
+                newFlash.innerHTML = "<span>" + message + "</span>" + 
+                                    '<button type="button" class="close" data-dismiss="alert" aria-label="Close">' +
+                                    '<span aria-hidden="true">&times;</span>' +
+                                    '</button>';
+                flashContainer.appendChild(newFlash);
+                flashContainer.style.paddingTop = "20px";
+            }
+            xhr.send(form_data)
+        }
+    
+
         /**
         * Obre una finestra modal per editar una comanda específica amb els valors actuals.
         *
@@ -1258,7 +1391,8 @@
                         <input type="hidden" id="ceco_order_tracking" value=""/>
                         <div class="d-inline-block">
                             <button type="button" class="btn btn-outline-success btn-sm" onclick="modify_order_tracking()" style="margin-right: 10px;"><i class="fa-solid fa-share-from-square"></i> Modificar</button>
-                            <button type="button" class="btn btn-outline-danger btn-sm" onclick="delete_order_tracking()"><i class="fa-solid fa-trash-alt"></i> Eliminar</button>
+                            <button type="button" class="btn btn-outline-danger btn-sm" onclick="delete_order_tracking()" style="margin-right: 10px;"><i class="fa-solid fa-trash-alt"></i> Eliminar</button>
+                            <button type="button" class="btn btn-outline-warning btn-sm" onclick="revert_order_tracking()"><i class="fa-solid fa-rotate-left"></i> Revertir tramitació</button>
                         </div>
                     </div>      
                 </div>
