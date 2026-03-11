@@ -429,6 +429,7 @@ def info_description_lots():
             "description_subreference": x.description_subreference,
             "code_panel": x.code_panel,
             "name_logaritme": x.name_logaritme,
+            "supplier": x.supplier,
         }
         for x in lots
     ]
