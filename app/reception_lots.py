@@ -549,7 +549,7 @@ def add_stock_lot():
 @app.route('/search_article_pending', methods=['POST'])
 @requires_auth
 def search_article_pending():
-    select_commands = session1.query(Commands, Lots).join(Lots, Commands.id_lot == Lots.key).filter(Commands.received == 0).all()
+    select_commands = session1.query(Commands, Lots).join(Lots, Commands.id_lot == Lots.key).filter(Commands.received == 0).filter(Commands.code_command != '').all()
 
     data = []
 

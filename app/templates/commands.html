@@ -817,6 +817,15 @@
             document.getElementById('units_edit_command').value = units
             document.getElementById('observations_edit_command').value = observations
             document.getElementById('id_edit_command').value = id
+
+            // 🔥 asignar el id al botón
+            const btn = document.getElementById('forced_tramited');
+
+            btn.onclick = () => {
+                delete_command(id);
+                close_modal('modal_edit_command')
+            };
+
             $('#modal_edit_command').modal('show');
         }
 
@@ -1173,7 +1182,7 @@
                                             <button type="button" class="btn btn-link btn-sm" id="{{command.id}}_btn_del" onclick="delete_command(`{{command.id}}`)" disabled>Tramitar</button>
                                         {% endif %} 
                                         {% if session['rol'] == 'admin' %}
-                                            <button type="button" class="btn btn-warning btn-sm" id="{{command.id}}_btn_edit" onclick="open_edit_command(`{{command.id}}`,`{{command.units}}`, `{{command.observations}}`)"><i class="fa-solid fa-pen-to-square" style="color: green;"></i> <i class="fa-solid fa-trash-can" style="color: red;"></i></button>
+                                            <button type="button" class="btn btn-warning btn-sm" id="{{command.id}}_btn_edit" onclick="open_edit_command(`{{command.id}}`,`{{command.units}}`, `{{command.observations}}`)"><i class="fa-solid fa-pen-to-square" style="color: green;"></i> <i class="fa-solid fa-trash-can" style="color: red;"></i> <i class="fa-solid fa-bolt" style="color: grey;"></i></button>
                                         {% endif %}   
                                     </div>
                                 </td>
@@ -1390,7 +1399,7 @@
                         <input type="hidden" id="ref_prov_order_tracking" value=""/>
                         <input type="hidden" id="ceco_order_tracking" value=""/>
                         <div class="d-inline-block">
-                            <button type="button" class="btn btn-outline-success btn-sm" onclick="modify_order_tracking()" style="margin-right: 10px;"><i class="fa-solid fa-share-from-square"></i> Modificar</button>
+                            <button type="button" class="btn btn-outline-success btn-sm" onclick="modify_order_tracking()" style="margin-right: 10px;"><i class="fa-solid fa-pen-to-square"></i> Modificar</button>
                             <button type="button" class="btn btn-outline-danger btn-sm" onclick="delete_order_tracking()" style="margin-right: 10px;"><i class="fa-solid fa-trash-alt"></i> Eliminar</button>
                             <button type="button" class="btn btn-outline-warning btn-sm" onclick="revert_order_tracking()"><i class="fa-solid fa-rotate-left"></i> Revertir tramitació</button>
                         </div>
@@ -1406,7 +1415,7 @@
         <div class="modal-dialog modal-lg" tabindex="-1" role="document">
           <div class="modal-content">
             <div class="modal-header">
-              <h5 class="modal-title" id="title"> Modificar/Eliminar Comanda</h5>
+              <h5 class="modal-title" id="title"> Accions de comanda</h5>
               <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="close_modal('modal_edit_command')"><span aria-hidden="true">&times;</span></button>
             </div>
             <div class="modal-body">
@@ -1427,7 +1436,8 @@
                         <input type="hidden" id="id_edit_command" value=""/>
                         <div class="d-inline-block">
                             <button type="button" class="btn btn-outline-success btn-sm" onclick="edit_command_pending()" style="margin-right: 10px;"><i class="fa-solid fa-share-from-square"></i> Modificar</button>
-                            <button type="button" class="btn btn-outline-danger btn-sm" onclick="delete_command_pending()"><i class="fa-solid fa-trash-alt"></i> Eliminar</button>
+                            <button type="button" class="btn btn-outline-danger btn-sm" onclick="delete_command_pending()" style="margin-right: 10px;"><i class="fa-solid fa-trash-alt"></i> Eliminar</button>
+                            <button type="button" class="btn btn-outline-secondary btn-sm" id="forced_tramited"><i class="fa-solid fa-bolt"></i> Forçar tramitació</button>
                         </div>
                     </div>      
                 </div>
