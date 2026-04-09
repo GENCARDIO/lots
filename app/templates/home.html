@@ -2425,6 +2425,325 @@
         close_modal('modal_labels')
     }
     
+
+    async function add_buy_primer() {
+        const dna = document.getElementById('dna_bp').value;
+        const sequence_name = document.getElementById('sequence_name_bp').value;
+        const purification = document.getElementById('purification_bp').value;
+        const synthesis_scale = document.getElementById('synthesis_scale_bp').value;
+        const shipping_conditions = document.getElementById('shipping_conditions_bp').value;
+        const modification_5 = document.getElementById('modification_5_bp').value;
+        const sequence = document.getElementById('sequence_bp').value;
+        const modification_3 = document.getElementById('modification_3_bp').value;
+        const internal_modification = document.getElementById('internal_modification_bp').value;
+        const quality_check_maldi = document.getElementById('quality_check_maldi_bp').value;
+        const technique = document.getElementById('technique_bp').value;
+        const observations = document.getElementById('observations_bp').value;
+
+        let errors = '';
+
+        const fields = [
+            { value: sequence_name, name: "Nom seqüència" },
+            { value: sequence, name: "Seqüència" },
+            { value: dna, name: "DNA" },
+            { value: purification, name: "Purificació" },
+            { value: synthesis_scale, name: "Escala sintesis" },
+            { value: shipping_conditions, name: "Condició compra" },
+            { value: technique, name: "Tecnica" }
+        ];
+
+        // validar campos vacíos
+        for (const field of fields) {
+            if (!field.value || field.value.trim() === '') {
+                if (errors.length === 0) {
+                    errors = 'Els següents camps no poden estar buits:<br>';
+                }
+                errors += `- ${field.name}<br>`;
+            }
+        }
+
+        // validación específica
+        if (sequence && sequence.trim().length < 10) {
+            errors += "La seqüència ha de tenir mínim 10 caràcters";
+        }
+
+        // 👉 si hay errores, los mostramos TODOS
+        if (errors.length > 0) {
+            showModalMessage(errors, 'warning', 'modal_message_container_add_primer', 15000);
+            return;
+        }
+
+        const form_data = new FormData();
+        form_data.append('dna', dna);
+        form_data.append('sequence_name', sequence_name);
+        form_data.append('purification', purification);
+        form_data.append('synthesis_scale', synthesis_scale);
+        form_data.append('shipping_conditions', shipping_conditions);
+        form_data.append('modification_5', modification_5);
+        form_data.append('sequence', sequence);
+        form_data.append('modification_3', modification_3);
+        form_data.append('internal_modification', internal_modification);
+        form_data.append('quality_check_maldi', quality_check_maldi);
+        form_data.append('technique', technique);
+        form_data.append('observations', observations);
+
+        try {
+            const response = await fetch('/add_buy_primer', {
+                method: 'POST',
+                body: form_data
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                alert(data.message || 'Unexpected error');
+                return;
+            }
+
+            if (data.status === 'success') {
+                close_modal('modal_buy_primer')
+                document.getElementById('sequence_name_bp').value = '';
+                document.getElementById('purification_bp').value = '';
+                document.getElementById('synthesis_scale_bp').value = '';
+                document.getElementById('shipping_conditions_bp').value = '';
+                document.getElementById('modification_5_bp').value = '';
+                document.getElementById('sequence_bp').value = '';
+                document.getElementById('modification_3_bp').value = '';
+                document.getElementById('internal_modification_bp').value = '';
+                document.getElementById('quality_check_maldi_bp').value = '';
+                document.getElementById('technique_bp').value = '';
+                document.getElementById('observations_bp').value = '';
+
+                const table = $('#table_primers').DataTable();
+
+                const r = data.data;
+
+                const rowNode = table.row.add([
+                    `<div class="form-check" style="display: flex; justify-content: center;"><input class="form-check-input" name="select_multiple" type="checkbox" value=${data.id} id="${data.id}_cb_primer"></div>`,
+                    `<div class="text-center">${dna ?? ''}</div>`,
+                    `<div class="text-center">${sequence_name ?? ''}</div>`,
+                    `<div class="text-center">${purification ?? ''}</div>`,
+                    `<div class="text-center">${synthesis_scale ?? ''}</div>`,
+                    `<div class="text-center">${shipping_conditions ?? ''}</div>`,
+                    `<div class="text-center">${modification_5 ?? ''}</div>`,
+                    `<div class="text-center">${formatColourSequence(sequence)}</div>`,
+                    `<div class="text-center">${modification_3 ?? ''}</div>`,
+                    `<div class="text-center">${internal_modification ?? ''}</div>`,
+                    `<div class="text-center">${quality_check_maldi ?? ''}</div>`,
+                    `<div class="text-center">${technique ?? ''}</div>`,
+                    `<div class="d-flex justify-content-center align-items-center gap-1 flex-nowrap">
+                        <button class="btn btn-sm btn-primary" title="Tramitar Compra" onclick="action_primer(${data.id}, 'tramited')">
+                            <i class="fa-solid fa-basket-shopping"></i>
+                        </button>
+                        <button class="btn btn-sm btn-danger" title="Eliminar Compra" onclick="action_primer(${data.id}, 'delete')">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </div>`
+                ]).node();
+
+                // aquí asignas el id al <tr>
+                rowNode.id = `${data.id}`;
+
+                // 👉 highlight
+                rowNode.classList.add('table-warning');
+
+                // ahora sí haces el draw
+                table.draw(false);
+
+                // quitar highlight después de 5s
+                setTimeout(() => {
+                    rowNode.classList.remove('table-warning');
+                }, 10000);
+
+                // Primer fem visibles totes les columnes
+                table.columns().visible(true);
+
+                // Revisem quines continuen completament buides i les amaguem
+                table.columns().every(function (index) {
+                    // No amaguis la columna del botó
+                    if (index === 12 || index === 0) {
+                        this.visible(true);
+                        return;
+                    }
+
+                    const columnData = this.data().toArray();
+
+                    const allEmpty = columnData.every(cell => {
+                        const tempDiv = document.createElement('div');
+                        tempDiv.innerHTML = cell;
+                        return tempDiv.textContent.trim() === '';
+                    });
+
+                    this.visible(!allEmpty);
+                });
+
+                table.columns.adjust().draw(false);
+
+                // 👉 mover arriba manualmente
+                const tbody = table.table().body();
+                tbody.insertBefore(rowNode, tbody.firstChild);
+
+                showModalMessage("Primer afegit correctament", 'success', 'modal_message_container');
+            } else if (data.status === 'duplicate') {
+                alert(data.message);
+            } else {
+                alert(data.message || 'Unexpected error');
+            }
+
+        } catch (error) {
+            console.error('Error adding primer:', error);
+            alert('Unexpected connection error');
+        }
+    }
+
+
+    function formatColourSequence(seq) {
+        if (!seq) return '';
+
+        const primer1 = "TGTAAAACGACGGCCAGT";
+        const primer2 = "CAGGAAACAGCTATGACC";
+
+        if (seq.startsWith(primer1)) {
+            return `<span style="color:red;">${primer1}</span>${seq.slice(primer1.length)}`;
+        }
+
+        if (seq.startsWith(primer2)) {
+            return `<span style="color:red;">${primer2}</span>${seq.slice(primer2.length)}`;
+        }
+
+        return seq;
+}
+
+
+    async function action_primer(id_primer, action) {
+        const form_data = new FormData();
+
+        const checked = document.querySelectorAll('.form-check-input:checked');
+
+        if (checked.length !== 0) {
+            // agafar els valors
+            const values = Array.from(checked).map(cb => cb.value);
+
+            // convertir a string separat per ;
+            const ids_primers_cb = values.join(';');
+
+            // 🔍 comprovar si id_primer està dins dels seleccionats
+            if (!values.includes(String(id_primer))) {
+                return; // no fem res
+            }
+
+            // 🔁 substituir id_primer pel conjunt seleccionat
+            id_primer = ids_primers_cb;
+        } else {
+            showModalMessage("S'ha de seleccionar com a mínim un primer", 'warning', 'modal_message_container');
+            return
+        }
+
+        form_data.append('id_primer', id_primer);
+        form_data.append('action', action);
+
+        try {
+            const response = await fetch('/action_primer', {
+                method: 'POST',
+                body: form_data
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                showModalMessage("Error, no hem rebut la resposta esperada", 'danger', 'modal_message_container');
+                return;
+            }
+
+            if (data.status === 'success') {
+                list_ids = data.id.split(';')
+                const table = $('#table_primers').DataTable();
+
+                list_ids.forEach(id_primer_change => {
+                    const row = document.getElementById(id_primer_change);
+                    if (!row) return;
+
+                    if (action === 'tramited'){
+                        // última columna (td)
+                        const cells = row.querySelectorAll('td');
+
+                        const lastCell = cells[cells.length - 1];
+
+                        // nous botons
+                        const newButtons = `
+                            <div class="d-flex justify-content-center align-items-center gap-1 flex-nowrap">
+                                <button class="btn btn-sm btn-success"
+                                        title="Recepcionar primer"
+                                        onclick="action_primer(${id_primer_change}, 'buy')">
+                                    <i class="fa-solid fa-circle-plus"></i>
+                                </button>
+                                <button class="btn btn-sm btn-danger"
+                                        title="Eliminar Compra"
+                                        onclick="action_primer(${id_primer_change}, 'delete')">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </div>
+                        `;
+                        // sustituir contenido
+                        lastCell.innerHTML = newButtons;
+                        // 👉 highlight fila
+                        row.classList.add('table-warning');
+
+                        // 👉 opcional transición suave
+                        row.style.transition = 'background-color 0.5s';
+                        
+                        document.getElementById(`${id_primer_change}_cb_primer`).checked = false;
+                        document.getElementById('all_checkbox').checked = false;
+
+                        // 👉 quitar highlight después de 5s
+                        setTimeout(() => {
+                            row.classList.remove('table-warning');
+                        }, 7000);
+                    } else if (action === 'buy') {
+                        table.row(row).remove().draw(false);
+                    } else if (action === 'delete') { 
+                        table.row(row).remove().draw(false);
+                    }
+                });
+
+                if (action === 'tramited'){
+                    showModalMessage("El primer s'ha tramitat correctament", data.status, 'modal_message_container');
+                } else if (action === 'buy') {
+                    showModalMessage("El primer s'ha posat com ha comprat correctament", data.status, 'modal_message_container');
+                } else if (action === 'delete') { 
+                    showModalMessage("El primer s'ha eliminat correctament", data.status, 'modal_message_container');
+                }
+            } else if (data.status === 'duplicate') {
+                    showModalMessage(data.message, 'warning', 'modal_message_container');
+            } else {
+                showModalMessage(data.message || "Error inesperat", 'danger', 'modal_message_container');
+            }
+
+        } catch (error) {
+            console.error('Error adding primer:', error);
+            showModalMessage("Error de connexió inesperat" || "Error inesperat", 'danger', 'modal_message_container');
+        }
+    }
+
+
+    function select_all_checkbox(checkbox){
+        if (!checkbox.checked) {
+            const check_boxes = document.querySelectorAll('input[name="select_multiple"]:checked');
+            check_boxes.forEach(cb => cb.checked = false);
+        } else {
+            const unchecked_boxes = document.querySelectorAll('input[name="select_multiple"]:not(:checked)');
+            unchecked_boxes.forEach(cb => cb.checked = true);
+            const check_boxes = document.querySelectorAll('input[name="select_multiple"]:checked');
+        }
+    }
+
+
+    function download_primers_command(){
+        command_id = document.getElementById('command_primer').value;
+        document.getElementById('command_id_primer').value = command_id;
+        document.getElementById('form_create_excels_primer').submit();
+    }
+
 </script>
 <style>
     #add_lot_info {
@@ -2467,6 +2786,7 @@
                                     <form action="/search_commands" style="display: inline;">
                                         <button type="submit" class="btn btn-outline-success btn-sm"><i class="fa-solid fa-magnifying-glass"></i> Consultar</button>
                                     </form>
+                                    <button type="button" onclick="open_modal('primer_management')" class="btn btn-outline-danger btn-sm"><i class="fa-solid fa-file-circle-plus"></i> Primers</button>
                                 </div>
                             </div>
                         </div>
@@ -3303,6 +3623,348 @@
         </div>
     </div>
 
+
+    <div class="modal fade modal-custom4"  id="primer_management" tabindex="-1" role="dialog" aria-labelledby="editRegister" aria-hidden="true">
+        <div class="modal-dialog" tabindex="-1" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="title"> Primers</h5>
+                <button type="button" class="btn btn-link btn-sm" onclick="open_modal('modal_buy_primer')" style="margin-left: 10px; margin-top: 2px;"><i class="fa-solid fa-plus"></i> Nou primer</button>
+                <div class="d-flex ml-auto">
+                    <button type="button" class="btn btn-outline-success btn-sm" onclick="open_modal('modal_download_excel_primers')" style="margin-right: 10px;"><i class="fa-solid fa-file-arrow-down"></i> Descarregar</button>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="close_modal('primer_management')"><span aria-hidden="true">&times;</span></button>
+                </div>
+            </div>
+            <div class="modal-body">
+                <div id="modal_message_container" class="mb-2 text-center" style="display:none;"></div>
+                <div class="row">
+                    <div class="col-lg-12 col-md-12 col-sm-12">       
+                        <table id="table_primers" class="display" style="width: 100%;">
+                            <thead>
+                                <tr id="thcolor">
+                                    <th style="width: 10px;"><div class="form-check text-center"><input class="form-check-input" type="checkbox" id="all_checkbox" onclick="select_all_checkbox(this)" style="margin-left: -15px"></th>
+                                    <th>DNA</th>
+                                    <th>Nom</th>
+                                    <th>Purificació</th>
+                                    <th>Escala sintesis</th>
+                                    <th>Condició compra</th>
+                                    <th>Modificacio 5'</th>
+                                    <th>Sequencia</th>
+                                    <th>Modificacio 3'</th>
+                                    <th>Mofificació interna</th>
+                                    <th>Check qualitat</th>
+                                    <th>Tecnica</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table>
+                    </div> 
+                    <!-- <form action="/download_follow_commands" method="post" id="down_excel_follow_commands">
+                    </form> -->
+                </div>
+            </div>
+          </div>
+        </div>
+    </div>
+
+    
+    <div class="modal fade"  id="modal_download_excel_primers" tabindex="-1" role="dialog" aria-labelledby="editRegister" aria-hidden="true">
+        <div class="modal-dialog modal-md" tabindex="-1" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="title">Compra primers</h5>
+                <div class="d-flex ml-auto">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="close_modal('modal_download_excel_primers')"><span aria-hidden="true">&times;</span></button>
+                </div>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-lg-12 col-md-12 col-sm-12">
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Comanda primer</b></span>
+                            <select class="form-select" id="command_primer">
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-lg-12 col-md-12 col-sm-12">
+                        <div class="d-flex justify-content-center mb-3">
+                            <button type="button" class="btn btn-outline-success btn-sm" onclick="download_primers_command()">
+                                <i class="fa-solid fa-file-arrow-down"></i> Descarregar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <form id="form_create_excels_primer" method="POST" action="/create_excel_primer" style="display:none;">
+                    <input type="hidden" name="command_id_primer" id="command_id_primer">
+                </form>
+            </div>
+        </div>
+        </div>
+    </div>
+
+    
+    <div class="modal fade"  id="modal_buy_primer" tabindex="-1" role="dialog" aria-labelledby="editRegister" aria-hidden="true">
+        <div class="modal-dialog modal-lg" tabindex="-1" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+                <div class="d-flex justify-content-center w-100">
+                    <h5 class="modal-title">Afegir primer</h5>
+                </div>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="close_modal('modal_buy_primer')"><span aria-hidden="true">&times;</span></button>
+            </div>
+            <div class="modal-body">
+                <div id="modal_message_container_add_primer" class="mb-2 text-center" style="display:none;"></div>
+                <div class="row">
+                    <div id="flash_message_comand"></div>
+                    <div class="col-lg-6 col-md-12 col-sm-12">
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 150px;"><b>DNA *</b></span>
+                            <input type="text" class="form-control" id="dna_bp" aria-label="TTN" value="DNA">
+                        </div>
+                    </div>
+                    <div class="col-lg-6 col-md-12 col-sm-12">
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 155px;"><b>Nom seqüència *</b></span>
+                            <input type="text" class="form-control" id="sequence_name_bp" aria-label="TTN">
+                        </div>
+                    </div>
+                    <div class="col-lg-6 col-md-12 col-sm-12">
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 150px;"><b>Purificació *</b></span>
+                            <input type="text" class="form-control" id="purification_bp" list="datalist-purification" aria-label="TTN">
+                            <datalist id="datalist-purification">
+                                <option value="Desalted">Desalted</option>
+                                <option value="HPLC">HPLC</option>
+                                <option value="OPC">OPC</option>
+                            </datalist>
+                        </div>
+                    </div>
+                    <div class="col-lg-6 col-md-12 col-sm-12">
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 155px;" name="span_units_command"><b>Escala sintesis *</b></span>
+                            <input type="text" class="form-control" id="synthesis_scale_bp" aria-label="TTN" list="datalist-synthesis">
+                            <datalist id="datalist-synthesis">
+                                <option value="0,02 µmol">0,02 µmol</option>
+                                <option value="0,04 µmol">0,04 µmol</option>
+                                <option value="0,2 µmol">0,2 µmol</option>
+                                <option value="1 µmol">1 µmol</option>
+                            </datalist>
+                        </div>
+                    </div>
+                    <div class="col-lg-6 col-md-12 col-sm-12">
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 150px;"><b>Modificació 5'</b></span>
+                            <input type="text" class="form-control" id="modification_5_bp" aria-label="TTN" list="datalist-mod5">
+                            <datalist id="datalist-mod5">
+                                <option value="DY480XL">DY480XL</option>
+                                <option value="DY510XL">DY510XL</option>
+                                <option value="FITC">FITC</option>
+                                <option value="Fluorescein">Fluorescein</option>
+                                <option value="HEG-spacer">HEG-spacer</option>
+                                <option value="Hex">Hex</option>
+                                <option value="Inosine">Inosine</option>
+                                <option value="Iodo-dU">Iodo-dU</option>
+                                <option value="IRD700">IRD700</option>
+                                <option value="IRD800">IRD800</option>
+                                <option value="Joe">Joe</option>
+                                <option value="LC610">LC610</option>
+                                <option value="LC640">LC640</option>
+                                <option value="LC670">LC670</option>
+                                <option value="LC705">LC705</option>
+                                <option value="Methylcytosin">Methylcytosin</option>
+                                <option value="Other">Other</option>
+                                <option value="pdC">pdC</option>
+                                <option value="pdU">pdU</option>
+                                <option value="Phosphate">Phosphate</option>
+                                <option value="Rhodamine Green">Rhodamine Green</option>
+                                <option value="Rox">Rox</option>
+                                <option value="Tamra">Tamra</option>
+                                <option value="Tet">Tet</option>
+                                <option value="TexasRed">TexasRed</option>
+                                <option value="Thiol-C3">Thiol-C3</option>
+                                <option value="Thiol-C6">Thiol-C6</option>
+                                <option value="Yakima YellowTM">Yakima YellowTM</option>
+                                <option value="ZNA-2">ZNA-2</option>
+                                <option value="ZNA-3">ZNA-3</option>
+                                <option value="ZNA-4">ZNA-4</option>
+                                <option value="ZNA-5">ZNA-5</option>
+                            </datalist>
+                        </div>
+                    </div>
+                    <div class="col-lg-6 col-md-12 col-sm-12">
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 155px;"><b>Condició compra *</b></span>
+                            <input type="text" class="form-control" id="shipping_conditions_bp" aria-label="TTN" list="datalist-shipping">
+                            <datalist id="datalist-shipping">
+                                <option value="dry">dry</option>
+                                <option value="diss. 50 µM">diss. 50 µM</option>
+                                <option value="diss. 100 µM">diss. 100 µM</option>
+                                <option value="diss. 200 µM">diss. 200 µM</option>
+                                <option value="diss. 300 µM">diss. 300 µM</option>
+                                <option value="diss. 400 µM">diss. 400 µM</option>
+                            </datalist>
+                        </div>
+                    </div>
+                    <div class="col-lg-12 col-md-12 col-sm-12">
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 150px;"><b>Seqüència *</b></span>
+                            <input type="text" class="form-control" id="sequence_bp" aria-label="TTN">
+                        </div>
+                    </div>
+                    <div class="col-lg-6 col-md-12 col-sm-12">
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 150px;"><b>Modificació 3'</b></span>
+                            <input type="text" class="form-control" id="modification_3_bp" aria-label="TTN" list="datalist-mod3">
+                            <datalist id="datalist-mod3">
+                                <option value="DY480XL">DY480XL</option>
+                                <option value="DY510XL">DY510XL</option>
+                                <option value="FITC">FITC</option>
+                                <option value="Fluorescein">Fluorescein</option>
+                                <option value="HEG-spacer">HEG-spacer</option>
+                                <option value="Hex">Hex</option>
+                                <option value="Inosine">Inosine</option>
+                                <option value="Iodo-dU">Iodo-dU</option>
+                                <option value="IRD700">IRD700</option>
+                                <option value="IRD800">IRD800</option>
+                                <option value="Joe">Joe</option>
+                                <option value="LC610">LC610</option>
+                                <option value="LC640">LC640</option>
+                                <option value="LC670">LC670</option>
+                                <option value="LC705">LC705</option>
+                                <option value="Methylcytosin">Methylcytosin</option>
+                                <option value="Other">Other</option>
+                                <option value="pdC">pdC</option>
+                                <option value="pdU">pdU</option>
+                                <option value="Phosphate">Phosphate</option>
+                                <option value="Rhodamine Green">Rhodamine Green</option>
+                                <option value="Rox">Rox</option>
+                                <option value="Tamra">Tamra</option>
+                                <option value="Tet">Tet</option>
+                                <option value="TexasRed">TexasRed</option>
+                                <option value="Thiol-C3">Thiol-C3</option>
+                                <option value="Thiol-C6">Thiol-C6</option>
+                                <option value="Yakima YellowTM">Yakima YellowTM</option>
+                                <option value="ZNA-2">ZNA-2</option>
+                                <option value="ZNA-3">ZNA-3</option>
+                                <option value="ZNA-4">ZNA-4</option>
+                                <option value="ZNA-5">ZNA-5</option>
+                            </datalist>
+                        </div>
+                    </div>
+                    <div class="col-lg-6 col-md-12 col-sm-12">
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 155px;"><b>Modificació int.</b></span>
+                            <input type="text" class="form-control" id="internal_modification_bp" aria-label="TTN" list="datalist-internal">
+                            <datalist id="datalist-internal">
+                                <option value="(2-Deoxyuridine)">(2-Deoxyuridine)</option>
+                                <option value="(2-dU)">(2-dU)</option>
+                                <option value="(2-Fluor-dI)">(2-Fluor-dI)</option>
+                                <option value="(2-OMe-rA)">(2-OMe-rA)</option>
+                                <option value="(2-OMe-rC)">(2-OMe-rC)</option>
+                                <option value="(2-OMe-rG)">(2-OMe-rG)</option>
+                                <option value="(2-OMe-rU)">(2-OMe-rU)</option>
+                                <option value="(5-Hydroxymethyl-C)">(5-Hydroxymethyl-C)</option>
+                                <option value="(5-Me-dC)">(5-Me-dC)</option>
+                                <option value="(6-Fam-dC)">(6-Fam-dC)</option>                                
+                                <option value="(6-Fam-dT)">(6-Fam-dT)</option>
+                                <option value="(AldC)">(AldC)</option>
+                                <option value="(AldU)">(AldU)</option>
+                                <option value="(Atto425-dC)">(Atto425-dC)</option>
+                                <option value="(Atto425-dT)">(Atto425-dT)</option>
+                                <option value="(Atto550-dC)">(Atto550-dC)</option>
+                                <option value="(Atto550-dT)">(Atto550-dT)</option>
+                                <option value="(BHQ1-dT)">(BHQ1-dT)</option>
+                                <option value="(BHQ2-dT)">(BHQ2-dT)</option>
+                                <option value="(Biotin-dC)">(Biotin-dC)</option>                                
+                                <option value="(Biotin-dT)">(Biotin-dT)</option>
+                                <option value="(Bromo-dU)">(Bromo-dU)</option>
+                                <option value="(C12spacer)">(C12spacer)</option>
+                                <option value="(C2-Amino-dT)">(C2-Amino-dT)</option>
+                                <option value="(C3spacer)">(C3spacer)</option>
+                                <option value="(C6-Amino-dT)">(C6-Amino-dT)</option>
+                                <option value="(C6spacer)">(C6spacer)</option>
+                                <option value="(Cy3-dC)">(Cy3-dC)</option>
+                                <option value="(Cy3-dT)">(Cy3-dT)</option>
+                                <option value="(Cy5.5-dC)">(Cy5.5-dC)</option>                                
+                                <option value="(Cy5.5-dT)">(Cy5.5-dT)</option>
+                                <option value="(Cy5-dC)">(Cy5-dC)</option>
+                                <option value="(Cy5-dT)">(Cy5-dT)</option>
+                                <option value="(Dabcyl-dC)">(Dabcyl-dC)</option>
+                                <option value="(Dabcyl-dT)">(Dabcyl-dT)</option>
+                                <option value="(Dig-dT)">(Dig-dT)</option>
+                                <option value="(dspacer)">(dspacer)</option>
+                                <option value="(DY480XL)">(DY480XL)</option>
+                                <option value="(DY480XL-dT)">(DY480XL-dT)</option>
+                                <option value="(DY510XL)">(DY510XL)</option>                                
+                                <option value="(DY510XL-dT)">(DY510XL-dT)</option>
+                                <option value="(EclipseTM)">(EclipseTM)</option>
+                                <option value="(FITC-dT)">(FITC-dT)</option>
+                                <option value="(Fluorescein-dC)">(Fluorescein-dC)</option>
+                                <option value="(Fluorescein-dT)">(Fluorescein-dT)</option>
+                                <option value="(HEG-spacer)">(HEG-spacer)</option>
+                                <option value="(Hex-dC)">(Hex-dC)</option>
+                                <option value="(Hex-dT)">(Hex-dT)</option>
+                                <option value="(Inosine)">(Inosine)</option>
+                                <option value="(Iodo-dU)">(Iodo-dU)</option>                                
+                                <option value="(Joe-dC)">(Joe-dC)</option>
+                                <option value="(Joe-dT)">(Joe-dT)</option>
+                                <option value="(LC610-dT)">(LC610-dT)</option>
+                                <option value="(LC640-dT)">(LC640-dT)</option>
+                                <option value="(LC670-dC)">(LC670-dC)</option>
+                                <option value="(LC670-dT)">(LC670-dT)</option>
+                                <option value="(LC705-dC)">(LC705-dC)</option>
+                                <option value="(LC705-dT)">(LC705-dT)</option>
+                                <option value="(Methylcytosin)">(Methylcytosin)</option>
+                                <option value="(Other)">(Other)</option>                                
+                                <option value="(pdC)">(pdC)</option>
+                                <option value="(pdU)">(pdU)</option>
+                                <option value="(RhodamineGreen-dT)">(RhodamineGreen-dT)</option>
+                                <option value="(Rox-dC)">(Rox-dC)</option>
+                                <option value="(Rox-dT)">(Rox-dT)</option>
+                                <option value="(Tamra-dC)">(Tamra-dC)</option>
+                                <option value="(Tamra-dT)">(Tamra-dT)</option>
+                                <option value="(Tet-dC)">(Tet-dC)</option>
+                                <option value="(Tet-dT)">(Tet-dT)</option>
+                                <option value="(TexasRed-dT)">(TexasRed-dT)</option>
+                                <option value="(Thiol-C6)">(Thiol-C6)</option>
+                            </datalist>
+                        </div>
+                    </div>
+                    <div class="col-lg-6 col-md-12 col-sm-12">
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 150px;"><b>Check qualitat</b></span>
+                            <input type="text" class="form-control" id="quality_check_maldi_bp" aria-label="TTN">
+                            <datalist id="datalist-mod3">
+                                <option value="MassCheck">MassCheck</option>
+                                <option value="MALDI-TOF">MALDI-TOF</option>
+                                <option value="ESI-TOF">ESI-TOF</option>
+                                <option value="Mass Check + Analytical HPLC">Mass Check + Analytical HPLC</option>
+                                <option value="Analytical HPLC">Analytical HPLC</option>
+                            </datalist>
+                        </div>
+                    </div>
+                    <div class="col-lg-6 col-md-12 col-sm-12">
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 155px;"><b>Tecnica *</b></span>
+                            <input type="text" class="form-control" id="technique_bp" aria-label="TTN">
+                        </div>
+                    </div>
+                    <div class="col-lg-12 col-md-12 col-sm-12">
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 150px;"><b>Observacions</b></span>
+                            <input type="text" class="form-control" id="observations_bp" aria-label="TTN">
+                        </div>
+                    </div>
+                    <center><button type="button" class="btn btn-primary btn-sm" onclick="add_buy_primer()">Afegir</button></center>
+                </div>
+            </div>
+          </div>
+        </div>
+    </div>
+    
+
     <script src="/static/js/bootstrap.js"></script>
 </body>    
 <script>
@@ -3321,6 +3983,17 @@
             columnDefs: [
                     { targets: [5], visible: false }      // amaga panell
                 ]
+        } );
+    });
+
+
+    $(document).ready(function () {
+        var table = $('#table_primers').DataTable( {
+            order: [ 1, 'desc' ],
+            autoWidth: true,
+            language: {
+                emptyTable: "No hi ha primers pendents de comprar"
+            }
         } );
     });
 

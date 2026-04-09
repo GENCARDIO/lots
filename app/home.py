@@ -1,15 +1,16 @@
 from flask import render_template, request, redirect, session, flash, jsonify, send_file
 from app import app
-from app.utils import requires_auth, list_desciption_lots, list_cost_center, to_dict, save_log
-from app.models import IP_HOME, session1, Lots, Stock_lots, Lot_consumptions
+from app.utils import requires_auth, list_desciption_lots, list_cost_center, to_dict, save_log, instant_date, send_mail_generic
+from app.models import IP_HOME, session1, Lots, Stock_lots, Lot_consumptions, Buy_primers
 import jwt
 import json
 from sqlalchemy import and_, or_, outerjoin
 from datetime import datetime
 from config import main_dir
 import pandas as pd
-from openpyxl import load_workbook
-from openpyxl.styles import Font, PatternFill, Alignment
+from openpyxl import load_workbook, Workbook
+from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+from openpyxl.utils import get_column_letter
 from config import main_dir_docs
 import os
 
@@ -436,6 +437,213 @@ def info_description_lots():
     return jsonify(data)
 
 
+@app.route("/info_management_primers")
+@requires_auth
+def info_management_primers():
+    lots = list_desciption_lots()
+    primers = session1.query(Buy_primers).filter(Buy_primers.received == 0).filter(Buy_primers.delete == 0).all()
+
+    data = [
+        {
+            "id": x.id,
+            "dna": x.dna,
+            "sequence_name": x.sequence_name,
+            "purification": x.purification,
+            "synthesis_scale": x.synthesis_scale,
+            "shipping_conditions": x.shipping_conditions,
+            "modification_5": x.modification_5,
+            "sequence": x.sequence,
+            "modification_3": x.modification_3,
+            "internal_modification": x.internal_modification,
+            "quality_check_maldi": x.quality_check_maldi,
+            "technique": x.technique,
+            "buy": x.buy,
+            "buy_date": x.buy_date,
+            "received": x.received,
+            "received_date": x.received_date,
+            "observations": x.observations,
+        }
+        for x in primers
+    ]
+    return jsonify(data)
+
+
+@app.route('/add_buy_primer', methods=['POST'])
+@requires_auth
+def add_buy_primer():
+    """
+        Afegeix una nova compra de primer a la base de dades.
+
+        :return: Resposta JSON amb l'estat de l'operació.
+        :rtype: flask.Response
+    """
+    dna = request.form.get('dna', '')
+    sequence_name = request.form.get('sequence_name', '')
+    purification = request.form.get('purification', '')
+    synthesis_scale = request.form.get('synthesis_scale', '')
+    shipping_conditions = request.form.get('shipping_conditions', '')
+    modification_5 = request.form.get('modification_5', '')
+    sequence = request.form.get('sequence', '')
+    modification_3 = request.form.get('modification_3', '')
+    internal_modification = request.form.get('internal_modification', '')
+    quality_check_maldi = request.form.get('quality_check_maldi', '')
+    technique = request.form.get('technique', '')
+    observations = request.form.get('observations', '')
+
+    try:
+        select_primer = session1.query(Buy_primers)\
+            .filter(Buy_primers.sequence == sequence)\
+            .filter(Buy_primers.received == 0)\
+            .filter(Buy_primers.delete == 0)\
+            .first()
+
+        if select_primer:
+            return jsonify({
+                "status": "duplicate",
+                "message": "Ja tenim un primer posat a comprar amb la mateix seqüència",
+                "id": "none"
+            }), 200
+
+        insert_buy_primer = Buy_primers(
+            dna=dna,
+            sequence_name=sequence_name,
+            purification=purification,
+            synthesis_scale=synthesis_scale,
+            shipping_conditions=shipping_conditions,
+            modification_5=modification_5,
+            sequence=sequence,
+            modification_3=modification_3,
+            internal_modification=internal_modification,
+            quality_check_maldi=quality_check_maldi,
+            technique=technique,
+            observations=observations,
+            request_by=session['acronim'],
+            request_date=instant_date(),
+            buy=0,
+            buy_by='',
+            buy_date='',
+            received=0,
+            received_by='',
+            received_date='',
+            email_send=session['email'],
+            delete=0,
+            delete_by='',
+            delete_date='',
+        )
+
+        session1.add(insert_buy_primer)
+        session1.commit()
+
+        new_id = insert_buy_primer.id
+
+        return jsonify({
+            "status": "success",
+            "message": "Primer posat a comprar correctament",
+            "id": new_id
+        }), 200
+
+    except Exception as e:
+        session1.rollback()
+        return jsonify({
+            "status": "error",
+            "message": "Error, no s'ha pogut inserir el primer a compres.",
+            "id": 'none'
+        }), 500
+
+
+@app.route('/action_primer', methods=['POST'])
+@requires_auth
+def action_primer():
+    id_primer = request.form.get('id_primer', '')
+    action = request.form.get('action', '')
+
+    list_id_primer = id_primer.split(';')
+    if action == 'tramited':
+        text_email = '<p style="margin-bottom:10px;">Els següents primers han estat comprats :</p>'
+        text_header_email = 'Compra de primers'
+
+        select_command = session1.query(Buy_primers).filter(Buy_primers.command_id.like('443054989-%')).all()
+        max_num = 0
+        for row in select_command:
+            if row.command_id:
+                try:
+                    num = int(row.command_id.split('-')[-1])
+                    if num > max_num:
+                        max_num = num
+                except:
+                    continue
+
+        next_num = max_num + 1
+        new_command_id = f"443054989-{next_num}"
+    elif action == 'buy':
+        text_email = '<p style="margin-bottom:10px;">Hem rebut els seguents primers :</p>'
+        text_header_email = 'Recepcio de primers'
+    else:
+        text_email = ''
+        text_header_email = ''
+
+    date_now = instant_date()
+    not_found = ''
+    id_primers_change = ''
+    send_mail = []
+    try:
+        for primer_id in list_id_primer:
+            select_primer = session1.query(Buy_primers).filter(Buy_primers.id == primer_id).first()
+            if select_primer is None:
+                not_found += id_primer + ';'
+            else:
+                if action == 'tramited' and select_primer.buy == 0:
+                    select_primer.buy = 1
+                    select_primer.buy_date = date_now
+                    select_primer.buy_by = session['acronim']
+                    select_primer.command_id = new_command_id
+
+                    text_email += f"&nbsp;&nbsp;&nbsp;• {select_primer.sequence_name} - {select_primer.sequence}<br>"
+                    id_primers_change += primer_id + ';'
+                    if select_primer.email_send not in send_mail:
+                        send_mail.append(select_primer.email_send)
+                elif action == 'buy' and select_primer.buy == 1:
+                    select_primer.received = 1
+                    select_primer.received_date = date_now
+                    select_primer.received_by = session['acronim']
+
+                    text_email += f"&nbsp;&nbsp;&nbsp;• {select_primer.sequence_name} - {select_primer.sequence}<br>"
+                    id_primers_change += primer_id + ';'
+                    if select_primer.email_send not in send_mail:
+                        send_mail.append(select_primer.email_send)
+                elif action == 'delete':
+                    select_primer.delete = 1
+                    select_primer.delete_date = date_now
+                    select_primer.delete_by = session['acronim']
+                    id_primers_change += primer_id + ';'
+        
+        session1.commit()
+
+        if len(send_mail) > 0:
+            result_emails = ','.join(send_mail)
+            print(result_emails)
+            send_mail_generic(result_emails, text_email, text_header_email)
+
+        id_primers_change = id_primers_change.rstrip(';')
+        not_found = not_found.rstrip(';')
+
+        return jsonify({
+            "status": "success",
+            "message": "Primer posat a comprar correctament",
+            "id": id_primers_change,
+            "not_found": not_found
+        }), 200
+
+    except Exception as e:
+        session1.rollback()
+        return jsonify({
+            "status": "error",
+            "message": "Error, no s'ha pogut procesar la petició solicitada",
+            "id": 'none',
+            "not_found": 'none'
+        }), 500
+
+
 @app.route("/upadate_bd")
 @requires_auth
 def upadate_bd():
@@ -776,6 +984,126 @@ def upadate_bd():
         session1.commit()
 
     return f"True<br>trobats ->{found}<br>Modificats ->{modify}<br>No trobats -> {not_found}"
+
+
+@app.route("/info_commands_primers")
+@requires_auth
+def info_commands_primers():
+    list_command_id = []
+    select_command = session1.query(Buy_primers).filter(Buy_primers.command_id.like('443054989-%')).all()
+    for command_primer in select_command:
+        if command_primer.command_id not in list_command_id:
+            list_command_id.append(command_primer.command_id)
+
+    list_command_id = sorted(
+        {row.command_id for row in select_command if row.command_id},
+        key=lambda x: int(x.split('-')[-1]),
+        reverse=True
+    )
+
+    return jsonify(list_command_id)
+
+
+@app.route('/create_excel_primer', methods=['POST'])
+@requires_auth
+def create_excel_primer():
+    """
+        Crea i descarrega un arxiu Excel amb etiquetes d'ADN o batch.
+
+        :return: Fitxer Excel o missatge d'error.
+        :rtype: Response
+    """
+    try:
+        command_id_primer = request.form.get('command_id_primer')
+        print(command_id_primer)
+        if not command_id_primer:
+            flash("Error, no s'ha pogut crear l'arxiu, les dades no han arribat", "danger")
+            return render_template('home.html', list_desciption_lots=list_desciption_lots(),
+                                    list_cost_center=list_cost_center())
+
+        select_primer = session1.query(Buy_primers).filter(Buy_primers.command_id == command_id_primer).all()
+
+        # --- Creació de l’Excel ---
+        wb = Workbook()
+        sheet = wb.active
+        sheet.title = "Oligos 1"
+
+        header_fill = PatternFill(start_color="4F81BD", end_color="4F81BD", fill_type="solid")  # blau fosc suau
+        header_font = Font(bold=True, color="FFFFFF")  # blanc i negreta
+        header_alignment = Alignment(horizontal="center", vertical="center")
+        thin_border = Border(
+            left=Side(style='thin'),
+            right=Side(style='thin'),
+            top=Side(style='thin'),
+            bottom=Side(style='thin')
+        )
+
+        headers = [
+            'DNA',
+            'Sequence name',
+            'Purification',
+            'Synthesis scale',
+            'Shipping Condition',
+            '5 Modification',
+            'Sequence',
+            '3 Modification',
+            'Internal modification',
+            'Quality check Maldi',
+            'Technique'
+        ]
+
+        for col, header in enumerate(headers, start=1):
+            cell = sheet.cell(row=1, column=col, value=header)
+            cell.fill = header_fill
+            cell.font = header_font
+            cell.alignment = header_alignment
+
+        # 📏 Ajustar altura header (opcional)
+        sheet.row_dimensions[1].height = 20
+
+        start = 2
+        for primer in select_primer:
+            sheet.cell(row=start, column=1, value=primer.dna)
+            sheet.cell(row=start, column=2, value=primer.sequence_name)
+            sheet.cell(row=start, column=3, value=primer.purification)
+            sheet.cell(row=start, column=4, value=primer.synthesis_scale)
+            sheet.cell(row=start, column=5, value=primer.shipping_conditions)
+            sheet.cell(row=start, column=6, value=primer.modification_5)
+            sheet.cell(row=start, column=7, value=primer.sequence)
+            sheet.cell(row=start, column=8, value=primer.modification_3)
+            sheet.cell(row=start, column=9, value=primer.internal_modification)
+            sheet.cell(row=start, column=10, value=primer.quality_check_maldi)
+            sheet.cell(row=start, column=11, value=primer.technique)
+            start += 1
+
+        # Remarcar les celes
+        for row in sheet.iter_rows(min_row=1, max_row=sheet.max_row, min_col=1, max_col=sheet.max_column):
+            for cell in row:
+                cell.border = thin_border
+
+        # 📐 Ajustar amplada automàtica de columnes
+        for col in sheet.columns:
+            max_length = 0
+            col_letter = get_column_letter(col[0].column)
+
+            for cell in col:
+                try:
+                    if cell.value:
+                        max_length = max(max_length, len(str(cell.value)))
+                except:
+                    pass
+
+            sheet.column_dimensions[col_letter].width = max_length + 2
+
+        # 💾 Guardar fitxer
+        path = f"{main_dir_docs}/{select_primer[0].command_id}.xlsx"
+        wb.save(path)
+
+        return send_file(path, as_attachment=True)
+    except Exception:
+        flash("Error, no s'ha trobat el l'stock a la BD", "danger")
+        return render_template('home.html', list_desciption_lots=list_desciption_lots(),
+                                list_cost_center=list_cost_center())
 
 
 '''@app.route('/charge_excel')

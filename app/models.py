@@ -162,3 +162,34 @@ class Cost_center(Base):
 
     id = Column(Integer(), primary_key=True)
     name = Column(String())
+
+
+class Buy_primers(Base):
+    __tablename__ = 'buy_primers'
+
+    id = Column(Integer(), primary_key=True)
+    dna = Column(String())
+    sequence_name = Column(String())
+    purification = Column(String())
+    synthesis_scale = Column(String())
+    shipping_conditions = Column(String())
+    modification_5 = Column(String())
+    sequence = Column(String())
+    modification_3 = Column(String())
+    internal_modification = Column(String())
+    quality_check_maldi = Column(String())
+    technique = Column(String())
+    request_by = Column(String())
+    request_date = Column(String())
+    buy = Column(Integer())
+    buy_date = Column(String())
+    buy_by = Column(String())
+    received = Column(Integer())
+    received_date = Column(String())
+    received_by = Column(String())
+    email_send = Column(String())
+    observations = Column(String())
+    delete = Column(Integer())
+    delete_date = Column(String())
+    delete_by = Column(String())
+    command_id = Column(String())

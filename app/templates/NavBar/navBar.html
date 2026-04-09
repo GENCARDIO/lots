@@ -882,6 +882,133 @@
             xhr.send(form_data)
             return
         }
+        else if (modal_id == 'primer_management'){
+            clearModalMessage('modal_message_container');
+            const res = await fetch("/info_management_primers");
+            const rows = await res.json();
+
+            const table = $('#table_primers').DataTable();
+            table.clear();
+            table.columns().visible(true);
+
+            for (const r of rows) {
+                let actionButton = '';
+                let deleteButton = `<button class="btn btn-sm btn-danger" title="Eliminar Compra" onclick="action_primer(${r.id}, 'delete')"><i class="fa-solid fa-trash"></i></button>`;
+
+                if (r.buy == 0) {
+                    actionButton = `
+                        <button class="btn btn-sm btn-primary"
+                                title="Tramitar Compra"
+                                onclick="action_primer(${r.id}, 'tramited')">
+                            <i class="fa-solid fa-basket-shopping"></i>
+                        </button>
+                    `;
+                } else if (r.buy == 1) {
+                    actionButton = `
+                        <button class="btn btn-sm btn-success"
+                                title="Recepcionar primer"
+                                onclick="action_primer(${r.id}, 'buy')">
+                            <i class="fa-solid fa-circle-plus"></i>
+                        </button>
+                    `;
+                }
+
+                const rowNode = table.row.add([
+                    `<div class="form-check" style="display: flex; justify-content: center;"><input class="form-check-input" type="checkbox" name="select_multiple" value=${r.id} id="${r.id}_cb_primer"></div>`,
+                    `<div class="text-center">${r.dna ?? ''}</div>`,
+                    `<div class="text-center">${r.sequence_name ?? ''}</div>`,
+                    `<div class="text-center">${r.purification ?? ''}</div>`,
+                    `<div class="text-center">${r.synthesis_scale ?? ''}</div>`,
+                    `<div class="text-center">${r.shipping_conditions ?? ''}</div>`,
+                    `<div class="text-center">${r.modification_5 ?? ''}</div>`,
+                    `<div class="text-center">${formatColourSequence(r.sequence)}</div>`,
+                    `<div class="text-center">${r.modification_3 ?? ''}</div>`,
+                    `<div class="text-center">${r.internal_modification ?? ''}</div>`,
+                    `<div class="text-center">${r.quality_check_maldi ?? ''}</div>`,
+                    `<div class="text-center">${r.technique ?? ''}</div>`,
+                    `<div class="text-center">${actionButton} ${deleteButton}</div>`
+                ]).node();
+    
+                rowNode.id = `${r.id}`;
+            }
+
+            // Hacemos invisible el modal antes de mostrarlo
+            $('#primer_management').css({ 'visibility': 'hidden', 'display': 'block' });
+
+            // Dibujamos la tabla
+            table.draw(false);
+
+            // Revisem quines columnes estan completament buides i les amaguem
+            if (table.rows().count() === 0) {
+                // 👉 NO ocultamos columnas dinámicamente
+                // dejamos visibles las que quieras por defecto
+
+                table.columns().visible(false);
+
+                // por ejemplo mostramos algunas
+                table.column(0).visible(true); // sequence_name
+                table.column(1).visible(true); // sequence_name
+                table.column(2).visible(true); // sequence_name
+                table.column(3).visible(true); // sequence_name
+                table.column(4).visible(true); // sequence_name
+                table.column(5).visible(true); // sequence_name
+                table.column(6).visible(true); // sequence_name
+                table.column(7).visible(true); // sequence
+                table.column(11).visible(true); // sequence
+            } else {
+                table.columns().every(function (index) {
+                    // No volem amagar la columna del botó
+                    if (index === 12 || index === 0) {
+                        this.visible(true);
+                        return;
+                    }
+
+                    const data = this.data().toArray();
+
+                    const allEmpty = data.every(cell => {
+                        const tempDiv = document.createElement('div');
+                        tempDiv.innerHTML = cell;
+                        const text = tempDiv.textContent.trim();
+                        return text === '';
+                    });
+
+                    this.visible(!allEmpty);
+                });
+            }
+
+            // Ajustamos las columnas
+            table.columns.adjust();
+
+            // Una vez ajustado todo, hacemos visible el modal y usamos tu open_modal para los estilos de Bootstrap
+            $('#primer_management').css('visibility', 'visible');
+
+            // Mostrem el modal i després ajustem columnes (important en modals)
+            $('#primer_management').modal('show');
+            // setTimeout(() => table.columns.adjust().draw(false), 50);
+
+            return;
+            }
+        else if (modal_id == 'modal_buy_primer'){
+            $('#primer_management').modal('hide'); }
+        else if (modal_id == 'modal_download_excel_primers'){
+            const res = await fetch("/info_commands_primers");
+            const data = await res.json();
+
+            const select = document.getElementById('command_primer');   
+
+            // netejar opcions existents
+            select.innerHTML = '';
+
+            if (!data || data.length === 0) {
+                showModalMessage("No hi ha cap batch creat", 'warning', 'modal_message_container');
+                return
+            } else {
+                data.forEach(cmd => {
+                    select.innerHTML += `<option value="${cmd}">${cmd}</option>`;
+                });
+                close_modal('primer_management')
+            }
+        }
         $(`#${modal_id}`).modal('show');
     }
 
@@ -922,6 +1049,11 @@
                 $('body').addClass('modal-open'); 
             });
         }    
+        else if (modal_id === "modal_buy_primer"){
+            $(`#primer_management`).modal('show');
+        } else if (modal_id === 'modal_download_excel_primers'){
+            $(`#primer_management`).modal('show');
+        }
     }
 
 
@@ -1741,6 +1873,43 @@
     // $('#modal_edit_lot').on('hidden.bs.modal', function () {
     //     open_modal('info_lots_bd')
     // });
+
+   
+    function showModalMessage(message, category = 'danger', modal_id, duration = 5000) {
+        const container = document.getElementById(modal_id);
+
+        if (!container) {
+            return;
+        }
+
+        container.innerHTML = `
+            <div class="alert alert-${category} alert-dismissible fade show d-inline-block text-left" role="alert">
+                <span>${message}</span>
+                <button type="button" class="close" data-dismiss="alert">
+                    <span>&times;</span>
+                </button>
+            </div>
+        `;
+        container.style.display = 'block';
+
+        // ⏱️ desaparecer automáticamente
+        setTimeout(() => {
+            container.innerHTML = '';
+            container.style.display = 'none';
+        }, duration);
+    }
+
+
+    function clearModalMessage(modal_id) {
+        const container = document.getElementById(modal_id);
+
+        if (!container) {
+            return;
+        }
+
+        container.innerHTML = '';
+        container.style.display = 'none';
+    }
 
 
     $(document).ready(function() {
