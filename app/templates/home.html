@@ -3629,7 +3629,10 @@
           <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="title"> Primers</h5>
-                <button type="button" class="btn btn-link btn-sm" onclick="open_modal('modal_buy_primer')" style="margin-left: 10px; margin-top: 2px;"><i class="fa-solid fa-plus"></i> Nou primer</button>
+                {% set lista = [1, 5, 9, 12, 13, 16, 18, 23, 24] %}
+                {% if session['idClient'] in lista%}
+                    <button type="button" class="btn btn-link btn-sm" onclick="open_modal('modal_buy_primer')" style="margin-left: 10px; margin-top: 2px;"><i class="fa-solid fa-plus"></i> Nou primer</button>
+                {% endif %}
                 <div class="d-flex ml-auto">
                     <button type="button" class="btn btn-outline-success btn-sm" onclick="open_modal('modal_download_excel_primers')" style="margin-right: 10px;"><i class="fa-solid fa-file-arrow-down"></i> Descarregar</button>
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="close_modal('primer_management')"><span aria-hidden="true">&times;</span></button>
