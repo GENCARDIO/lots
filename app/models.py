@@ -155,6 +155,7 @@ class Commands(Base):
     incidence_number = Column(String())
     date_complete = Column(String())
     user_email = Column(String())
+    supplier = Column(String())
 
 
 class Cost_center(Base):

@@ -2738,10 +2738,40 @@
     }
 
 
-    function download_primers_command(){
+    function download_primers_command(id_primer=''){
         command_id = document.getElementById('command_primer').value;
         document.getElementById('command_id_primer').value = command_id;
+        document.getElementById('command_primers_selected').value = id_primer;
         document.getElementById('form_create_excels_primer').submit();
+    }
+
+
+    async function prepare_buy_primer() {
+        const form_data = new FormData();
+
+        const checked = document.querySelectorAll('.form-check-input:checked');
+
+        if (checked.length !== 0) {
+            // agafar els valors
+            const values = Array.from(checked).map(cb => cb.value);
+
+            // convertir a string separat per ;
+            const ids_primers_cb = values.join(';');
+
+            // 🔁 substituir id_primer pel conjunt seleccionat
+            id_primer = ids_primers_cb;
+        } else {
+            showModalMessage("S'ha de seleccionar com a mínim un primer", 'warning', 'modal_message_container');
+            return
+        }
+
+        if (id_primer.startsWith("on;")) {
+            id_primer = id_primer.slice(3);
+        }
+
+        console.log(checked)
+        console.log(id_primer)
+        download_primers_command(id_primer)
     }
 
 </script>
@@ -3527,7 +3557,7 @@
                         <table id="table_article_pending" class="display" style="width: 100%;">
                             <thead>
                                 <tr id="thcolor">
-                                    <th>Lot</th>
+                                    <th>Referencia</th>
                                     <th>Descripció</th>
                                     <th>Comanda</th>
                                     <th>Unitats</th>
@@ -3634,7 +3664,8 @@
                     <button type="button" class="btn btn-link btn-sm" onclick="open_modal('modal_buy_primer')" style="margin-left: 10px; margin-top: 2px;"><i class="fa-solid fa-plus"></i> Nou primer</button>
                 {% endif %}
                 <div class="d-flex ml-auto">
-                    <button type="button" class="btn btn-outline-success btn-sm" onclick="open_modal('modal_download_excel_primers')" style="margin-right: 10px;"><i class="fa-solid fa-file-arrow-down"></i> Descarregar</button>
+                    <button type="button" class="btn btn-outline-success btn-sm" onclick="prepare_buy_primer()" style="margin-right: 10px;"><i class="fa-solid fa-file-arrow-down"></i> Seleccionats</button>
+                    <button type="button" class="btn btn-outline-success btn-sm" onclick="open_modal('modal_download_excel_primers')" style="margin-right: 10px;"><i class="fa-solid fa-file-arrow-down"></i> Historic</button>
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="close_modal('primer_management')"><span aria-hidden="true">&times;</span></button>
                 </div>
             </div>
@@ -3701,6 +3732,7 @@
                 </div>
                 <form id="form_create_excels_primer" method="POST" action="/create_excel_primer" style="display:none;">
                     <input type="hidden" name="command_id_primer" id="command_id_primer">
+                    <input type="hidden" name="command_primers_selected" id="command_primers_selected">
                 </form>
             </div>
         </div>

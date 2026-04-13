@@ -184,6 +184,9 @@ def delete_command():
     str_ids_commands = request.form.get("list_ids_commands")
     list_ids_commands = str_ids_commands.split(',')
 
+    str_supplier_commands = request.form.get("list_suppliers")
+    list_suppliers = str_supplier_commands.split(',')
+
     date = instant_date()
 
     date_now = datetime.now()
@@ -198,13 +201,15 @@ def delete_command():
             if select_command_code_aux is None:
                 code_command = code_command_aux
                 break
+
     try:
-        for id_command in list_ids_commands:
+        for id_command, supplier in zip(list_ids_commands, list_suppliers):
             select_command = session1.query(Commands).filter(Commands.id == id_command).first()
             select_command.date_close = date
             select_command.user_close = session['acronim']
             select_command.user_id_close = session['idClient']
             select_command.code_command = code_command
+            select_command.supplier = supplier
 
             select_lot = session1.query(Lots.description).filter(Lots.key == select_command.id_lot).first()
             lot_description = select_lot[0] if select_lot else ""

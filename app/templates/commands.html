@@ -96,6 +96,7 @@
             // Comprobem si ha fet servir la seleccio multiple
             var checkboxes = document.querySelectorAll('input[name="selection_multiple"]:checked');
             var list_ids_commands = [];
+            var list_suppliers = [];
 
             checkboxes.forEach(function(checkbox) {
                 list_ids_commands.push(checkbox.value);
@@ -104,9 +105,33 @@
             if (list_ids_commands.length === 0) {
                 list_ids_commands.push(id_command) }
 
+            for (const id of list_ids_commands) {
+                let supplier = document.getElementById(`supplier_${id}`).value
+                if (supplier == 'void'){
+
+                    var flashContainer = document.querySelector(".d-flex.justify-content-center .row");
+                    // Eliminar la alerta anterior, si existe
+                    if (flashContainer.children.length > 0) {
+                        flashContainer.removeChild(flashContainer.children[0]); }
+                    var newFlash = document.createElement("div");
+                    newFlash.className = "alert alert-warning alert-dismissible fade show ml-3";
+                    newFlash.role = "alert";
+                    newFlash.innerHTML = "<span> El camp 'Comprat per' no pot estar buit</span>" + 
+                                        '<button type="button" class="close" data-dismiss="alert" aria-label="Close">' +
+                                        '<span aria-hidden="true">&times;</span>' +
+                                        '</button>';
+                    flashContainer.appendChild(newFlash);
+                    flashContainer.style.paddingTop = "20px";
+                    return
+                } else {
+                    list_suppliers.push(supplier)
+                }
+            }
+
             // Crear form data
             var form_data = new FormData();
             form_data.append('list_ids_commands', list_ids_commands)
+            form_data.append('list_suppliers', list_suppliers)
 
             // Creeem l'objecte per l'ajax
             var xhr = new XMLHttpRequest();
@@ -1158,7 +1183,8 @@
                             <th style="min-width: 40px; max-width: 60px;">Usuari</th>
                             <th style="min-width: 50px; max-width: 70px;">CECO</th>
                             <th style="min-width: 100px; max-width: 230px;">Observacions</th>
-                            <th style="min-width: 50px; max-width: 80px;">Plataforma Preferent</th>
+                            <th style="min-width: 120px; max-width: 120px;">Plat. Preferent</th>
+                            <th style="min-width: 120px; max-width: 120px;">Comprat per</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -1196,7 +1222,15 @@
                                 <td>{{command.cost_center}}</td>
                                 <td>{{command.observations}}</td>
                                 <td>{{lot.plataform_command_preferent}}</td>
-
+                                <td>
+                                    <select class="form-select" id="supplier_{{command.id}}">
+                                        <option value="void" selected></option>
+                                        <option value="8852-APP/Compres">8852-APP/Compres</option>
+                                        <option value="8852-Logaritme">8852-Logaritme</option>
+                                        <option value="8852-UDMMP">8852-UDMMP</option>
+                                        <option value="IDIBGI">IDIBGI</option>
+                                    </select>
+                                </td>
                             </tr>
                         {% endfor %}
                     </tbody>

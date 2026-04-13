@@ -562,7 +562,7 @@ def action_primer():
         text_email = '<p style="margin-bottom:10px;">Els següents primers han estat comprats :</p>'
         text_header_email = 'Compra de primers'
 
-        select_command = session1.query(Buy_primers).filter(Buy_primers.command_id.like('443054989-%')).all()
+        select_command = session1.query(Buy_primers).filter(Buy_primers.command_id.like('4430954989-%')).all()
         max_num = 0
         for row in select_command:
             if row.command_id:
@@ -574,7 +574,7 @@ def action_primer():
                     continue
 
         next_num = max_num + 1
-        new_command_id = f"443054989-{next_num}"
+        new_command_id = f"4430954989-{next_num}"
     elif action == 'buy':
         text_email = '<p style="margin-bottom:10px;">Hem rebut els seguents primers :</p>'
         text_header_email = 'Recepcio de primers'
@@ -990,7 +990,7 @@ def upadate_bd():
 @requires_auth
 def info_commands_primers():
     list_command_id = []
-    select_command = session1.query(Buy_primers).filter(Buy_primers.command_id.like('443054989-%')).all()
+    select_command = session1.query(Buy_primers).filter(Buy_primers.command_id.like('4430954989-%')).all()
     for command_primer in select_command:
         if command_primer.command_id not in list_command_id:
             list_command_id.append(command_primer.command_id)
@@ -1015,13 +1015,26 @@ def create_excel_primer():
     """
     try:
         command_id_primer = request.form.get('command_id_primer')
-        print(command_id_primer)
-        if not command_id_primer:
+        command_primers_selected = request.form.get('command_primers_selected')
+        if command_primers_selected == '' and not command_id_primer:
             flash("Error, no s'ha pogut crear l'arxiu, les dades no han arribat", "danger")
             return render_template('home.html', list_desciption_lots=list_desciption_lots(),
                                     list_cost_center=list_cost_center())
 
-        select_primer = session1.query(Buy_primers).filter(Buy_primers.command_id == command_id_primer).all()
+        if command_primers_selected != '':
+            select_primer = []
+            list_primers_selected = command_primers_selected.split(';')
+            for primers_sel in list_primers_selected:
+                print(primers_sel)
+                select_primer_sel = session1.query(Buy_primers).filter(Buy_primers.id == primers_sel).first()
+                if select_primer_sel is not None:
+                    select_primer.append(select_primer_sel)
+                else:
+                    flash("Error, no s'ha pogut recollir les dades", "danger")
+                    return render_template('home.html', list_desciption_lots=list_desciption_lots(),
+                                            list_cost_center=list_cost_center())
+        else:
+            select_primer = session1.query(Buy_primers).filter(Buy_primers.command_id == command_id_primer).all()
 
         # --- Creació de l’Excel ---
         wb = Workbook()
@@ -1095,8 +1108,12 @@ def create_excel_primer():
 
             sheet.column_dimensions[col_letter].width = max_length + 2
 
+        if select_primer[0].command_id == '':
+            name_doc_buy_primers = 'provisional_compra_primers'
+        else:
+            name_doc_buy_primers = select_primer[0].command_id
         # 💾 Guardar fitxer
-        path = f"{main_dir_docs}/{select_primer[0].command_id}.xlsx"
+        path = f"{main_dir_docs}/{name_doc_buy_primers}.xlsx"
         wb.save(path)
 
         return send_file(path, as_attachment=True)
