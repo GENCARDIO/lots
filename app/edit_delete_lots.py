@@ -75,6 +75,8 @@ def edit_lot():
     units_for_discount = request.form.get("units_for_discount")
     units_measurement = request.form.get("units_measurement")
     observations = request.form.get("observations")
+    nif = request.form.get("nif")
+    sales_contact = request.form.get("sales_contact")
 
     import_unit_ics = import_unit_ics.replace(',', '.')
     import_unit_idibgi = import_unit_idibgi.replace(',', '.')
@@ -221,7 +223,7 @@ def edit_lot():
                 save_log(dict_save_info)
                 change_confirmed = True
 
-            if select_lot.maximum_amount != maximum_amount:
+            if str(select_lot.maximum_amount) != str(maximum_amount):
                 info_change = {"field": 'maximum_amount', "old_info": select_lot.maximum_amount, "new_info": maximum_amount}
                 select_lot.maximum_amount = maximum_amount
                 dict_save_info['info'] = json.dumps(info_change)
@@ -235,7 +237,7 @@ def edit_lot():
                 save_log(dict_save_info)
                 change_confirmed = True
 
-            if select_lot.units_format_supplier != units_format_supplier:
+            if str(select_lot.units_format_supplier) != str(units_format_supplier):
                 info_change = {"field": 'units_format_supplier', "old_info": select_lot.units_format_supplier, "new_info": units_format_supplier}
                 select_lot.units_format_supplier = units_format_supplier
                 dict_save_info['info'] = json.dumps(info_change)
@@ -249,7 +251,7 @@ def edit_lot():
                 save_log(dict_save_info)
                 change_confirmed = True
 
-            if select_lot.units_format != units_format:
+            if str(select_lot.units_format) != str(units_format):
                 info_change = {"field": 'units_format', "old_info": select_lot.units_format, "new_info": units_format}
                 select_lot.units_format = units_format
                 dict_save_info['info'] = json.dumps(info_change)
@@ -265,7 +267,7 @@ def edit_lot():
 
             if str(select_lot.units_for_discount) != str(units_for_discount):
                 info_change = {"field": 'units_for_discount', "old_info": select_lot.units_for_discount, "new_info": units_for_discount}
-                select_lot.units_format = units_for_discount
+                select_lot.units_for_discount = units_for_discount
                 dict_save_info['info'] = json.dumps(info_change)
                 save_log(dict_save_info)
                 change_confirmed = True
@@ -284,8 +286,22 @@ def edit_lot():
                 save_log(dict_save_info)
                 change_confirmed = True
 
+            if select_lot.nif != nif:
+                info_change = {"field": 'nif', "old_info": select_lot.nif, "new_info": nif}
+                select_lot.nif = nif
+                dict_save_info['info'] = json.dumps(info_change)
+                save_log(dict_save_info)
+                change_confirmed = True
+
+            if select_lot.sales_contact != sales_contact:
+                info_change = {"field": 'sales_contact', "old_info": select_lot.sales_contact, "new_info": sales_contact}
+                select_lot.sales_contact = sales_contact
+                dict_save_info['info'] = json.dumps(info_change)
+                save_log(dict_save_info)
+                change_confirmed = True
+
             if not change_confirmed and not change_confirmed_price:
-                return "False_//_No has fet cap canvi respecte l'original."
+                return "False_//_No hi ha cap canvi ha realizar respecte l'original."
 
             # Si es fan canvis al lot s'han de reflexa a l'stock, exceptuan import ics i idibgi que no s'ha de fer.
             if change_confirmed:
@@ -365,6 +381,12 @@ def edit_lot():
 
                         if lot_stock.observations != observations:
                             lot_stock.observations = observations
+
+                        # if lot_stock.nif != nif:
+                        #     lot_stock.nif = nif
+
+                        # if lot_stock.sales_contact != sales_contact:
+                        #     lot_stock.sales_contact = sales_contact
 
                     if len(id_stock_lots_change) > 2:
                         id_stock_lots_change = id_stock_lots_change[:-2]

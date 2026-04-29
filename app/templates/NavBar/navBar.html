@@ -243,6 +243,20 @@
                         <input type="text" class="form-control" id='supplier_edit' aria-label="TTN" aria-describedby="basic-addon1">
                     </div>
                 </div>
+
+                <div class="col-lg-6 col-md-12 col-sm-12">       
+                    <div class="input-group mb-3">
+                        <span class="input-group-text" id="basic-addon1" style="width: 180px;"><b>NIF</b></span>
+                        <input type="text" class="form-control" id='nif_edit' aria-label="TTN" aria-describedby="basic-addon1">
+                    </div>
+                </div>
+                <div class="col-lg-6 col-md-12 col-sm-12">       
+                    <div class="input-group mb-3">
+                        <span class="input-group-text" id="basic-addon1" style="width: 180px;"><b>Contacte comercial</b></span>
+                        <input type="text" class="form-control" id='sales_contact_edit' aria-label="TTN" aria-describedby="basic-addon1">
+                    </div>
+                </div>
+
                 <div class="col-lg-6 col-md-12 col-sm-12">       
                     <div class="input-group mb-3">
                         <span class="input-group-text" id="basic-addon1" style="width: 180px;"><b>Import ICS</b></span>
@@ -327,7 +341,8 @@
                 </div>
 
                 <input type="hidden" id="id_lot_edit"/>
-                <center></centere><button type="button" class="btn btn-primary btn-sm" onclick="edit_lot()"><i class="fa-solid fa-circle-plus"></i> Editar </button></center>
+                <input type="hidden" id="view_for_command" value=""/>
+                <center></centere><button type="button" class="btn btn-primary btn-sm" id="edit_lot_btn" onclick="edit_lot()"><i class="fa-solid fa-circle-plus"></i> Editar </button></center>
             </div>
         </div>
       </div>
@@ -591,8 +606,9 @@
                                 if (key !== 'id' && key !== 'id_lot') {
                                     if (key === 'info_article'){
                                         const escaped_value = list_lots[i][key].replace(/'/g, "\\'");
-                                        new_row_data.push(`<button class="btn btn-outline-success btn-sm" onclick="show_edit_info('${escaped_value}')"><i class="fa-solid fa-pen-to-square"></i></button>
-                                                           <button class="btn btn-outline-danger btn-sm" onclick="show_delete_lot('${list_lots[i]['id']}')"><i class="fa-solid fa-trash"></i></button>`) }
+                                        new_row_data.push(`<button class="btn btn-outline-success btn-sm" name="btn_admin" onclick="show_edit_info('${escaped_value}', false)"><i class="fa-solid fa-pen-to-square"></i></button>
+                                                           <button class="btn btn-outline-danger btn-sm" name="btn_admin" onclick="show_delete_lot('${list_lots[i]['id']}')"><i class="fa-solid fa-trash"></i></button>
+                                                           <button class="btn btn-outline-primary btn-sm" onclick="show_edit_info('${escaped_value}', true)"><i class="fa-solid fa-eye"></i></button>`) }
                                     else if (key === 'active'){
                                         console.log(list_lots[i]['active'])
                                         if (list_lots[i]['active'] === 0){
@@ -613,9 +629,14 @@
                     for (var j = 0; j < 4; j++) {
                         table.column(j).nodes().to$().addClass('text-center');
                     }
-                    if (rol !== 'admin'){
-                        var table = $('#table_info_lots_db').DataTable();
-                        table.column(3).visible(false);
+                    // if (rol !== 'admin'){
+                    //     var table = $('#table_info_lots_db').DataTable();
+                    //     table.column(3).visible(false);
+                    // }
+                    if (rol === 'user'){
+                        document.querySelectorAll('[name="btn_admin"]').forEach(btn => {
+                            btn.style.display = 'none';
+                        });
                     }
                 } else {
                     message = `Error inesperat. Si persisteix l'error contacta amb un administrador`
@@ -800,8 +821,28 @@
 
             return;
             }
+        else if (modal_id == 'modal_edit_lot_2'){
+            modal_id = 'modal_edit_lot' 
+        }
         else if (modal_id == 'modal_edit_lot'){
-            $('#info_lots_bd').modal('hide'); }
+            const $currentModal = $('#info_lots_bd');
+            const $nextModal = $('#modal_edit_lot');
+
+            $nextModal.removeClass('fade');
+
+            $currentModal.one('hidden.bs.modal', function () {
+                $nextModal.modal('show');
+
+                setTimeout(function () {
+                    $('body').addClass('modal-open');
+                    $nextModal.css('overflow-y', 'auto');
+                    $nextModal.addClass('fade');
+                }, 200);
+            });
+
+            $currentModal.modal('hide');
+            return;      
+        }
         else if (modal_id == 'open_update_price'){
             document.getElementById('file_template').value = '' }
         else if (modal_id == 'modal_labels'){
@@ -1013,6 +1054,28 @@
     }
 
 
+    /**
+     * Escapa caràcters HTML especials per evitar problemes de seguretat (XSS).
+     *
+     * Aquesta funció transforma una cadena de text substituint els caràcters HTML especials
+     * pels seus equivalents segurs en format entitat HTML. Això evita que el contingut es pugui
+     * interpretar com codi HTML o JavaScript.
+     *
+     * @param {string} s Cadena de text que es vol escapar.
+     *
+     * @returns {string} Retorna la cadena amb els caràcters especials escapats.
+     *
+     * @descriptor La funció converteix la variable d’entrada a string i substitueix els següents caràcters:
+     * 
+     * - `&` → `&amp;`
+     * - `<` → `&lt;`
+     * - `>` → `&gt;`
+     * - `"` → `&quot;`
+     * - `'` → `&#039;`
+     * 
+     * És especialment útil quan es mostren dades dinàmiques en el DOM (per exemple en taules o modals),
+     * evitant vulnerabilitats de tipus Cross-Site Scripting (XSS).
+     */
     function escapeHtml(s) {
         return String(s)
             .replaceAll("&", "&amp;")
@@ -1030,12 +1093,15 @@
      */
      function close_modal(modal_id){
         $(`#${modal_id}`).modal('hide');
-        if (modal_id === "modal_edit_lot"){ 
-            open_modal('info_lots_bd') 
-            // Esto sierve para cuando cierrras i abres modals a la vez el scroll siga activo
-            $('#modal_edit_lot').on('hidden.bs.modal', function () {
-                $('body').addClass('modal-open'); 
-            });}
+        if (modal_id === "modal_edit_lot"){
+            let view_for_command = document.getElementById('view_for_command').value
+            if (view_for_command !== 'true'){
+                open_modal('info_lots_bd') 
+                // Esto sierve para cuando cierrras i abres modals a la vez el scroll siga activo
+                $('#modal_edit_lot').on('hidden.bs.modal', function () {
+                    $('body').addClass('modal-open'); 
+                });}
+            }
         else if (modal_id === "modal_edit_order_tracking"){ 
             open_modal('modal_order_tracking') 
             // Esto sierve para cuando cierrras i abres modals a la vez el scroll siga activo
@@ -1062,7 +1128,7 @@
      * @param {string} info_article És un strimg amb tota l'informació del lot
      * @returns {void} No retorna cap valor.
      */
-    function show_edit_info(info_article){
+    function show_edit_info(info_article, only_show){
         open_modal('modal_edit_lot')
         list_info_article = info_article.split('/-/')
         document.getElementById('id_lot_edit').value = list_info_article[0];
@@ -1090,30 +1156,48 @@
         document.getElementById('purchase_format_supplier_edit').value = list_info_article[23];
         document.getElementById('units_format_supplier_edit').value = list_info_article[24];
         document.getElementById('name_logaritme_edit').value = list_info_article[25];
-        document.getElementById('units_for_discount_edit').value = list_info_article[26];
+        const value = list_info_article[26];
+        document.getElementById('units_for_discount_edit').value = value !== null && value !== '' ? Number(value) : '';
+        // document.getElementById('units_for_discount_edit').value = list_info_article[26];
         document.getElementById('units_measurement_edit').value = list_info_article[27];
         document.getElementById('observations_edit').value = list_info_article[28];
+        document.getElementById('nif_edit').value = list_info_article[29];
+        document.getElementById('sales_contact_edit').value = list_info_article[30];
 
         if (list_info_article[11] === ''){ document.getElementById('div_desc_subref').style.display = 'none'}
         else { document.getElementById('div_desc_subref').style.display = 'block'}
 
+        if (only_show){
+            var text_article = "Veure"
+            document.getElementById('edit_lot_btn').style.display = "none"
+        } else {
+            var text_article = "Editar"
+            document.getElementById('edit_lot_btn').style.display = "block"
+        }
+        
+        setReadOnlyState(only_show)
+
         if (list_info_article[12] === 'Reactiu'){
-            document.getElementById('reference_catalog_edit').readOnly = true;
-            document.getElementById('code_sap_edit').readOnly = false;
-            document.getElementById('code_log_edit').readOnly = false;
+            if (!only_show){
+                document.getElementById('reference_catalog_edit').readOnly = true;
+                document.getElementById('code_sap_edit').readOnly = false;
+                document.getElementById('code_log_edit').readOnly = false;
+            }
             document.getElementById('div_panel_edit').style.display = 'block'
             document.getElementById('div_id_reactive_edit').style.display = 'block'
             document.querySelector('.input-group-text[name="span_type"]').style.width = '180px'
-            document.querySelectorAll('[name="title_edit"]')[0].innerHTML = 'Editar article &nbsp;&nbsp;- <i style="color: blue;">Reactiu</i> -';
+            document.querySelectorAll('[name="title_edit"]')[0].innerHTML = `${text_article} article &nbsp;&nbsp;- <i style="color: blue;">Reactiu</i> -`;
         }
         else if (list_info_article[12] === 'Fungible'){
-            document.getElementById('reference_catalog_edit').readOnly = false;
-            document.getElementById('code_sap_edit').readOnly = true;
-            document.getElementById('code_log_edit').readOnly = true;
+            if (!only_show){
+                document.getElementById('reference_catalog_edit').readOnly = false;
+                document.getElementById('code_sap_edit').readOnly = true;
+                document.getElementById('code_log_edit').readOnly = true;
+            }
             document.getElementById('div_panel_edit').style.display = 'none'
             document.getElementById('div_id_reactive_edit').style.display = 'none'
             document.querySelector('.input-group-text[name="span_type"]').style.width = '180px'
-            document.querySelectorAll('[name="title_edit"]')[0].innerHTML = 'Editar article &nbsp;&nbsp;- <i style="color: blue;">Fungible</i> -';
+            document.querySelectorAll('[name="title_edit"]')[0].innerHTML = `${text_article} article &nbsp;&nbsp;- <i style="color: blue;">Fungible</i> -`;
         }
         else {
             document.getElementById('reference_catalog_edit').readOnly = true;
@@ -1124,6 +1208,82 @@
             document.querySelector('.input-group-text[name="span_type"]').style.width = '180px'
             document.querySelectorAll('[name="title_edit"]')[0].innerHTML = 'Editar article';
         }
+
+    }
+
+
+    /**
+     * Configura l’estat de només lectura dels camps del formulari d’edició de lots.
+     *
+     * Aquesta funció permet alternar entre mode visualització (només lectura) i mode edició
+     * dels camps del formulari associats a un lot. També gestiona la visibilitat del botó
+     * d’edició i adapta l’estil visual dels camps segons el mode seleccionat.
+     *
+     * @param {boolean} only_show Indica si els camps han d’estar en mode només lectura (`true`)
+     * o en mode editable (`false`).
+     *
+     * @returns {void} No retorna cap valor. Modifica directament l’estat i estil dels elements del DOM.
+     *
+     * @descriptor La funció recorre una llista d’IDs de camps del formulari i, per a cada element:
+     * 
+     * - Si és un `input` o `textarea`, aplica la propietat `readOnly`.
+     * - Si és un `select` o `checkbox`, aplica la propietat `disabled`.
+     * - Ajusta el color de fons per diferenciar visualment els camps en mode lectura.
+     * 
+     * També mostra o oculta el botó `edit_lot_btn` segons si es tracta de mode visualització o edició.
+     * 
+     * Si algun element no existeix al DOM, es continua l’execució sense generar errors.
+     */
+    function setReadOnlyState(only_show) {
+        const fields = [
+            'manufacturer_edit',
+            'description_edit',
+            'analytical_technique_edit',
+            'id_reactive_edit',
+            'code_sap_edit',
+            'code_log_edit',
+            'active_edit',
+            'temp_conservation_edit',
+            'description_subref_edit',
+            'react_or_fungible_edit',
+            'code_panel_edit',
+            'location_edit',
+            'supplier_edit',
+            'purchase_format_edit',
+            'units_format_edit',
+            'import_unit_ics_edit',
+            'import_unit_idibgi_edit',
+            'local_management_edit',
+            'plataform_command_preferent_edit',
+            'maximum_amount_edit',
+            'purchase_format_supplier_edit',
+            'units_format_supplier_edit',
+            'name_logaritme_edit',
+            'units_for_discount_edit',
+            'units_measurement_edit',
+            'observations_edit',
+            'nif_edit',
+            'sales_contact_edit'
+        ];
+
+        document.getElementById('edit_lot_btn').style.display = only_show ? "none" : "block";
+
+        fields.forEach(id => {
+            const el = document.getElementById(id);
+            if (!el) return;
+
+            // Para inputs de texto
+            if (el.tagName === "INPUT" || el.tagName === "TEXTAREA") {
+                el.readOnly = only_show;
+                el.style.backgroundColor = only_show ? "white" : "";
+            }
+
+            // Para selects y otros
+            if (el.tagName === "SELECT" || el.type === "checkbox") {
+                el.disabled = only_show;
+                el.style.backgroundColor = only_show ? "white" : "";
+            }
+        });
     }
 
 
@@ -1189,6 +1349,9 @@
         let units_measurement = document.getElementById('units_measurement_edit').value
         let observations = document.getElementById('observations_edit').value
 
+        let nif = document.getElementById('nif_edit').value
+        let sales_contact = document.getElementById('sales_contact_edit').value
+
         // Crear form data
         var form_data = new FormData();
 
@@ -1220,6 +1383,8 @@
         form_data.append('units_for_discount', units_for_discount)
         form_data.append('units_measurement', units_measurement)
         form_data.append('observations', observations)
+        form_data.append('nif', nif)
+        form_data.append('sales_contact', sales_contact)
 
         // Creeem l'objecte per l'ajax
         var xhr = new XMLHttpRequest();
@@ -1446,6 +1611,25 @@
     }
 
 
+    /**
+     * Consulta la despesa econòmica segons el criteri de cerca indicat.
+     *
+     * Aquesta funció obté el valor del camp `search_data_spend_mmoney` i l’envia al servidor
+     * mitjançant una petició AJAX POST a la ruta `/look_spend_money`. Si la resposta és correcta,
+     * obre el modal de despesa i carrega les dades retornades dins de la taula `table_spend_money`.
+     *
+     * @returns {void} No retorna cap valor. Gestiona la consulta al servidor, l’actualització de la taula
+     * i la visualització de missatges d’error si és necessari.
+     *
+     * @descriptor La funció crea un objecte `FormData` amb el criteri de cerca introduït per l’usuari.
+     * Després envia la informació al backend mitjançant `XMLHttpRequest`.
+     *
+     * Si la resposta conté un resultat d’error, mostra el missatge corresponent a la interfície.
+     * Si la resposta és correcta, obre el modal `modal_spend_money`, neteja la taula DataTable,
+     * transforma la resposta JSON en un objecte i afegeix una fila per cada registre retornat.
+     *
+     * En cas d’error en la petició o en la resposta del servidor, mostra una alerta visual a la pàgina.
+     */
     function look_spend_money(){
         const search_data_spend_mmoney = document.getElementById('search_data_spend_mmoney').value
 
@@ -1529,7 +1713,7 @@
     /**
      * Fa el submit de un form
      */
-     function download_template(){
+    function download_template(){
         document.forms["down_excel_price"].submit();
     }
 
@@ -1657,7 +1841,56 @@
         }
 
 
-    function show_new_article(){
+    /**
+     * Mostra el modal per crear un nou article i inicialitza les dades del formulari.
+     *
+     * Aquesta funció consulta al servidor la llista de lots existents mitjançant una petició `fetch`
+     * a la ruta `/get_lots`, carrega els fabricants en el `datalist` de proveïdors i guarda informació
+     * addicional en atributs `data-*` per poder reutilitzar-la posteriorment.
+     *
+     * També tanca el modal de consulta de lots, neteja els camps principals del formulari de nou article,
+     * elimina possibles blocs de lots creats anteriorment i genera dinàmicament el primer bloc de dades
+     * corresponent al `Lot 1`.
+     *
+     * @returns {Promise<void>} No retorna cap valor. Gestiona la càrrega de dades, la neteja del formulari
+     * i l'obertura del modal de creació d'article.
+     *
+     * @descriptor La funció obté els lots disponibles des de `/get_lots`, recorre la resposta rebuda i crea
+     * opcions dins del `datalist` amb ID `datalist-manufacturer`. Cada opció mostra el fabricant i desa
+     * informació complementària com l'ID, el NIF i el contacte comercial.
+     *
+     * Posteriorment reinicia els camps del formulari, elimina els elements generats prèviament amb
+     * `name="divs_new_lots"`, crea el bloc HTML inicial per introduir les dades del primer lot i mostra
+     * el modal `add_new_lot`.
+     */
+    async function show_new_article(){
+        try {
+            const res = await fetch('/get_lots');
+            const data = await res.json();
+
+            // aquí tienes la lista
+            console.log(data);
+
+            const datalist = document.getElementById('datalist-manufacturer');
+            datalist.innerHTML = '';
+
+            data.forEach(lot => {
+                const option = document.createElement('option');
+
+                // lo que se verá en el input
+                option.value = lot.manufacturer;
+
+                // combinación de atributos (lo puedes guardar en data-*)
+                option.dataset.id = lot.id;
+                option.dataset.full = `${lot.manufacturer}_/_${lot.nif}_/_${lot.sales_contact}`;
+
+                datalist.appendChild(option);
+            });
+
+        } catch (error) {
+            console.error('Error:', error);
+        }
+
         close_modal('info_lots_bd')
         show_reactive('')
         // $('#add_command').modal('show'); 
@@ -1836,6 +2069,52 @@
 
 
     /**
+     * Gestiona la selecció d’un proveïdor des del datalist i omple automàticament camps relacionats.
+     *
+     * Aquesta funció escolta l’esdeveniment `change` a nivell de document i detecta quan l’usuari
+     * modifica el camp d’entrada amb ID `supplier`. Quan es produeix un canvi, busca l’opció corresponent
+     * dins del `datalist` amb ID `datalist-manufacturer` i recupera la informació associada emmagatzemada
+     * en l’atribut `data-full`.
+     *
+     * A partir d’aquest valor, separa les dades utilitzant el delimitador `_/_` i assigna els valors
+     * corresponents als camps `nif` i `sales_contact`.
+     *
+     * @returns {void} No retorna cap valor. Actualitza directament els camps del formulari.
+     *
+     * @descriptor La funció utilitza delegació d’esdeveniments per assegurar el funcionament encara que
+     * l’element `supplier` es creï dinàmicament (per exemple, dins d’un modal). 
+     * 
+     * Es valida l’existència del `datalist`, de l’opció seleccionada i del contingut de `data-full` abans
+     * de processar la informació. Si el format no és l’esperat o falten dades, la funció no realitza cap acció.
+     * 
+     * Aquesta implementació depèn del format del camp `data-full`, que ha de contenir almenys tres valors
+     * separats pel delimitador `_/_` (manufacturer, NIF i contacte comercial).
+     */
+    document.addEventListener('change', function (e) {
+        if (e.target && e.target.id === 'supplier') {
+            const datalist = document.getElementById('datalist-manufacturer');
+            if (!datalist) return;
+
+            const option = [...datalist.options].find(opt => opt.value === e.target.value);
+            if (!option) return;
+
+            const full = option.dataset.full;
+            if (!full) return;
+
+            const split_full = full.split('_/_');
+
+            if (split_full.length >= 3) {
+                const nifInput = document.getElementById('nif');
+                const contactInput = document.getElementById('sales_contact');
+
+                if (nifInput) nifInput.value = split_full[1] || '';
+                if (contactInput) contactInput.value = split_full[2] || '';
+            }
+        }
+    });
+
+
+    /**
      * Mostra o oculta els elements amb la classe `divs_reatives` basant-se en el tipus de reactiu especificat.
      * 
      * Aquesta funció ajusta la visibilitat dels elements de la pàgina web amb la classe `divs_reatives` segons 
@@ -1874,7 +2153,28 @@
     //     open_modal('info_lots_bd')
     // });
 
-   
+    /**
+     * Mostra un missatge d'alerta dins d'un modal de manera temporal.
+     *
+     * Aquesta funció genera dinàmicament una alerta de Bootstrap dins del contenidor
+     * especificat per `modal_id`. El missatge es mostra amb una categoria visual
+     * (success, danger, warning, etc.) i desapareix automàticament després d’un temps definit.
+     *
+     * @param {string} message Missatge que es vol mostrar a l'usuari.
+     * @param {string} [category='danger'] Tipus d'alerta (ex: 'success', 'warning', 'danger', 'info').
+     * @param {string} modal_id ID del contenidor HTML on es mostrarà el missatge.
+     * @param {number} [duration=5000] Temps en mil·lisegons abans que el missatge desaparegui.
+     *
+     * @returns {void} No retorna cap valor. Actualitza el DOM mostrant i ocultant l'alerta.
+     *
+     * @descriptor La funció busca el contenidor amb l’ID proporcionat. Si existeix,
+     * injecta una alerta de Bootstrap amb el missatge indicat i un botó per tancar-la manualment.
+     * 
+     * També activa un temporitzador (`setTimeout`) que elimina el contingut del contenidor
+     * i l’oculta després del temps especificat.
+     * 
+     * Si el contenidor no existeix, la funció no realitza cap acció.
+     */
     function showModalMessage(message, category = 'danger', modal_id, duration = 5000) {
         const container = document.getElementById(modal_id);
 
@@ -1900,6 +2200,22 @@
     }
 
 
+    /**
+     * Elimina qualsevol missatge d'alerta dins d'un modal.
+     *
+     * Aquesta funció neteja el contingut del contenidor especificat per `modal_id`
+     * i l’oculta de la interfície d’usuari.
+     *
+     * @param {string} modal_id ID del contenidor HTML que conté el missatge.
+     *
+     * @returns {void} No retorna cap valor. Modifica directament el DOM eliminant el missatge.
+     *
+     * @descriptor La funció busca el contenidor amb l’ID proporcionat. Si existeix,
+     * elimina tot el contingut HTML (`innerHTML`) i canvia el seu estil a `display: none`
+     * per ocultar-lo visualment.
+     * 
+     * Si el contenidor no existeix, la funció no realitza cap acció.
+     */
     function clearModalMessage(modal_id) {
         const container = document.getElementById(modal_id);
 

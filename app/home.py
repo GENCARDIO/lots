@@ -4,7 +4,7 @@ from app.utils import requires_auth, list_desciption_lots, list_cost_center, to_
 from app.models import IP_HOME, session1, Lots, Stock_lots, Lot_consumptions, Buy_primers
 import jwt
 import json
-from sqlalchemy import and_, or_, outerjoin
+from sqlalchemy import and_, or_, outerjoin, func
 from datetime import datetime
 from config import main_dir
 import pandas as pd
@@ -111,7 +111,7 @@ def search_lot_db():
             dict_lots['code_SAP'] = lot.code_SAP
             dict_lots['code_LOG'] = lot.code_LOG
             dict_lots['catalog_reference'] = lot.catalog_reference
-            dict_lots['info_article'] = f"{lot.key}/-/{lot.catalog_reference}/-/{lot.manufacturer}/-/{lot.description}/-/{lot.analytical_technique}/-/{lot.reference_units}/-/{lot.id_reactive}/-/{lot.code_SAP}/-/{lot.code_LOG}/-/{lot.active}/-/{lot.temp_conservation}/-/{lot.description_subreference}/-/{lot.react_or_fungible}/-/{lot.code_panel}/-/{lot.location}/-/{lot.supplier}/-/{lot.purchase_format}/-/{lot.units_format}/-/{lot.import_unit_ics}/-/{lot.import_unit_idibgi}/-/{lot.local_management}/-/{lot.plataform_command_preferent}/-/{lot.maximum_amount}/-/{lot.purchase_format_supplier}/-/{lot.units_format_supplier}/-/{lot.name_logaritme}/-/{lot.units_for_discount}/-/{lot.units_measurement}/-/{lot.observations}"
+            dict_lots['info_article'] = f"{lot.key}/-/{lot.catalog_reference}/-/{lot.manufacturer}/-/{lot.description}/-/{lot.analytical_technique}/-/{lot.reference_units}/-/{lot.id_reactive}/-/{lot.code_SAP}/-/{lot.code_LOG}/-/{lot.active}/-/{lot.temp_conservation}/-/{lot.description_subreference}/-/{lot.react_or_fungible}/-/{lot.code_panel}/-/{lot.location}/-/{lot.supplier}/-/{lot.purchase_format}/-/{lot.units_format}/-/{lot.import_unit_ics}/-/{lot.import_unit_idibgi}/-/{lot.local_management}/-/{lot.plataform_command_preferent}/-/{lot.maximum_amount}/-/{lot.purchase_format_supplier}/-/{lot.units_format_supplier}/-/{lot.name_logaritme}/-/{lot.units_for_discount}/-/{lot.units_measurement}/-/{lot.observations}/-/{lot.nif}/-/{lot.sales_contact}"
             dict_lots['description'] = lot.description
             dict_lots['description_subreference'] = lot.description_subreference
             dict_lots['active'] = lot.active
@@ -1121,6 +1121,27 @@ def create_excel_primer():
         flash("Error, no s'ha trobat el l'stock a la BD", "danger")
         return render_template('home.html', list_desciption_lots=list_desciption_lots(),
                                 list_cost_center=list_cost_center())
+
+
+@app.route('/get_lots', methods=['GET'])
+def get_lots():
+    """
+    Retorna una llista de lots.
+
+    :return: JSON amb la llista de lots.
+    :rtype: flask.Response
+    """
+    lots = session1.query(Lots).group_by(Lots.manufacturer).order_by(func.lower(Lots.manufacturer)).all()
+
+    result = []
+    for lot in lots:
+        result.append({
+            "manufacturer": lot.manufacturer,
+            "nif": lot.nif,
+            "sales_contact": lot.sales_contact
+        })
+
+    return jsonify(result)
 
 
 '''@app.route('/charge_excel')

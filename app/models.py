@@ -49,6 +49,8 @@ class Lots(Base):
     units_for_discount = Column(Integer())
     units_measurement = Column(String())
     observations = Column(String())
+    nif = Column(String())
+    sales_contact = Column(String())
 
 
 class Stock_lots(Base):
@@ -108,6 +110,8 @@ class Stock_lots(Base):
     units_for_discount = Column(Integer())
     units_measurement = Column(String())
     observations = Column(String())
+    nif = Column(String())
+    sales_contact = Column(String())
 
 
 class Logs(Base):

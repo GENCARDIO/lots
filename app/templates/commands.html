@@ -1140,6 +1140,85 @@
 
         }
 
+
+        function view_modal_lot(id_lot) {
+            const formData = new FormData();
+            formData.append("id_lot", id_lot);
+
+            fetch("/view_modal_lot", {
+                method: "POST",
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (!data.success) {
+                    alert(data.message);
+                    return;
+                }
+
+                open_modal('modal_edit_lot_2')
+
+                const lot = data.lot;
+
+                document.getElementById('reference_catalog_edit').value = lot.catalog_reference
+                document.getElementById('manufacturer_edit').value = lot.manufacturer
+                document.getElementById('description_edit').value = lot.description
+                document.getElementById('analytical_technique_edit').value = lot.analytical_technique
+                document.getElementById('id_reactive_edit').value = lot.id_reactive
+                document.getElementById('code_sap_edit').value = lot.code_SAP
+                document.getElementById('code_log_edit').value = lot.code_LOG
+                document.getElementById('active_edit').value = lot.active
+                document.getElementById('temp_conservation_edit').value = lot.temp_conservation
+                document.getElementById('description_subref_edit').value = lot.description_subreference
+                document.getElementById('react_or_fungible_edit').value = lot.react_or_fungible
+                document.getElementById('code_panel_edit').value = lot.code_panel
+                document.getElementById('location_edit').value = lot.location
+                document.getElementById('supplier_edit').value = lot.supplier
+                document.getElementById('purchase_format_edit').value = lot.purchase_format
+                document.getElementById('units_format_edit').value = lot.units_format
+                document.getElementById('import_unit_ics_edit').value = lot.import_unit_ics
+                document.getElementById('import_unit_idibgi_edit').value = lot.import_unit_idibgi
+                document.getElementById('local_management_edit').value = lot.local_management
+                document.getElementById('plataform_command_preferent_edit').value = lot.plataform_command_preferent
+                document.getElementById('maximum_amount_edit').value = lot.maximum_amount
+                document.getElementById('purchase_format_supplier_edit').value = lot.purchase_format_supplier
+                document.getElementById('units_format_supplier_edit').value = lot.units_format_supplier
+                document.getElementById('name_logaritme_edit').value = lot.name_logaritme
+                document.getElementById('units_for_discount_edit').value = lot.units_for_discount
+                document.getElementById('units_measurement_edit').value = lot.units_measurement
+                document.getElementById('observations_edit').value = lot.observations
+                document.getElementById('nif_edit').value = lot.nif
+                document.getElementById('sales_contact_edit').value = lot.sales_contact
+                document.getElementById('view_for_command').value = 'true'
+
+                if (lot.react_or_fungible === 'Reactiu'){
+                    document.getElementById('div_panel_edit').style.display = 'block'
+                    document.getElementById('div_id_reactive_edit').style.display = 'block'
+                    document.querySelector('.input-group-text[name="span_type"]').style.width = '180px'
+                    document.querySelectorAll('[name="title_edit"]')[0].innerHTML = `Veure article &nbsp;&nbsp;- <i style="color: blue;">Reactiu</i> -`;
+                }
+                else if (lot.react_or_fungible === 'Fungible'){
+                    document.getElementById('div_panel_edit').style.display = 'none'
+                    document.getElementById('div_id_reactive_edit').style.display = 'none'
+                    document.querySelector('.input-group-text[name="span_type"]').style.width = '180px'
+                    document.querySelectorAll('[name="title_edit"]')[0].innerHTML = `Veure article &nbsp;&nbsp;- <i style="color: blue;">Fungible</i> -`;
+                }
+                else {
+                    document.getElementById('div_panel_edit').style.display = 'block'
+                    document.getElementById('div_id_reactive_edit').style.display = 'block'
+                    document.querySelector('.input-group-text[name="span_type"]').style.width = '180px'
+                    document.querySelectorAll('[name="title_edit"]')[0].innerHTML = 'Veure article';
+                }
+
+                document.getElementById('edit_lot_btn').style.display = "none"
+
+            })
+            .catch(error => {
+                console.error("Error:", error);
+                alert("S'ha produït un error carregant el lot.");
+            });
+        }
+
     </script>
 
     <style>
@@ -1212,7 +1291,7 @@
                                         {% endif %}   
                                     </div>
                                 </td>
-                                <td>{{lot.catalog_reference}}</td>
+                                <td><a href="#" onclick="view_modal_lot('{{ command.id_lot }}'); return false;">{{ lot.catalog_reference }}</a></td>
                                 <td>{{lot.description}}</td>
                                 <td>{{lot.code_SAP}}</td>
                                 <td>{{lot.code_LOG}}</td>

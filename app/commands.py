@@ -1,4 +1,4 @@
-from flask import request, session, render_template, flash, send_file
+from flask import request, session, render_template, flash, send_file, jsonify
 from app import app
 from app.utils import instant_date, requires_auth, create_excel, save_log, to_dict, year_now, list_desciption_lots, list_cost_center, send_mail_generic
 from app.models import session1, Lots, Commands, Cost_center, Stock_lots
@@ -847,3 +847,61 @@ def add_incidence_command_succes():
         return "False_//_No s'ha detectat cap canvi_//_none_//_none_//_none_//_none"
 
     return 'True_//_Canvi realitzat correctament'
+
+
+@app.route('/view_modal_lot', methods=['POST'])
+@requires_auth
+def view_modal_lot():
+    """
+    Retorna les dades d'un lot en format JSON.
+
+    :return: Resposta JSON amb l'estat de la petició i les dades del lot.
+    :rtype: flask.Response
+    """
+    id_lot = request.form.get("id_lot")
+
+    select_lot = session1.query(Lots).filter_by(key=id_lot).first()
+
+    if not select_lot:
+        return jsonify({
+            "success": False,
+            "message": "No s'ha trobat el lot a la BD"
+        }), 404
+
+    return jsonify({
+        "success": True,
+        "message": "Lot trobat correctament",
+        "lot": {
+            "catalog_reference": select_lot.catalog_reference,
+            "manufacturer": select_lot.manufacturer,
+            "description": select_lot.description,
+            "analytical_technique": select_lot.analytical_technique,
+            "reference_units": select_lot.reference_units,
+            "id_reactive": select_lot.id_reactive,
+            "code_SAP": select_lot.code_SAP,
+            "code_LOG": select_lot.code_LOG,
+            "active": select_lot.active,
+            "temp_conservation": select_lot.temp_conservation,
+            "description_subreference": select_lot.description_subreference,
+            "react_or_fungible": select_lot.react_or_fungible,
+            "code_panel": select_lot.code_panel,
+            "location": select_lot.location,
+            "supplier": select_lot.supplier,
+            "purchase_format": select_lot.purchase_format,
+            "units_format": select_lot.units_format,
+            "import_unit_ics": select_lot.import_unit_ics,
+            "import_unit_idibgi": select_lot.import_unit_idibgi,
+            "local_management": select_lot.local_management,
+            "plataform_command_preferent": select_lot.plataform_command_preferent,
+            "maximum_amount": select_lot.maximum_amount,
+            "purchase_format_supplier": select_lot.purchase_format_supplier,
+            "units_format_supplier": select_lot.units_format_supplier,
+            "name_logaritme": select_lot.name_logaritme,
+            "units_for_discount": select_lot.units_for_discount,
+            "units_measurement": select_lot.units_measurement,
+            "observations": select_lot.observations,
+            "nif": select_lot.nif,
+            "sales_contact": select_lot.sales_contact,
+        }
+    })
+

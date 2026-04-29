@@ -166,7 +166,9 @@ def register_new_lot():
                               name_logaritme=lots['name_logaritme'],
                               units_for_discount=lots['units_for_discount'],
                               units_measurement=lots['units_measurement'],
-                              observations=lots['observations'])
+                              observations=lots['observations'],
+                              nif=lots['nif'],
+                              sales_contact=lots['sales_contact'])
             session1.add(insert_lot)
 
             json_lots = json.dumps(lots)

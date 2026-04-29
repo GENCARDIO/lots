@@ -1230,6 +1230,8 @@
         const units_for_discount = document.getElementById(`units_for_discount`).value
         const units_measurement = document.getElementById(`units_measurement`).value
         const observations = document.getElementById(`observations`).value
+        const nif = document.getElementById(`nif`).value
+        const sales_contact = document.getElementById(`sales_contact`).value
 
         if (reference_catalog === code_sap || code_sap === code_log && code_log !== '' && code_sap != '') {
             alert("Els camps ref. proveïdor i codi LOG no poden ser iguals que el Codi SAP")
@@ -1262,7 +1264,7 @@
             
             // Aquí m'han fet treure la restricció de que el codi SAP i LOG siguin obligatoris
             // if (code_sap !== '' && code_log !== '' && analytical_technique !== '' && description !== '' && reference_catalog !== '' && manufacturer !== '' && location !== '') {
-            if (analytical_technique !== '' && description !== '' && reference_catalog !== '' && manufacturer !== '' && location !== '' && purchase_format !== '' && name_logaritme !== '') {
+            if (analytical_technique !== '' && description !== '' && reference_catalog !== '' && manufacturer !== '' && location !== '' && purchase_format !== '' && name_logaritme !== '' && nif !== '' && sales_contact !== '') {
                 // Si es un funbile hem de possar aquest camps en blanc.
                 if (react_or_fungible === 'Fungible'){
                     temp_conservation = ''
@@ -1294,7 +1296,9 @@
                     name_logaritme: name_logaritme,
                     units_for_discount: units_for_discount,
                     units_measurement: units_measurement,
-                    observations: observations }; }
+                    observations: observations,
+                    nif: nif,
+                    sales_contact: sales_contact }; }
             else {  
                 alert("No es poden deixar els camps sense omplir.")
                 return
@@ -1326,7 +1330,7 @@
             var import_unit_ics = document.getElementById(`import_unit_ics${x}`).value
             var import_unit_idibgi = document.getElementById(`import_unit_idibgi${x}`).value
 
-            if (id_reactiu !== '' && analytical_technique !== '' && description !== '' && reference_catalog !== '' && manufacturer !== '' && location !== '' && purchase_format !== '' && import_unit_ics !== '' && import_unit_idibgi !== '' && local_management !== '' && plataform_command_preferent !== '' && maximum_amount !== '' && purchase_format_supplier !== '') {
+            if (id_reactiu !== '' && analytical_technique !== '' && description !== '' && reference_catalog !== '' && manufacturer !== '' && location !== '' && purchase_format !== '' && import_unit_ics !== '' && import_unit_idibgi !== '' && local_management !== '' && plataform_command_preferent !== '' && maximum_amount !== '' && purchase_format_supplier !== '' && nif !== '' && sales_contact !== '') {
                 var dict_lots = {
                     code_sap: code_sap,
                     code_log: code_log,
@@ -1352,7 +1356,9 @@
                     name_logaritme: name_logaritme,
                     units_for_discount: units_for_discount,
                     units_measurement: units_measurement,
-                    observations: observations }; }
+                    observations: observations,
+                    nif: nif,
+                    sales_contact: sales_contact }; }
             else {
                 alert("No es poden deixar els camps sense omplir.")
                 return
@@ -2982,7 +2988,20 @@
                     <div class="col-lg-6 col-md-12 col-sm-12">       
                         <div class="input-group mb-3">
                             <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Proveïdor</b></span>
-                            <input type="text" class="form-control" id='supplier' aria-label="TTN" aria-describedby="basic-addon1">
+                            <input type="text" class="form-control" id='supplier' aria-label="TTN" aria-describedby="basic-addon1" list="datalist-manufacturer">
+                            <datalist id="datalist-manufacturer"></datalist>
+                        </div>
+                    </div>
+                    <div class="col-lg-6 col-md-12 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>NIF</b></span>
+                            <input type="text" class="form-control" id='nif' aria-label="TTN" aria-describedby="basic-addon1">
+                        </div>
+                    </div>
+                    <div class="col-lg-6 col-md-12 col-sm-12">       
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Contacte comercial</b></span>
+                            <input type="text" class="form-control" id='sales_contact' aria-label="TTN" aria-describedby="basic-addon1">
                         </div>
                     </div>
                     <div class="col-lg-12 col-md-12 col-sm-12">       
