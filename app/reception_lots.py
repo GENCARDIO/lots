@@ -107,7 +107,9 @@ def search_add_lot():
                                  'name_logaritme': lot.name_logaritme,
                                  'units_for_discount': lot.units_for_discount,
                                  'units_measurement': lot.units_measurement,
-                                 'observations': lot.observations}
+                                 'observations': lot.observations,
+                                 'nif': lot.nif,
+                                 'sales_contact': lot.sales_contact}
                     list_lots.append(dict_lots)
             json_data = json.dumps(list_lots)
             list_commands_json = json.dumps(list_commands) 
@@ -481,7 +483,9 @@ def add_stock_lot():
                                             name_logaritme=lots['name_logaritme'],
                                             units_for_discount=lots['units_for_discount'],
                                             units_measurement=lots['units_measurement'],
-                                            observations=lots['observations'] )
+                                            observations=lots['observations'],
+                                            nif=lots['nif'],
+                                            sales_contact=lots['sales_contact'])
                     session1.add(insert_lot)
 
                     dict_info_excel = {'catalog_reference': lots['catalog_reference'],
