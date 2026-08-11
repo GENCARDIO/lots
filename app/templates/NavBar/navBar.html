@@ -1,88 +1,111 @@
-<nav class="navbar shadow-sm navbar-expand-sm fixed-top mb-3" rel="preload" style="background-image: linear-gradient(15deg, #357ca5 0%, #60cec1 100%);">
-    <a class="navbar-brand" style="color:white;" href="/"><b>COMANDES</b></a>
-    <div class="collapse navbar-collapse" id="navbarNavDarkDropdown">
-        <ul class="navbar-nav mr-auto"> 
-            <!-- <li class="nav-item">
-                <a class="navbar btn mr-1" style="color:white;padding:5px;" data-toggle="modal" data-target="#open_close_lot"><b><i class="fa-solid fa-plus-minus"></i>&nbsp;Obri/tancar lot</a></b>
-            </li> -->
+<nav class="navbar app-top-navbar navbar-expand-sm fixed-top mb-3" rel="preload">
+    <a class="navbar-brand app-top-navbar-brand" href="/"><b>COMANDES</b></a>
+    <div class="collapse navbar-collapse app-top-navbar-content" id="navbarNavDarkDropdown">
+        <ul class="navbar-nav app-top-navbar-menu">
             <li class="nav-item">
-                <a class="navbar btn mr-1" style="color:white;padding:5px;" onclick="search_lots_db(`{{ session['rol'] }}`)"><b><i class="fa-solid fa-eye"></i>&nbsp;Productes</a></b>
-            </li>
-            <!-- <li class="nav-item">
-                <a class="navbar btn mr-1" style="color:white;padding:5px;" onclick="open_modal('open_history_lots')"><b><i class="fa-solid fa-book"></i>&nbsp;Historic lots</a></b>
-            </li> -->
-            <li class="nav-item">
-                <a class="navbar btn mr-1" style="color:white;padding:5px;" onclick="open_modal('search_all_year')"><b><i class="fa-solid fa-database"></i>&nbsp;Històric</a></b>
+                <a class="app-top-navbar-button" onclick="openProductsLookupPage(`{{ session['rol'] }}`)">
+                    <i class="fa-solid fa-eye"></i> Productes
+                </a>
             </li>
             <li class="nav-item">
-                <!-- <a class="navbar btn mr-1" style="color:white;padding:5px;" onclick="look_spend_money()"><b><i class="fa-solid fa-dollar-sign"></i>&nbsp;Indicadors</a></b> -->
-                <a class="navbar btn mr-1" style="color:white;padding:5px;" onclick="open_modal('search_year_spend_money')"><b><i class="fa-solid fa-dollar-sign"></i>&nbsp;Indicadors</a></b>
+                <a class="app-top-navbar-button" onclick="open_modal('search_all_year')">
+                    <i class="fa-solid fa-database"></i> Històric
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="app-top-navbar-button" onclick="open_modal('search_year_spend_money')">
+                    <i class="fa-solid fa-dollar-sign"></i> Indicadors
+                </a>
             </li>
             {% if session['rol'] == 'admin' %}
                 <li class="nav-item">
-                    <a class="navbar btn mr-1" style="color:white;padding:5px;" onclick="open_modal('open_update_price')"><b><i class="fa-solid fa-money-check-dollar"></i>&nbsp;Preus</a></b>
+                    <a class="app-top-navbar-button" onclick="open_modal('open_update_price')">
+                        <i class="fa-solid fa-money-check-dollar"></i> Preus
+                    </a>
                 </li>
             {% endif %}
             {% if session['rol'] == 'admin' and session['user'] == 'Adria' %}
                 <li class="nav-item">
                     <form action="/show_recover_data" id="show_recover">
-                        <a class="navbar btn mr-1" style="color:white;padding:5px;" onclick="document.getElementById('show_recover').submit(); return false;">
-                            <b><i class="fa-solid fa-rotate-left"></i>&nbsp;Recuperar productes</b>
+                        <a class="app-top-navbar-button" onclick="document.getElementById('show_recover').submit(); return false;">
+                            <i class="fa-solid fa-rotate-left"></i> Recuperar productes
                         </a>
-                    </form>  
+                    </form>
                 </li>
             {% endif %}
+        </ul>
+        <ul class="navbar-nav app-top-navbar-session">
+            <li class="nav-item">
+                <span class="app-top-navbar-session-item">
+                    <i class="fas fa-user fa"></i> {{session['user']}}
+                </span>
+            </li>
+            <li class="nav-item">
+                <a class="app-top-navbar-session-item" href="logout">
+                    <i class="fas fa-door-closed fa-sm"></i> Tanca sessió
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="app-top-navbar-session-item" href="apps">
+                    <i class="fas fa-home"></i> Home
+                </a>
+            </li>
+        </ul>
     </div>
-
-    <ul class="navbar-nav ml-auto">
-        <li class="nav-item">
-            <a class="navbar btn mr-1" style="color:white;padding:5px;"><i class="fas fa-user fa"></i>&nbsp;{{session['user']}}</a>
-        </li>
-        <li class="nav-item">
-            <a class="navbar btn mr-1" style="color:white;padding:5px;" href="logout"><i class="fas fa-door-closed fa-sm"></i>&nbsp;Tanca sessió</a>
-        </li>
-        <li class="nav-item">
-            <a class="navbar btn mr-1" style="color:white;padding:5px;" href="apps"><i class="fas fa-home"></i>&nbsp;Home</a>
-        </li>
-    </ul>
 </nav>
 <div style="height: 45px;">
 </div>
 
 
-<div class="modal fade modal-custom"  id="info_lots_bd" tabindex="-1" role="dialog" aria-labelledby="editRegister" aria-hidden="true">
+<div class="app-navbar-page-view document-action-modal app-navbar-wide-table-modal" id="info_lots_bd" tabindex="-1" role="region" aria-labelledby="products_lookup_title" aria-hidden="true">
     <div class="modal-dialog modal-xl" tabindex="-1" role="document">
-      <div class="modal-content">
+      <div class="modal-content document-action-modal-content">
         <div class="modal-header">
-          <h5 class="modal-title" id="title"> Productes</h5>
-          <button type="button" class="btn btn-link btn-sm" onclick="show_new_article()" style="margin-left: 10px; margin-top: 2px;"><i class="fa-solid fa-plus"></i> Nou producte</button>
-          <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="close_modal('info_lots_bd')"><span aria-hidden="true">&times;</span></button>
+          <h5 class="modal-title" id="products_lookup_title"><i class="fa-solid fa-boxes-stacked"></i> Productes</h5>
+          <button type="button" class="btn btn-outline-success btn-sm ml-2" onclick="show_new_article()"><i class="fa-solid fa-plus"></i> Nou producte</button>
+          <button type="button" class="close" aria-label="Close" onclick="hideNavbarPageView('info_lots_bd')"><span aria-hidden="true">&times;</span></button>
         </div>
         <div class="modal-body">
-            <div class="row">                                   
-                <div class="col-lg-12 col-md-12 col-sm-12" id="div_table_look_lots">       
-                    <table id="table_info_lots_db" class="display" style="width: 100%;">
+            <div class="table-toolbar app-navbar-table-toolbar" id="products_lookup_toolbar">
+                <label class="toolbar-field toolbar-field-show">
+                    <span>Mostra</span>
+                    <select id="products_lookup_length_control">
+                        <option value="10">10</option>
+                        <option value="25">25</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                    </select>
+                </label>
+                <label class="toolbar-field toolbar-field-search">
+                    <span>Cercar</span>
+                    <input type="search" id="products_lookup_global_search" placeholder="Cerca en tota la taula">
+                </label>
+                <button type="button" class="toolbar-clear-button" id="products_lookup_clear_filters">
+                    <i class="fa-solid fa-eraser"></i> Netejar filtres
+                </button>
+            </div>
+            <div class="table-wrapper app-navbar-table-wrapper" id="div_table_look_lots">
+                    <table id="table_info_lots_db" class="lab-data-table" style="width: 100%;">
                         <thead>
-                            <tr id="thcolor">
-                                <th style="width: 80px;">Codi SAP</th>
-                                <th style="width: 80px;">Codi LOG</th>
-                                <th style="width: 100px;">Ref. Proveïdor</th>
-                                <th style="width: 60px;" name="admin_edit_delete">Accions</th>
-                                <th style="width: 350px;">Descripció article</th>
-                                <th style="width: 350px;">Descripció Subref.</th>
+                            <tr>
+                                <th><div class="header-filter"><span class="header-title">Codi SAP <span class="sort-icon">↕</span></span><input type="text" data-column="0"></div></th>
+                                <th><div class="header-filter"><span class="header-title">Codi LOG <span class="sort-icon">↕</span></span><input type="text" data-column="1"></div></th>
+                                <th><div class="header-filter"><span class="header-title">Ref. Proveïdor <span class="sort-icon">↕</span></span><input type="text" data-column="2"></div></th>
+                                <th name="admin_edit_delete">Accions</th>
+                                <th><div class="header-filter"><span class="header-title">Descripció article <span class="sort-icon">↕</span></span><input type="text" data-column="4"></div></th>
+                                <th><div class="header-filter"><span class="header-title">Descripció Subref. <span class="sort-icon">↕</span></span><input type="text" data-column="5"></div></th>
                             </tr>
                         </thead>
-                        <tbody>
-                        </tbody>
+                        <tbody></tbody>
                     </table>
-                </div> 
             </div>
         </div>
       </div>
     </div>
 </div>
 
-    
+
+
 <div class="modal fade"  id="open_history_lots" tabindex="-1" role="dialog" aria-labelledby="editRegister" aria-hidden="true">
     <div class="modal-dialog modal-xs" tabindex="-1" role="document">
       <div class="modal-content">
@@ -91,8 +114,10 @@
           <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="close_modal('open_history_lots')"><span aria-hidden="true">&times;</span></button>
         </div>
         <div class="modal-body">
-            <div class="row">                                   
-                <div class="col-lg-12 col-md-12 col-sm-12">       
+            <div class="row">
+
+                <div class="col-lg-12 col-md-12 col-sm-12">
+
                     <div class="input-group mb-3">
                         <span class="input-group-text" id="basic-addon1"><b>Codi lot:</b></span>
                         <input type="text" class="form-control" id='historic_code_lot' name="search_code" aria-label="TTN" aria-describedby="basic-addon1" required>
@@ -114,8 +139,10 @@
           <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="close_modal('modal_history_lots')"><span aria-hidden="true">&times;</span></button>
         </div>
         <div class="modal-body">
-            <div class="row">                                   
-                <div class="col-lg-12 col-md-12 col-sm-12">       
+            <div class="row">
+
+                <div class="col-lg-12 col-md-12 col-sm-12">
+
                     <table id="tbl_history_lots" class="display" style="width: 100%;">
                         <thead>
                             <tr id="thcolor">
@@ -132,7 +159,8 @@
                         <tbody>
                         </tbody>
                     </table>
-                </div> 
+                </div>
+
             </div>
         </div>
       </div>
@@ -147,39 +175,39 @@
           <h5 class="modal-title" id="title" name="title_edit">Editar article</h5>
           <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="close_modal('modal_edit_lot')"><span aria-hidden="true">&times;</span></button>
         </div>
-        <div class="modal-body">
+        <div class="modal-body home-form-grid">
             <div class="row">
-                <div class="col-lg-6 col-md-12 col-sm-12">       
+                <div class="col-lg-4 col-md-12 col-sm-12">
                     <div class="input-group mb-3">
                         <span class="input-group-text" id="basic-addon1" style="width: 180px;"><b>Ref. proveïdor</b></span>
                         <input type="text" class="form-control" id='reference_catalog_edit' aria-label="TTN" aria-describedby="basic-addon1" style="background-color: white;">
                     </div>
                 </div>
-                <div class="col-lg-6 col-md-12 col-sm-12">       
+                <div class="col-lg-4 col-md-12 col-sm-12">
                     <div class="input-group mb-3">
                         <span class="input-group-text" id="basic-addon1" style="width: 180px;"><b>Codi SAP</b></span>
                         <input type="text" class="form-control" id='code_sap_edit' aria-label="TTN" aria-describedby="basic-addon1" style="background-color: white;">
                     </div>
                 </div>
-                <div class="col-lg-6 col-md-12 col-sm-12">       
+                <div class="col-lg-4 col-md-12 col-sm-12">
                     <div class="input-group mb-3">
                         <span class="input-group-text" id="basic-addon1" style="width: 180px;"><b>Codi LOG</b></span>
                         <input type="text" class="form-control" id='code_log_edit' aria-label="TTN" aria-describedby="basic-addon1" style="background-color: white;">
                     </div>
                 </div>
-                <div class="col-lg-6 col-md-12 col-sm-12">       
+                <div class="col-lg-4 col-md-12 col-sm-12">
                     <div class="input-group mb-3">
                         <span class="input-group-text" id="basic-addon1" style="width: 180px;"><b>Tècnica analítica</b></span>
                         <input type="text" class="form-control" id='analytical_technique_edit' aria-label="TTN" aria-describedby="basic-addon1">
                     </div>
                 </div>
-                <div class="col-lg-6 col-md-12 col-sm-12">       
+                <div class="col-lg-4 col-md-12 col-sm-12">
                     <div class="input-group mb-3">
                         <span class="input-group-text" id="basic-addon1" style="width: 180px;"><b>Fabricant</b></span>
                         <input type="text" class="form-control" id='manufacturer_edit' aria-label="TTN" aria-describedby="basic-addon1">
                     </div>
                 </div>
-                <div class="col-lg-6 col-md-12 col-sm-12">       
+                <div class="col-lg-4 col-md-12 col-sm-12">
                     <div class="input-group mb-3">
                         <span class="input-group-text" id="basic-addon1" style="width: 180px;"><b>Actiu</b></span>
                         <!-- <input type="text" class="form-control" id='active_edit' aria-label="TTN" aria-describedby="basic-addon1"> -->
@@ -189,151 +217,159 @@
                         </select>
                     </div>
                 </div>
-                <div class="col-lg-12 col-md-12 col-sm-12">       
+                <div class="col-lg-12 col-md-12 col-sm-12">
+
                     <div class="input-group mb-3">
                         <span class="input-group-text" id="basic-addon1" style="width: 180px;"><b>Descripció</b></span>
                         <input type="text" class="form-control" id='description_edit' aria-label="TTN" aria-describedby="basic-addon1">
                     </div>
                 </div>
-                <div class="col-lg-12 col-md-12 col-sm-12" id="div_desc_subref">       
+                <div class="col-lg-12 col-md-12 col-sm-12" id="div_desc_subref">
+
                     <div class="input-group mb-3">
                         <span class="input-group-text" id="basic-addon1" style="width: 180px;"><b>Descripció Subref.</b></span>
                         <input type="text" class="form-control" id='description_subref_edit' aria-label="TTN" aria-describedby="basic-addon1">
                     </div>
                 </div>
-                <div class="col-lg-12 col-md-12 col-sm-12">       
+                <div class="col-lg-12 col-md-12 col-sm-12">
+
                     <div class="input-group mb-3">
                         <span class="input-group-text" id="basic-addon1" style="width: 180px;"><b>Nom logaritme</b></span>
                         <input type="text" class="form-control" id='name_logaritme_edit' aria-label="TTN" aria-describedby="basic-addon1">
                     </div>
                 </div>
-                <div class="col-lg-6 col-md-12 col-sm-12">       
-                    <div class="input-group mb-3">
-                        <span class="input-group-text" id="basic-addon1" style="width: 180px;"><b>Tp. Conservació</b></span>
-                        <input type="text" class="form-control" id='temp_conservation_edit' aria-label="TTN" aria-describedby="basic-addon1">
-                    </div>
-                </div>
-                <div class="col-lg-6 col-md-12 col-sm-12" id="div_id_reactive_edit">       
-                    <div class="input-group mb-3">
-                        <span class="input-group-text" id="basic-addon1" style="width: 180px;"><b>Id reactiu</b></span>
-                        <input type="text" class="form-control" id='id_reactive_edit' aria-label="TTN" aria-describedby="basic-addon1">
-                    </div>
-                </div>
-                <div class="col-lg-6 col-md-12 col-sm-12">       
+                <div class="col-lg-4 col-md-12 col-sm-12">
                     <div class="input-group mb-3">
                         <span class="input-group-text" id="basic-addon1" style="width: 180px;" name="span_type"><b>Tipu</b></span>
                         <input type="text" class="form-control" id='react_or_fungible_edit' aria-label="TTN" aria-describedby="basic-addon1">
                     </div>
                 </div>
-                <div class="col-lg-6 col-md-12 col-sm-12" id="div_panel_edit">       
+                <div class="col-lg-4 col-md-12 col-sm-12" id="div_id_reactive_edit">
+                    <div class="input-group mb-3">
+                        <span class="input-group-text" id="basic-addon1" style="width: 180px;"><b>Id reactiu</b></span>
+                        <input type="text" class="form-control" id='id_reactive_edit' aria-label="TTN" aria-describedby="basic-addon1">
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-12 col-sm-12" id="div_panel_edit">
                     <div class="input-group mb-3">
                         <span class="input-group-text" id="basic-addon1" style="width: 180px;"><b>Codi panel</b></span>
                         <input type="text" class="form-control" id='code_panel_edit' aria-label="TTN" aria-describedby="basic-addon1" style="background-color: white;" readonly>
                     </div>
                 </div>
-                <div class="col-lg-6 col-md-12 col-sm-12">       
+                <div class="col-lg-4 col-md-12 col-sm-12">
+                    <div class="input-group mb-3">
+                        <span class="input-group-text" id="basic-addon1" style="width: 180px;"><b>Tp. Conservació</b></span>
+                        <input type="text" class="form-control" id='temp_conservation_edit' aria-label="TTN" aria-describedby="basic-addon1">
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-12 col-sm-12">
+
                     <div class="input-group mb-3">
                         <span class="input-group-text" id="basic-addon1" style="width: 180px;"><b>Localització</b></span>
                         <input type="text" class="form-control" id='location_edit' aria-label="TTN" aria-describedby="basic-addon1">
                     </div>
                 </div>
-                <div class="col-lg-6 col-md-12 col-sm-12">       
+                <div class="col-lg-4 d-none d-lg-block"></div>
+                <div class="col-lg-4 col-md-12 col-sm-12">
                     <div class="input-group mb-3">
                         <span class="input-group-text" id="basic-addon1" style="width: 180px;"><b>Proveïdor</b></span>
                         <input type="text" class="form-control" id='supplier_edit' aria-label="TTN" aria-describedby="basic-addon1">
                     </div>
                 </div>
 
-                <div class="col-lg-6 col-md-12 col-sm-12">       
+                <div class="col-lg-4 col-md-12 col-sm-12">
                     <div class="input-group mb-3">
                         <span class="input-group-text" id="basic-addon1" style="width: 180px;"><b>NIF</b></span>
                         <input type="text" class="form-control" id='nif_edit' aria-label="TTN" aria-describedby="basic-addon1">
                     </div>
                 </div>
-                <div class="col-lg-6 col-md-12 col-sm-12">       
+                <div class="col-lg-4 col-md-12 col-sm-12">
                     <div class="input-group mb-3">
                         <span class="input-group-text" id="basic-addon1" style="width: 180px;"><b>Contacte comercial</b></span>
                         <input type="text" class="form-control" id='sales_contact_edit' aria-label="TTN" aria-describedby="basic-addon1">
                     </div>
                 </div>
 
-                <div class="col-lg-6 col-md-12 col-sm-12">       
-                    <div class="input-group mb-3">
-                        <span class="input-group-text" id="basic-addon1" style="width: 180px;"><b>Import ICS</b></span>
-                        <input type="text" class="form-control" id='import_unit_ics_edit' aria-label="TTN" aria-describedby="basic-addon1">
-                    </div>
-                </div>
-                <div class="col-lg-6 col-md-12 col-sm-12">       
-                    <div class="input-group mb-3">
-                        <span class="input-group-text" id="basic-addon1" style="width: 180px;"><b>Import Idibgi</b></span>
-                        <input type="text" class="form-control" id='import_unit_idibgi_edit' aria-label="TTN" aria-describedby="basic-addon1">
-                    </div>
-                </div>
-                <div class="col-lg-6 col-md-12 col-sm-12">       
+                <div class="col-lg-4 col-md-12 col-sm-12">
                     <div class="input-group mb-3">
                         <span class="input-group-text" id="basic-addon1" style="width: 180px;"><b>Gestió local</b></span>
                         <input type="text" class="form-control" id='local_management_edit' aria-label="TTN" aria-describedby="basic-addon1">
                     </div>
                 </div>
-                <div class="col-lg-6 col-md-12 col-sm-12">       
+                <div class="col-lg-4 col-md-12 col-sm-12">
                     <div class="input-group mb-3">
                         <span class="input-group-text" id="basic-addon1" style="width: 180px;"><b>Cmd. preferent</b></span>
                         <input type="text" class="form-control" id='plataform_command_preferent_edit' aria-label="TTN" aria-describedby="basic-addon1">
                     </div>
                 </div>
-
-                <div class="col-lg-6 col-md-12 col-sm-12">       
-                    <div class="input-group mb-3">
-                        <span class="input-group-text" id="basic-addon1" style="width: 180px;"><b>Format compra ICS</b></span>
-                        <input type="text" class="form-control" id='purchase_format_supplier_edit' aria-label="TTN" aria-describedby="basic-addon1">
-                    </div>
-                </div>
-                <div class="col-lg-6 col-md-12 col-sm-12">       
-                    <div class="input-group mb-3">
-                        <span class="input-group-text" id="basic-addon1" style="width: 180px;"><b>Unitats format ICS</b></span>
-                        <input type="text" class="form-control" id='units_format_supplier_edit' aria-label="TTN" aria-describedby="basic-addon1">
-                    </div>
-                </div>
-
-                <div class="col-lg-6 col-md-12 col-sm-12">       
-                    <div class="input-group mb-3">
-                        <span class="input-group-text" id="basic-addon1" style="width: 180px;"><b>Format compra PROV</b></span>
-                        <input type="text" class="form-control" id='purchase_format_edit' aria-label="TTN" aria-describedby="basic-addon1">
-                    </div>
-                </div>
-                <div class="col-lg-6 col-md-12 col-sm-12">       
-                    <div class="input-group mb-3">
-                        <span class="input-group-text" id="basic-addon1" style="width: 180px;"><b>Unitats format PROV</b></span>
-                        <input type="text" class="form-control" id='units_format_edit' aria-label="TTN" aria-describedby="basic-addon1">
-                    </div>
-                </div>
-
-                <div class="col-lg-6 col-md-12 col-sm-12">       
+                <div class="col-lg-4 col-md-12 col-sm-12">
                     <div class="input-group mb-3">
                         <span class="input-group-text" id="basic-addon1" style="width: 180px;"><b>Q. màxima</b></span>
                         <input type="text" class="form-control" id='maximum_amount_edit' aria-label="TTN" aria-describedby="basic-addon1">
                     </div>
                 </div>
-                <div class="col-lg-6 col-md-12 col-sm-12">       
+
+                <div class="col-lg-4 col-md-12 col-sm-12">
+
                     <div class="input-group mb-3">
+                        <span class="input-group-text" id="basic-addon1" style="width: 180px;"><b>Format compra ICS</b></span>
+                        <input type="text" class="form-control" id='purchase_format_supplier_edit' aria-label="TTN" aria-describedby="basic-addon1">
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-12 col-sm-12">
+
+                    <div class="input-group mb-3">
+                        <span class="input-group-text" id="basic-addon1" style="width: 180px;"><b>Unitats format ICS</b></span>
+                        <input type="text" class="form-control" id='units_format_supplier_edit' aria-label="TTN" aria-describedby="basic-addon1">
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-12 col-sm-12">
+
+                    <div class="input-group mb-3">
+                        <span class="input-group-text" id="basic-addon1" style="width: 180px;"><b>Import ICS</b></span>
+                        <input type="text" class="form-control" id='import_unit_ics_edit' aria-label="TTN" aria-describedby="basic-addon1">
                     </div>
                 </div>
 
+                <div class="col-lg-4 col-md-12 col-sm-12">
 
-                <div class="col-lg-6 col-md-12 col-sm-12">       
+                    <div class="input-group mb-3">
+                        <span class="input-group-text" id="basic-addon1" style="width: 180px;"><b>Format compra PROV</b></span>
+                        <input type="text" class="form-control" id='purchase_format_edit' aria-label="TTN" aria-describedby="basic-addon1">
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-12 col-sm-12">
+
+                    <div class="input-group mb-3">
+                        <span class="input-group-text" id="basic-addon1" style="width: 180px;"><b>Unitats format PROV</b></span>
+                        <input type="text" class="form-control" id='units_format_edit' aria-label="TTN" aria-describedby="basic-addon1">
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-12 col-sm-12">
+
+                    <div class="input-group mb-3">
+                        <span class="input-group-text" id="basic-addon1" style="width: 180px;"><b>Import Idibgi</b></span>
+                        <input type="text" class="form-control" id='import_unit_idibgi_edit' aria-label="TTN" aria-describedby="basic-addon1">
+                    </div>
+                </div>
+
+                <div class="col-lg-4 col-md-12 col-sm-12">
                     <div class="input-group mb-3">
                         <span class="input-group-text" id="basic-addon1" style="width: 180px;"><b>Unitats</b></span>
                         <input type="number" class="form-control" id='units_for_discount_edit' aria-label="TTN" aria-describedby="basic-addon1">
                     </div>
                 </div>
-                <div class="col-lg-6 col-md-12 col-sm-12">       
+                <div class="col-lg-4 col-md-12 col-sm-12">
+
                     <div class="input-group mb-3">
                         <span class="input-group-text" id="basic-addon1" style="width: 180px;"><b>Unitats mesura</b></span>
                         <input type="text" class="form-control" id='units_measurement_edit' aria-label="TTN" aria-describedby="basic-addon1">
                     </div>
                 </div>
+                <div class="col-lg-4 d-none d-lg-block"></div>
 
-                <div class="col-lg-12 col-md-12 col-sm-12">       
+                <div class="col-lg-12 col-md-12 col-sm-12">
+
                     <div class="input-group mb-3">
                         <span class="input-group-text" id="basic-addon1" style="width: 180px;"><b>Observacions</b></span>
                         <input type="text" class="form-control" id='observations_edit' aria-label="TTN" aria-describedby="basic-addon1">
@@ -358,13 +394,16 @@
           <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="close_modal('modal_delete_confirmation')"><span aria-hidden="true">&times;</span></button>
         </div>
         <div class="modal-body">
-            <div class="row">                                   
-                <div class="col-lg-12 col-md-12 col-sm-12">       
+            <div class="row">
+
+                <div class="col-lg-12 col-md-12 col-sm-12">
+
                     <div class="input-group mb-3">
                         <span class="input-group-text" id="basic-addon1"><b>Motiu:</b></span>
                         <input type="text" class="form-control" id='reason_delete' name="reason_delete" aria-label="TTN" aria-describedby="basic-addon1" required>
                     </div>
-                </div> 
+                </div>
+
                 <input type="hidden" name="id_lot_delete" id="id_lot_delete"/>
                 <center><button type="button" class="btn btn-danger btn-sm" onclick="delete_lot()">Eliminar <i class="fa-solid fa-trash"></i></button></center>
             </div>
@@ -374,24 +413,22 @@
 </div>
 
 
-<div class="modal fade"  id="search_all_year" tabindex="-1" role="dialog" aria-labelledby="editRegister" aria-hidden="true">
+<div class="modal fade document-action-modal app-navbar-modal app-navbar-compact-modal" id="search_all_year" tabindex="-1" role="dialog" aria-labelledby="editRegister" aria-hidden="true">
     <div class="modal-dialog modal-md" tabindex="-1" role="document">
-      <div class="modal-content">
+      <div class="modal-content document-action-modal-content">
         <div class="modal-header">
-          <h5 class="modal-title" id="title"> Cercar dades:</h5>
+          <h5 class="modal-title" id="title"><i class="fa-solid fa-database"></i> Històric</h5>
           <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="close_modal('search_all_year')"><span aria-hidden="true">&times;</span></button>
         </div>
-        <div class="modal-body">
-            <div class="row">                                   
-                <div class="col-lg-12 col-md-12 col-sm-12">       
-                    <div class="input-group mb-3">
-                        <span class="input-group-text" id="basic-addon1"><b>Selecciona any</b></span>
-                        <!-- <input type="text" class="form-control" id='search_data_code' name="search_data_code" aria-label="TTN" aria-describedby="basic-addon1" required> -->
-                        <select class="form-control" id="search_data_code" name="search_data_code">
-                        </select>
-                    </div>
-                </div>
-                <center><button type="button" class="btn btn-success btn-sm" onclick="search_all_year()">Cercar</button></center>
+        <div class="modal-body document-modal-body">
+            <label class="toolbar-field app-modal-field">
+                <span>Selecciona any</span>
+                <select id="search_data_code" name="search_data_code"></select>
+            </label>
+            <div class="app-modal-actions">
+                <button type="button" class="btn btn-outline-success btn-sm" onclick="search_all_year()">
+                    <i class="fa-solid fa-magnifying-glass"></i> Cercar
+                </button>
             </div>
         </div>
       </div>
@@ -399,24 +436,22 @@
 </div>
 
 
-<div class="modal fade"  id="search_year_spend_money" tabindex="-1" role="dialog" aria-labelledby="editRegister" aria-hidden="true">
+<div class="modal fade document-action-modal app-navbar-modal app-navbar-compact-modal" id="search_year_spend_money" tabindex="-1" role="dialog" aria-labelledby="editRegister" aria-hidden="true">
     <div class="modal-dialog modal-md" tabindex="-1" role="document">
-      <div class="modal-content">
+      <div class="modal-content document-action-modal-content">
         <div class="modal-header">
-          <h5 class="modal-title" id="title"> Diners gastat:</h5>
+          <h5 class="modal-title" id="title"><i class="fa-solid fa-chart-line"></i> Indicadors</h5>
           <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="close_modal('search_year_spend_money')"><span aria-hidden="true">&times;</span></button>
         </div>
-        <div class="modal-body">
-            <div class="row">                                   
-                <div class="col-lg-12 col-md-12 col-sm-12">       
-                    <div class="input-group mb-3">
-                        <span class="input-group-text" id="basic-addon1"><b>Selecciona any</b></span>
-                        <!-- <input type="text" class="form-control" id='search_data_code' name="search_data_code" aria-label="TTN" aria-describedby="basic-addon1" required> -->
-                        <select class="form-control" id="search_data_spend_mmoney" name="search_data_spend_mmoney">
-                        </select>
-                    </div>
-                </div>
-                <center><button type="button" class="btn btn-success btn-sm" onclick="look_spend_money()">Cercar</button></center>
+        <div class="modal-body document-modal-body">
+            <label class="toolbar-field app-modal-field">
+                <span>Selecciona any</span>
+                <select id="search_data_spend_mmoney" name="search_data_spend_mmoney"></select>
+            </label>
+            <div class="app-modal-actions">
+                <button type="button" class="btn btn-outline-success btn-sm" onclick="look_spend_money()">
+                    <i class="fa-solid fa-magnifying-glass"></i> Cercar
+                </button>
             </div>
         </div>
       </div>
@@ -424,39 +459,54 @@
 </div>
 
 
-<div class="modal fade modal-custom"  id="modal_seach_all_year" tabindex="-1" role="dialog" aria-labelledby="editRegister" aria-hidden="true">
+<div class="app-navbar-page-view document-action-modal app-navbar-wide-table-modal" id="modal_seach_all_year" tabindex="-1" role="region" aria-labelledby="historic_stock_title" aria-hidden="true">
     <div class="modal-dialog" tabindex="-1" role="document">
-      <div class="modal-content">
+      <div class="modal-content document-action-modal-content">
         <div class="modal-header">
-          <h5 class="modal-title" id="title"> Historic Stock lots</h5>
-          <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="close_modal('modal_seach_all_year')"><span aria-hidden="true">&times;</span></button>
+          <h5 class="modal-title" id="historic_stock_title"><i class="fa-solid fa-clock-rotate-left"></i> Històric Stock lots</h5>
+          <button type="button" class="close" aria-label="Close" onclick="hideNavbarPageView('modal_seach_all_year')"><span aria-hidden="true">&times;</span></button>
         </div>
         <div class="modal-body">
-            <div class="row">                                   
-                <div class="col-lg-12 col-md-12 col-sm-12">       
-                    <table id="table_search_all_year" class="display" style="width: 100%; font-size: 0.75rem;">
+            <div class="table-toolbar app-navbar-table-toolbar" id="historic_stock_toolbar">
+                <label class="toolbar-field toolbar-field-show">
+                    <span>Mostra</span>
+                    <select id="historic_stock_length_control">
+                        <option value="10">10</option>
+                        <option value="25">25</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                    </select>
+                </label>
+                <label class="toolbar-field toolbar-field-search">
+                    <span>Cercar</span>
+                    <input type="search" id="historic_stock_global_search" placeholder="Cerca en tota la taula">
+                </label>
+                <button type="button" class="toolbar-clear-button" id="historic_stock_clear_filters">
+                    <i class="fa-solid fa-eraser"></i> Netejar filtres
+                </button>
+            </div>
+            <div class="table-wrapper app-navbar-table-wrapper">
+                    <table id="table_search_all_year" class="lab-data-table" style="width: 100%; font-size: 0.75rem;">
                         <thead>
-                            <tr id="thcolor">
-                                <th style="min-width: 270px;">Descripció</th>
-                                <th>Proveïdor</th>
-                                <th>Ref.proveïdor</th>
-                                <th>Unitats</th>
-                                <th>Lot</th>
-                                <th>Arribada</th>
-                                <th>Caducitat</th>
-                                <th>Obertura</th>
-                                <th>Tancament</th>
-                                <th>Num.Comanda</th>
-                                <th>CECO</th>
-                                <th>Preu</th>
-                                <th>Tècnica</th>
-                                <th>Observacions</th>
+                            <tr>
+                                <th><div class="header-filter"><span class="header-title">Descripció <span class="sort-icon">↕</span></span><input type="text" data-column="0"></div></th>
+                                <th><div class="header-filter"><span class="header-title">Proveïdor <span class="sort-icon">↕</span></span><input type="text" data-column="1"></div></th>
+                                <th><div class="header-filter"><span class="header-title">Ref. proveïdor <span class="sort-icon">↕</span></span><input type="text" data-column="2"></div></th>
+                                <th><div class="header-filter"><span class="header-title">Unitats <span class="sort-icon">↕</span></span><input type="text" data-column="3"></div></th>
+                                <th><div class="header-filter"><span class="header-title">Lot <span class="sort-icon">↕</span></span><input type="text" data-column="4"></div></th>
+                                <th><div class="header-filter"><span class="header-title">Arribada <span class="sort-icon">↕</span></span><input type="text" data-column="5"></div></th>
+                                <th><div class="header-filter"><span class="header-title">Caducitat <span class="sort-icon">↕</span></span><input type="text" data-column="6"></div></th>
+                                <th><div class="header-filter"><span class="header-title">Obertura <span class="sort-icon">↕</span></span><input type="text" data-column="7"></div></th>
+                                <th><div class="header-filter"><span class="header-title">Tancament <span class="sort-icon">↕</span></span><input type="text" data-column="8"></div></th>
+                                <th><div class="header-filter"><span class="header-title">Num. comanda <span class="sort-icon">↕</span></span><input type="text" data-column="9"></div></th>
+                                <th><div class="header-filter"><span class="header-title">CECO <span class="sort-icon">↕</span></span><input type="text" data-column="10"></div></th>
+                                <th><div class="header-filter"><span class="header-title">Preu <span class="sort-icon">↕</span></span><input type="text" data-column="11"></div></th>
+                                <th><div class="header-filter"><span class="header-title">Tècnica <span class="sort-icon">↕</span></span><input type="text" data-column="12"></div></th>
+                                <th><div class="header-filter"><span class="header-title">Observacions <span class="sort-icon">↕</span></span><input type="text" data-column="13"></div></th>
                             </tr>
                         </thead>
-                        <tbody>
-                        </tbody>
+                        <tbody></tbody>
                     </table>
-                </div> 
             </div>
         </div>
       </div>
@@ -464,28 +514,43 @@
 </div>
 
 
-<div class="modal fade"  id="modal_spend_money" tabindex="-1" role="dialog" aria-labelledby="editRegister" aria-hidden="true">
+<div class="modal fade document-action-modal app-navbar-modal app-navbar-table-modal" id="modal_spend_money" tabindex="-1" role="dialog" aria-labelledby="editRegister" aria-hidden="true">
     <div class="modal-dialog modal-lg" tabindex="-1" role="document">
-      <div class="modal-content">
+      <div class="modal-content document-action-modal-content">
         <div class="modal-header">
-          <h5 class="modal-title" id="title"> Gasto en € per CECO</h5>
+          <h5 class="modal-title" id="title"><i class="fa-solid fa-chart-pie"></i> Despesa per CECO</h5>
           <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="close_modal('modal_spend_money')"><span aria-hidden="true">&times;</span></button>
         </div>
         <div class="modal-body">
-            <div class="row">                                   
-                <div class="col-lg-12 col-md-12 col-sm-12">       
-                    <table id="table_spend_money" class="display" style="width: 100%;">
+            <div class="table-toolbar app-navbar-table-toolbar" id="spend_money_toolbar">
+                <label class="toolbar-field toolbar-field-show">
+                    <span>Mostra</span>
+                    <select id="spend_money_length_control">
+                        <option value="10">10</option>
+                        <option value="25">25</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                    </select>
+                </label>
+                <label class="toolbar-field toolbar-field-search">
+                    <span>Cercar</span>
+                    <input type="search" id="spend_money_global_search" placeholder="Cerca en tota la taula">
+                </label>
+                <button type="button" class="toolbar-clear-button" id="spend_money_clear_filters">
+                    <i class="fa-solid fa-eraser"></i> Netejar filtres
+                </button>
+            </div>
+            <div class="table-wrapper app-navbar-table-wrapper">
+                    <table id="table_spend_money" class="lab-data-table" style="width: 100%;">
                         <thead>
-                            <tr id="thcolor">
-                                <th>CECO</th>
-                                <th>IDIBGI</th>
-                                <th>ICS.</th>
+                            <tr>
+                                <th><div class="header-filter"><span class="header-title">CECO <span class="sort-icon">↕</span></span><input type="text" data-column="0"></div></th>
+                                <th><div class="header-filter"><span class="header-title">IDIBGI <span class="sort-icon">↕</span></span><input type="text" data-column="1"></div></th>
+                                <th><div class="header-filter"><span class="header-title">ICS <span class="sort-icon">↕</span></span><input type="text" data-column="2"></div></th>
                             </tr>
                         </thead>
-                        <tbody>
-                        </tbody>
+                        <tbody></tbody>
                     </table>
-                </div> 
             </div>
         </div>
       </div>
@@ -493,27 +558,29 @@
 </div>
 
 
-<div class="modal fade"  id="open_update_price" tabindex="-1" role="dialog" aria-labelledby="editRegister" aria-hidden="true">
+<div class="modal fade document-action-modal app-navbar-modal" id="open_update_price" tabindex="-1" role="dialog" aria-labelledby="editRegister" aria-hidden="true">
     <div class="modal-dialog modal-md" tabindex="-1" role="document">
-      <div class="modal-content">
+      <div class="modal-content document-action-modal-content">
         <div class="modal-header d-flex justify-content-between align-items-center">
-            <h5 class="modal-title" id="title"> Actualitzar Preus</h5>
-            <div>
-                <button type="button" class="btn btn-link" id='_delivery_note' onclick="download_template()"><i class="fa-solid fa-file-arrow-down"></i> Plantilla Preus</button>
+            <h5 class="modal-title" id="title"><i class="fa-solid fa-money-check-dollar"></i> Actualitzar preus</h5>
+            <div class="app-modal-header-actions">
+                <button type="button" class="btn btn-outline-primary btn-sm" id='_delivery_note' onclick="download_template()"><i class="fa-solid fa-file-arrow-down"></i> Plantilla preus</button>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="close_modal('open_update_price')"><span aria-hidden="true">&times;</span></button>
             </div>
-        </div>      
-        <div class="modal-body">
-            <div class="row">                                   
-                <div class="col-lg-12 col-md-12 col-sm-12">       
-                    <div class="mb-3">
-                        <label for="formFile" class="form-label"><i>Carrega plantilla amb els canvis de preu</i></label>
-                        <div class="d-flex align-items-center">
-                            <input class="form-control me-2" type="file" id="file_template" name="file_template" style="flex: 1;">
-                            <button type="button" class="btn btn-primary" onclick="charge_doc_price()" style="margin-left: -10px;"><i class="fa-sharp fa-solid fa-file-arrow-up"></i> Carregar</button>
-                        </div>
-                    </div>                            
-                </div> 
+        </div>
+
+        <div class="modal-body document-modal-body">
+            <div class="document-file-field app-price-file-field">
+                <input type="file" id="file_template" name="file_template" onchange="updatePriceTemplateFileName(this)">
+                <label for="file_template">
+                    <i class="fa-solid fa-file-excel"></i>
+                    <span id="file_template_name">Selecciona plantilla amb els canvis de preu</span>
+                </label>
+            </div>
+            <div class="app-modal-actions">
+                <button type="button" class="btn btn-outline-primary btn-sm" onclick="charge_doc_price()">
+                    <i class="fa-solid fa-file-arrow-up"></i> Carregar
+                </button>
             </div>
         </div>
       </div>
@@ -531,8 +598,10 @@
           <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="close_modal('modal_lost_description_lots')"><span aria-hidden="true">&times;</span></button>
         </div>
         <div class="modal-body">
-            <div class="row">                                   
-                <div class="col-lg-12 col-md-12 col-sm-12">       
+            <div class="row">
+
+                <div class="col-lg-12 col-md-12 col-sm-12">
+
                     <table id="table_lost_description_lots" class="display" style="width: 100%;">
                         <thead>
                             <tr id="thcolor">
@@ -543,7 +612,8 @@
                         <tbody>
                         </tbody>
                     </table>
-                </div> 
+                </div>
+
             </div>
         </div>
       </div>
@@ -559,21 +629,82 @@
 </div>
 
 <script>
+    const navbarPageViewsWithoutSidebar = ['info_lots_bd', 'modal_seach_all_year'];
+
+    function setNavbarEmbeddedPageMode(isEmbedded) {
+        const homeShell = document.querySelector('.home-shell');
+        document.body.classList.toggle('app-navbar-page-embedded', isEmbedded);
+        if (homeShell) {
+            homeShell.classList.toggle('is-navbar-page-active', isEmbedded);
+        }
+    }
+
+    function openProductsLookupPage(rol) {
+        search_lots_db(rol);
+    }
+
+    function showNavbarPageView(viewId) {
+        const view = document.getElementById(viewId);
+        if (!view) {
+            return;
+        }
+
+        document.querySelectorAll('.app-navbar-page-view.is-open').forEach(function (openView) {
+            if (openView.id !== viewId) {
+                openView.classList.remove('is-open');
+                openView.setAttribute('aria-hidden', 'true');
+            }
+        });
+
+        const shouldEmbedInHome = navbarPageViewsWithoutSidebar.includes(viewId);
+        const homeMain = document.querySelector('.home-main');
+        if (shouldEmbedInHome && homeMain && view.parentElement !== homeMain) {
+            homeMain.appendChild(view);
+        }
+
+        view.classList.add('is-open');
+        view.setAttribute('aria-hidden', 'false');
+        document.body.classList.add('app-navbar-page-open');
+        setNavbarEmbeddedPageMode(Boolean(shouldEmbedInHome && homeMain));
+        setTimeout(function () {
+            const tableSelector = viewId === 'info_lots_bd' ? '#table_info_lots_db' : '#table_search_all_year';
+            if ($.fn.DataTable.isDataTable(tableSelector)) {
+                $(tableSelector).DataTable().columns.adjust().draw(false);
+            }
+        }, 60);
+    }
+
+    function hideNavbarPageView(viewId, unlockBody = true) {
+        const view = document.getElementById(viewId);
+        if (!view) {
+            return;
+        }
+        view.classList.remove('is-open');
+        view.setAttribute('aria-hidden', 'true');
+        if (unlockBody && !document.querySelector('.app-navbar-page-view.is-open')) {
+            document.body.classList.remove('app-navbar-page-open');
+            setNavbarEmbeddedPageMode(false);
+        }
+    }
+
     /**
      * Realitza una cerca de lots a la base de dades i mostra els resultats en una taula.
-     * 
+     *
+
      *  @param {string} modal_id És l'identificador únic del modal
      *
      * Aquesta funció envia una sol·licitud AJAX al servidor per cercar lots a la base de dades.
      * Una vegada rebuda la resposta del servidor, es processa per mostrar un missatge d'èxit
      * o error. Si la cerca és exitosa, els resultats es mostren en una taula utilitzant DataTables.
-     * 
+     *
+
      * @returns {void} No retorna cap valor.
      */
     function search_lots_db(rol){
         // Crear form data
         var form_data = new FormData();
-        
+
+
         // Creeem l'objecte per l'ajax
         var xhr = new XMLHttpRequest();
         // 1er argument si es pots o get
@@ -590,11 +721,17 @@
                     alert_type = 'danger'}
                 else if (response.includes('True')){
                     show_message = false
-                    $('#info_lots_bd').modal('show');
+                    showNavbarPageView('info_lots_bd');
 
                     var list_lots = JSON.parse(split_response[1]);
 
                     var table = $('#table_info_lots_db').DataTable();
+                    $('#products_lookup_global_search').val('');
+                    $('#info_lots_bd .header-filter input').val('');
+                    table.search('');
+                    table.columns().search('');
+                    table.order([[0, 'desc']]);
+                    table.page.len(10);
                     table.clear().draw();
 
                     for (var i = 0; i < list_lots.length; i++) {
@@ -605,10 +742,7 @@
                             if (list_lots[i].hasOwnProperty(key)) {
                                 if (key !== 'id' && key !== 'id_lot') {
                                     if (key === 'info_article'){
-                                        const escaped_value = list_lots[i][key].replace(/'/g, "\\'");
-                                        new_row_data.push(`<button class="btn btn-outline-success btn-sm" name="btn_admin" onclick="show_edit_info('${escaped_value}', false)"><i class="fa-solid fa-pen-to-square"></i></button>
-                                                           <button class="btn btn-outline-danger btn-sm" name="btn_admin" onclick="show_delete_lot('${list_lots[i]['id']}')"><i class="fa-solid fa-trash"></i></button>
-                                                           <button class="btn btn-outline-primary btn-sm" onclick="show_edit_info('${escaped_value}', true)"><i class="fa-solid fa-eye"></i></button>`) }
+                                        new_row_data.push(buildProductLookupActions(list_lots[i][key], list_lots[i]['id'])) }
                                     else if (key === 'active'){
                                         console.log(list_lots[i]['active'])
                                         if (list_lots[i]['active'] === 0){
@@ -619,16 +753,19 @@
                                 }
                             }
                         }
-                        var new_row = table.row.add(new_row_data).draw(false).node();
+                        var new_row = table.row.add(new_row_data).node();
                         new_row.id = `${list_lots[i]['id']}_look_lots`;
                         if (red_row){
-                            new_row.style.backgroundColor = 'rgba(255, 0, 0, 0.2)'; 
+                            new_row.style.backgroundColor = 'rgba(255, 0, 0, 0.2)';
+
                             $(new_row).find('td').css('background-color', 'rgba(255, 0, 0, 0.2)'); }
                     }
+                    table.draw(false);
                     // Aplicar estilos CSS para centrar el contenido de las primeras cuatro columnas
                     for (var j = 0; j < 4; j++) {
                         table.column(j).nodes().to$().addClass('text-center');
                     }
+                    table.columns.adjust();
                     // if (rol !== 'admin'){
                     //     var table = $('#table_info_lots_db').DataTable();
                     //     table.column(3).visible(false);
@@ -646,7 +783,8 @@
             else {
                 message = `Error, No s'ha pogut realitzar l'operació. Si persisteix l'error contacta amb un administrador`
                 alert_type = 'danger' }
-            
+
+
             if (show_message){
                 var flashContainer = document.querySelector(".d-flex.justify-content-center .row");
                 // Eliminar la alerta anterior, si existe
@@ -655,7 +793,8 @@
                 var newFlash = document.createElement("div");
                 newFlash.className = "alert alert-" + alert_type + " alert-dismissible fade show ml-3";
                 newFlash.role = "alert";
-                newFlash.innerHTML = "<span>" + message + "</span>" + 
+                newFlash.innerHTML = "<span>" + message + "</span>" +
+
                                     '<button type="button" class="close" data-dismiss="alert" aria-label="Close">' +
                                     '<span aria-hidden="true">&times;</span>' +
                                     '</button>';
@@ -670,11 +809,13 @@
 
     /**
      * Mostra l'historial del lot segons el codi especificat.
-     * 
+     *
+
      * Aquesta funció envia una sol·licitud AJAX al servidor per obtenir l'historial d'un lot
      * basat en el codi proporcionat. Una vegada rebuda la resposta del servidor, es processa
      * per mostrar un missatge d'èxit o error i, si correspon, es mostra l'historial del lot en una taula.
-     * 
+     *
+
      * @returns {void} No retorna cap valor.
      */
     function history_lot(){
@@ -731,7 +872,8 @@
             else {
                 message = `Error, No s'ha pogut realitzar l'operació. Si persisteix l'error contacta amb un administrador`
                 alert_type = 'danger' }
-            
+
+
             $('#open_history_lots').modal('hide');
 
             if (show_message){
@@ -742,7 +884,8 @@
                 var newFlash = document.createElement("div");
                 newFlash.className = "alert alert-" + alert_type + " alert-dismissible fade show ml-3";
                 newFlash.role = "alert";
-                newFlash.innerHTML = "<span>" + message + "</span>" + 
+                newFlash.innerHTML = "<span>" + message + "</span>" +
+
                                     '<button type="button" class="close" data-dismiss="alert" aria-label="Close">' +
                                     '<span aria-hidden="true">&times;</span>' +
                                     '</button>';
@@ -754,7 +897,8 @@
         xhr.send(form_data)
     }
 
-    
+
+
     /**
      * Obrim el modal amb l'id que ens passen per paràmetre.
      * @param {string} modal_id És l'identificador únic del modal
@@ -822,11 +966,17 @@
             return;
             }
         else if (modal_id == 'modal_edit_lot_2'){
-            modal_id = 'modal_edit_lot' 
+            modal_id = 'modal_edit_lot'
+
         }
         else if (modal_id == 'modal_edit_lot'){
             const $currentModal = $('#info_lots_bd');
             const $nextModal = $('#modal_edit_lot');
+
+            if (document.getElementById('info_lots_bd')?.classList.contains('is-open')) {
+                $nextModal.modal('show');
+                return;
+            }
 
             $nextModal.removeClass('fade');
 
@@ -841,15 +991,18 @@
             });
 
             $currentModal.modal('hide');
-            return;      
+            return;
+
         }
         else if (modal_id == 'open_update_price'){
-            document.getElementById('file_template').value = '' }
+            document.getElementById('file_template').value = '';
+            updatePriceTemplateFileName(document.getElementById('file_template')); }
         else if (modal_id == 'modal_labels'){
             error = false
             // Crear form data
             var form_data = new FormData();
-                                
+
+
             // Creeem l'objecte per l'ajax
             var xhr = new XMLHttpRequest();
             // 1er argument si es pots o get
@@ -913,12 +1066,14 @@
                     var newFlash = document.createElement("div");
                     newFlash.className = "alert alert-" + alert_type + " alert-dismissible fade show ml-3";
                     newFlash.role = "alert";
-                    newFlash.innerHTML = "<span>" + message + "</span>" + 
+                    newFlash.innerHTML = "<span>" + message + "</span>" +
+
                                         '<button type="button" class="close" data-dismiss="alert" aria-label="Close">' +
                                         '<span aria-hidden="true">&times;</span>' +
                                         '</button>';
                     flashContainer.appendChild(newFlash);
-                    flashContainer.style.paddingTop = "20px";}            
+                    flashContainer.style.paddingTop = "20px";}
+
             }
             xhr.send(form_data)
             return
@@ -969,7 +1124,8 @@
                     `<div class="text-center">${r.technique ?? ''}</div>`,
                     `<div class="text-center">${actionButton} ${deleteButton}</div>`
                 ]).node();
-    
+
+
                 rowNode.id = `${r.id}`;
             }
 
@@ -1035,7 +1191,8 @@
             const res = await fetch("/info_commands_primers");
             const data = await res.json();
 
-            const select = document.getElementById('command_primer');   
+            const select = document.getElementById('command_primer');
+
 
             // netejar opcions existents
             select.innerHTML = '';
@@ -1066,13 +1223,15 @@
      * @returns {string} Retorna la cadena amb els caràcters especials escapats.
      *
      * @descriptor La funció converteix la variable d’entrada a string i substitueix els següents caràcters:
-     * 
+     *
+
      * - `&` → `&amp;`
      * - `<` → `&lt;`
      * - `>` → `&gt;`
      * - `"` → `&quot;`
      * - `'` → `&#039;`
-     * 
+     *
+
      * És especialment útil quan es mostren dades dinàmiques en el DOM (per exemple en taules o modals),
      * evitant vulnerabilitats de tipus Cross-Site Scripting (XSS).
      */
@@ -1085,6 +1244,78 @@
             .replaceAll("'", "&#039;");
     }
 
+    function buildProductLookupActions(infoArticle, idLot) {
+        const escapedInfoArticle = String(infoArticle).replace(/'/g, "\\'");
+        return `<button class="btn btn-outline-success btn-sm" name="btn_admin" onclick="show_edit_info('${escapedInfoArticle}', false)"><i class="fa-solid fa-pen-to-square"></i></button>
+                <button class="btn btn-outline-danger btn-sm" name="btn_admin" onclick="show_delete_lot('${idLot}')"><i class="fa-solid fa-trash"></i></button>
+                <button class="btn btn-outline-primary btn-sm" onclick="show_edit_info('${escapedInfoArticle}', true)"><i class="fa-solid fa-eye"></i></button>`;
+    }
+
+    function buildProductInfoArticleFromEditForm() {
+        return [
+            document.getElementById('id_lot_edit').value,
+            document.getElementById('reference_catalog_edit').value,
+            document.getElementById('manufacturer_edit').value,
+            document.getElementById('description_edit').value,
+            document.getElementById('analytical_technique_edit').value,
+            document.getElementById('units_format_edit').value,
+            document.getElementById('id_reactive_edit').value,
+            document.getElementById('code_sap_edit').value,
+            document.getElementById('code_log_edit').value,
+            document.getElementById('active_edit').value,
+            document.getElementById('temp_conservation_edit').value,
+            document.getElementById('description_subref_edit').value,
+            document.getElementById('react_or_fungible_edit').value,
+            document.getElementById('code_panel_edit').value,
+            document.getElementById('location_edit').value,
+            document.getElementById('supplier_edit').value,
+            document.getElementById('purchase_format_edit').value,
+            document.getElementById('units_format_edit').value,
+            document.getElementById('import_unit_ics_edit').value,
+            document.getElementById('import_unit_idibgi_edit').value,
+            document.getElementById('local_management_edit').value,
+            document.getElementById('plataform_command_preferent_edit').value,
+            document.getElementById('maximum_amount_edit').value,
+            document.getElementById('purchase_format_supplier_edit').value,
+            document.getElementById('units_format_supplier_edit').value,
+            document.getElementById('name_logaritme_edit').value,
+            document.getElementById('units_for_discount_edit').value,
+            document.getElementById('units_measurement_edit').value,
+            document.getElementById('observations_edit').value,
+            document.getElementById('nif_edit').value,
+            document.getElementById('sales_contact_edit').value
+        ].join('/-/');
+    }
+
+    function updateProductLookupRowFromEditForm() {
+        if (!$.fn.DataTable.isDataTable('#table_info_lots_db')) {
+            return;
+        }
+        const idLot = document.getElementById('id_lot_edit').value;
+        const table = $('#table_info_lots_db').DataTable();
+        const rowSelector = `#${idLot}_look_lots`;
+        const row = table.row(rowSelector);
+        if (!row.node()) {
+            return;
+        }
+
+        const infoArticle = buildProductInfoArticleFromEditForm();
+        row.data([
+            document.getElementById('code_sap_edit').value,
+            document.getElementById('code_log_edit').value,
+            document.getElementById('reference_catalog_edit').value,
+            buildProductLookupActions(infoArticle, idLot),
+            document.getElementById('description_edit').value,
+            document.getElementById('description_subref_edit').value
+        ]).draw(false);
+
+        const rowNode = row.node();
+        const isInactive = document.getElementById('active_edit').value === '0';
+        rowNode.style.backgroundColor = isInactive ? 'rgba(255, 0, 0, 0.2)' : '';
+        $(rowNode).find('td').css('background-color', isInactive ? 'rgba(255, 0, 0, 0.2)' : '');
+        table.columns.adjust();
+    }
+
 
     /**
      * Tanquem el modal amb l'id que ens passen per paràmetre.
@@ -1092,34 +1323,42 @@
      * @returns {void} No retorna cap valor.
      */
      function close_modal(modal_id){
+        if (modal_id === 'info_lots_bd' || modal_id === 'modal_seach_all_year') {
+            hideNavbarPageView(modal_id);
+            return;
+        }
         $(`#${modal_id}`).modal('hide');
         if (modal_id === "modal_edit_lot"){
             let view_for_command = document.getElementById('view_for_command').value
             if (view_for_command !== 'true'){
-                open_modal('info_lots_bd') 
+                showNavbarPageView('info_lots_bd')
+
                 // Esto sierve para cuando cierrras i abres modals a la vez el scroll siga activo
                 $('#modal_edit_lot').on('hidden.bs.modal', function () {
-                    $('body').addClass('modal-open'); 
+                    $('body').addClass('modal-open');
+
                 });}
             }
-        else if (modal_id === "modal_edit_order_tracking"){ 
-            open_modal('modal_order_tracking') 
+        else if (modal_id === "modal_edit_order_tracking"){
+
+            open_modal('modal_order_tracking')
+
             // Esto sierve para cuando cierrras i abres modals a la vez el scroll siga activo
             $('#modal_edit_order_tracking').on('hidden.bs.modal', function () {
-                $('body').addClass('modal-open'); 
+                $('body').addClass('modal-open');
+
             });}
-        else if (modal_id === "modal_incidence_command_success"){ 
-            open_modal('modal_command_success') 
+        else if (modal_id === "modal_incidence_command_success"){
+
+            open_modal('modal_command_success')
+
             // Esto sierve para cuando cierrras i abres modals a la vez el scroll siga activo
             $('#modal_incidence_command_success').on('hidden.bs.modal', function () {
-                $('body').addClass('modal-open'); 
+                $('body').addClass('modal-open');
+
             });
-        }    
-        else if (modal_id === "modal_buy_primer"){
-            $(`#primer_management`).modal('show');
-        } else if (modal_id === 'modal_download_excel_primers'){
-            $(`#primer_management`).modal('show');
         }
+
     }
 
 
@@ -1174,7 +1413,8 @@
             var text_article = "Editar"
             document.getElementById('edit_lot_btn').style.display = "block"
         }
-        
+
+
         setReadOnlyState(only_show)
 
         if (list_info_article[12] === 'Reactiu'){
@@ -1225,13 +1465,16 @@
      * @returns {void} No retorna cap valor. Modifica directament l’estat i estil dels elements del DOM.
      *
      * @descriptor La funció recorre una llista d’IDs de camps del formulari i, per a cada element:
-     * 
+     *
+
      * - Si és un `input` o `textarea`, aplica la propietat `readOnly`.
      * - Si és un `select` o `checkbox`, aplica la propietat `disabled`.
      * - Ajusta el color de fons per diferenciar visualment els camps en mode lectura.
-     * 
+     *
+
      * També mostra o oculta el botó `edit_lot_btn` segons si es tracta de mode visualització o edició.
-     * 
+     *
+
      * Si algun element no existeix al DOM, es continua l’execució sense generar errors.
      */
     function setReadOnlyState(only_show) {
@@ -1295,7 +1538,6 @@
      function show_delete_lot(id_lot){
         open_modal('modal_delete_confirmation')
         document.getElementById('id_lot_delete').value = id_lot;
-        close_modal('info_lots_bd')
     }
 
 
@@ -1403,6 +1645,7 @@
                     alert_type = 'danger'}
                 else if (response.includes('True')){
                     alert_type = 'success'
+                    updateProductLookupRowFromEditForm();
                 } else {
                     message = `Error inesperat. Si persisteix l'error contacta amb un administrador`
                     alert_type = 'danger'
@@ -1410,7 +1653,8 @@
             else {
                 message = `Error, No s'ha pogut realitzar l'operació. Si persisteix l'error contacta amb un administrador`
                 alert_type = 'danger' }
-            
+
+
             var flashContainer = document.querySelector(".d-flex.justify-content-center .row");
             // Eliminar la alerta anterior, si existe
             if (flashContainer.children.length > 0) {
@@ -1418,7 +1662,8 @@
             var newFlash = document.createElement("div");
             newFlash.className = "alert alert-" + alert_type + " alert-dismissible fade show ml-3";
             newFlash.role = "alert";
-            newFlash.innerHTML = "<span>" + message + "</span>" + 
+            newFlash.innerHTML = "<span>" + message + "</span>" +
+
                                 '<button type="button" class="close" data-dismiss="alert" aria-label="Close">' +
                                 '<span aria-hidden="true">&times;</span>' +
                                 '</button>';
@@ -1460,7 +1705,8 @@
                     alert_type = 'danger'}
                 else if (response.includes('True')){
                     alert_type = 'success'
-                    
+
+
                     var list_ids_delete = split_response[2].split(';')
                     for (var i = 0; i < list_ids_delete.length; i++) {
                         var id_delete = list_ids_delete[i].trim();
@@ -1476,7 +1722,8 @@
             else {
                 message = `Error, No s'ha pogut realitzar l'operació. Si persisteix l'error contacta amb un administrador`
                 alert_type = 'danger' }
-            
+
+
             // var flashContainer = document.querySelector(".d-flex.justify-content-center .row");
             // // Eliminar la alerta anterior, si existe
             // if (flashContainer.children.length > 0) {
@@ -1484,18 +1731,20 @@
             // var newFlash = document.createElement("div");
             // newFlash.className = "alert alert-" + alert_type + " alert-dismissible fade show ml-3";
             // newFlash.role = "alert";
-            // newFlash.innerHTML = "<span>" + message + "</span>" + 
+            // newFlash.innerHTML = "<span>" + message + "</span>" +
+
             //                     '<button type="button" class="close" data-dismiss="alert" aria-label="Close">' +
             //                     '<span aria-hidden="true">&times;</span>' +
             //                     '</button>';
             // flashContainer.appendChild(newFlash);
             // flashContainer.style.paddingTop = "20px";
 
-            $('#info_lots_bd').modal('show');
+            showNavbarPageView('info_lots_bd');
 
             var divMessage = document.getElementById("div_message_look_lots");
             if (divMessage) {divMessage.remove();}
-        
+
+
             var html_insert = `
                 <div class="d-flex justify-content-center" id="div_message_look_lots">
                     <div class="row mt-1 justify-content-center">
@@ -1518,19 +1767,29 @@
 
     /**
      * Realitza una cerca de dades per a tot l'any i actualitza la taula de resultats.
-     * 
-     * Aquesta funció recull el codi de cerca del formulari, crea un objecte FormData amb aquest valor 
-     * i envia una sol·licitud AJAX al servidor per obtenir les dades. Un cop rebuda la resposta, 
+     *
+
+     * Aquesta funció recull el codi de cerca del formulari, crea un objecte FormData amb aquest valor
+
+     * i envia una sol·licitud AJAX al servidor per obtenir les dades. Un cop rebuda la resposta,
+
      * actualitza la taula amb les dades obtingudes o mostra un missatge d'error si l'operació falla.
-     * 
-     * @param {string} rol - El rol actual de l'usuari, que pot ser utilitzat per determinar els permisos 
+     *
+
+     * @param {string} rol - El rol actual de l'usuari, que pot ser utilitzat per determinar els permisos
+
      *                      o accions específiques dins de la funció (actualment no s'utilitza a la funció).
-     * 
-     * @returns {void} No retorna cap valor. Actualitza la taula de resultats amb les dades obtingudes 
+     *
+
+     * @returns {void} No retorna cap valor. Actualitza la taula de resultats amb les dades obtingudes
+
      *                  del servidor o mostra un missatge d'error si la cerca falla.
-     * 
-     * @descriptor La funció recull el codi de cerca, el envia al servidor per obtenir les dades i, 
-     * si l'operació és exitosa, actualitza la taula amb les dades obtingudes. Si hi ha un error, 
+     *
+
+     * @descriptor La funció recull el codi de cerca, el envia al servidor per obtenir les dades i,
+
+     * si l'operació és exitosa, actualitza la taula amb les dades obtingudes. Si hi ha un error,
+
      * mostra un missatge d'error a l'usuari.
      */
     function search_all_year(){
@@ -1538,7 +1797,8 @@
 
         // Crear form data
         var form_data = new FormData();
-        
+
+
         form_data.append('search_data_code', search_data_code)
 
         // Creeem l'objecte per l'ajax
@@ -1559,10 +1819,15 @@
                     message = (response.data || "No s'ha trobat informació");
                 } else {
                     // Si hi ha resultats
-                    open_modal('modal_seach_all_year');
+                    showNavbarPageView('modal_seach_all_year');
 
                     var table = $('#table_search_all_year').DataTable();
-                    table.page.len(10).draw();
+                    $('#historic_stock_global_search').val('');
+                    $('#modal_seach_all_year .header-filter input').val('');
+                    table.search('');
+                    table.columns().search('');
+                    table.order([[5, 'desc']]);
+                    table.page.len(10);
                     table.clear().draw();
 
                     response.data.forEach(function (item) {
@@ -1589,7 +1854,8 @@
                 }
             }
             else { message = `Error, No s'ha pogut realitzar l'operació.` }
-            
+
+
             if (message !== ''){
                 var flashContainer = document.querySelector(".d-flex.justify-content-center .row");
                 // Eliminar la alerta anterior, si existe
@@ -1598,7 +1864,8 @@
                 var newFlash = document.createElement("div");
                 newFlash.className = "alert alert-" + alert_type + " alert-dismissible fade show ml-3";
                 newFlash.role = "alert";
-                newFlash.innerHTML = "<span>" + message + "</span>" + 
+                newFlash.innerHTML = "<span>" + message + "</span>" +
+
                                     '<button type="button" class="close" data-dismiss="alert" aria-label="Close">' +
                                     '<span aria-hidden="true">&times;</span>' +
                                     '</button>';
@@ -1635,8 +1902,10 @@
 
         // Crear form data
         var form_data = new FormData();
-        
-        form_data.append('search_data_spend_mmoney', search_data_spend_mmoney)        
+
+
+        form_data.append('search_data_spend_mmoney', search_data_spend_mmoney)
+
         // Creeem l'objecte per l'ajax
         var xhr = new XMLHttpRequest();
         // 1er argument si es pots o get
@@ -1654,6 +1923,11 @@
                 } else {
                     open_modal('modal_spend_money')
                     var table = $('#table_spend_money').DataTable();
+                    $('#spend_money_global_search').val('');
+                    $('#modal_spend_money .header-filter input').val('');
+                    table.search('');
+                    table.columns().search('');
+                    table.order([[0, 'asc']]);
                     table.page.len(10).draw();
                     table.clear().draw();
 
@@ -1665,8 +1939,11 @@
                             '<div class="text-center">' + response_dict[key][0] + '</div>',
                             '<div class="text-center">' + response_dict[key][1] + '</div>',
                         ];
-                        table.row.add(newRow).draw(false);
+                        table.row.add(newRow);
                     });
+                    table.draw(false);
+                    table.columns.adjust();
+                    close_modal('search_year_spend_money');
                     // response_list.forEach(function(item) {
                     //     var newRow = table.row.add([
                     //         '<div class="text-center">' + item['description'] + '</div>',
@@ -1688,7 +1965,8 @@
                 }
             }
             else { message = `Error, No s'ha pogut realitzar l'operació.` }
-            
+
+
             if (message !== ''){
                 var flashContainer = document.querySelector(".d-flex.justify-content-center .row");
                 // Eliminar la alerta anterior, si existe
@@ -1697,7 +1975,8 @@
                 var newFlash = document.createElement("div");
                 newFlash.className = "alert alert-" + alert_type + " alert-dismissible fade show ml-3";
                 newFlash.role = "alert";
-                newFlash.innerHTML = "<span>" + message + "</span>" + 
+                newFlash.innerHTML = "<span>" + message + "</span>" +
+
                                     '<button type="button" class="close" data-dismiss="alert" aria-label="Close">' +
                                     '<span aria-hidden="true">&times;</span>' +
                                     '</button>';
@@ -1717,21 +1996,36 @@
         document.forms["down_excel_price"].submit();
     }
 
+    function updatePriceTemplateFileName(input) {
+        const label = document.getElementById('file_template_name');
+        if (!label) {
+            return;
+        }
+        label.textContent = input.files && input.files.length ? input.files[0].name : 'Selecciona plantilla amb els canvis de preu';
+    }
+
 
     /**
      * Carga un archivo de precios y lo envía al servidor para procesar.
-     * 
+     *
+
      * Esta función permite cargar un archivo .xlsx a través de un formulario y lo envía mediante una solicitud
-     * AJAX al servidor para su procesamiento. Realiza validaciones de formato y muestra un mensaje de alerta según el 
+     * AJAX al servidor para su procesamiento. Realiza validaciones de formato y muestra un mensaje de alerta según el
+
      * resultado de la operación.
-     * 
+     *
+
      * @returns {void} No retorna ningún valor. Controla la carga de un archivo y gestiona las respuestas del servidor.
-     * 
-     * @descriptor La función verifica si se ha seleccionado un archivo en el campo de entrada con el ID `file`, 
+     *
+
+     * @descriptor La función verifica si se ha seleccionado un archivo en el campo de entrada con el ID `file`,
+
      * luego valida si el archivo tiene una extensión válida .xlsx. Si todo es correcto, envía el archivo
-     * al servidor mediante una solicitud AJAX POST a la ruta `/upload_template_price`. 
+     * al servidor mediante una solicitud AJAX POST a la ruta `/upload_template_price`.
+
      * Dependiendo de la respuesta del servidor, se muestra un mensaje de éxito, advertencia o error.
-     * 
+     *
+
      * La función gestiona también la interfaz de usuario, ocultando un modal y mostrando una alerta personalizada
      * según el resultado del proceso de carga.
      */
@@ -1739,7 +2033,8 @@
             // Crear form data
             var form_data = new FormData();
 
-            // Carregar dades al form de l'html            
+            // Carregar dades al form de l'html
+
             const file_input = document.getElementById('file_template')
             const file = file_input.files[0];
 
@@ -1756,7 +2051,8 @@
                     return;
                 }
             }
-            
+
+
             form_data.append('file', file)
 
             $('#open_update_price').modal('hide');
@@ -1766,7 +2062,8 @@
             // 1er argument si es pots o get
             // 2n argument url o ruta
             // 3r argumemt true sempre
-            
+
+
             xhr.open('POST', '/upload_template_price', true);
             xhr.onload = function(){
                 if (xhr.status === 200) {
@@ -1790,7 +2087,8 @@
                                 // Afegeix la fila i guarda la referència
                                 console.log(item.catalog_reference)
                                 var row = table.row.add([
-                                    item.catalog_reference || '',  
+                                    item.catalog_reference || '',
+
                                     item.description || ''
                                 ]).draw(false).node(); // Obté el node <tr>
 
@@ -1811,7 +2109,8 @@
                         else {
                             message = `El document s'ha carregat però els seguent camps no s'han actualitzat.<br>${split_response[1]}.`
                             alert_type = 'warning'
-                        }                        
+                        }
+
                     } else {
                         message = `Error inesperat. Si persisteix l'error contacta amb un administrador`
                         alert_type = 'danger'
@@ -1829,7 +2128,8 @@
                 var newFlash = document.createElement("div");
                 newFlash.className = "alert alert-" + alert_type + " alert-dismissible fade show ml-3";
                 newFlash.role = "alert";
-                newFlash.innerHTML = "<span>" + message + "</span>" + 
+                newFlash.innerHTML = "<span>" + message + "</span>" +
+
                                     '<button type="button" class="close" data-dismiss="alert" aria-label="Close">' +
                                     '<span aria-hidden="true">&times;</span>' +
                                     '</button>';
@@ -1891,9 +2191,9 @@
             console.error('Error:', error);
         }
 
-        close_modal('info_lots_bd')
         show_reactive('')
-        // $('#add_command').modal('show'); 
+        // $('#add_command').modal('show');
+
         // message = "Aquest article no esta intoduït, abans de fer comandes has d'introduïr-lo a la BD"
         // alert_type = "warning"
         message = ''
@@ -1916,25 +2216,18 @@
 
         var miDiv = document.getElementById('div_info_new_lot');
 
-        var nuevoHTML_start = `style="background-color: #BFD7ED;"`
+        var nuevoHTML_start = `data-lot-section="field"`
 
         var nuevoHTML = `
-            <div class="col-lg-12 col-md-12 col-sm-12" name="divs_new_lots" ${nuevoHTML_start}>       
+            <div class="col-lg-12 col-md-12 col-sm-12 lot-section-header" name="divs_new_lots">
+                <span>Lot 1</span>
+            </div>
+            <div class="col-lg-12 col-md-12 col-sm-12 new-lot-section-body" name="divs_new_lots">
+                <div class="row">
+            <div class="col-lg-6 col-md-6 col-sm-12 lot-field-left divs_reatives" name="divs_new_lots" ${nuevoHTML_start}>
+
                 <div class="input-group mb-3">
-                </div>
-            </div>
-            <div class="col-lg-5 col-md-12 col-sm-12" name="divs_new_lots" ${nuevoHTML_start}>
-                <hr>
-            </div>
-            <div class="col-lg-2 col-md-12 col-sm-12" name="divs_new_lots" ${nuevoHTML_start}>
-                <center><b>Lot 1</b></center>
-            </div>
-            <div class="col-lg-5 col-md-12 col-sm-12" name="divs_new_lots" ${nuevoHTML_start}>
-                <hr>
-            </div>
-            <div class="col-lg-6 col-md-6 col-sm-12 divs_reatives" name="divs_new_lots" ${nuevoHTML_start}>       
-                <div class="input-group mb-3">
-                    <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Temp. conservació :</b></span>
+                    <span class="input-group-text" id="basic-addon1"><b>Temp. conservació</b></span>
                     <select class="form-select" id="temp_conservation0">
                         <option>-20</option>
                         <option>-80</option>
@@ -1943,24 +2236,26 @@
                     </select>
                 </div>
             </div>
-            <div class="col-lg-6 col-md-6 col-sm-12" name="divs_new_lots" ${nuevoHTML_start}>       
+            <div class="col-lg-6 col-md-6 col-sm-12 lot-field-right" name="divs_new_lots" ${nuevoHTML_start}>
+
                 <div class="input-group mb-3">
-                    <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Reactiu o fungible :</b></span>
+                    <span class="input-group-text" id="basic-addon1"><b>Reactiu o fungible</b></span>
                     <select class="form-select" id="react_or_fungible0" onchange="show_reactive(this.value)">
                         <option>Reactiu</option>
                         <option>Fungible</option>
                     </select>
                 </div>
             </div>
-            <div class="col-lg-6 col-md-6 col-sm-12 divs_reatives" name="divs_new_lots" ${nuevoHTML_start}>       
+            <div class="col-lg-6 col-md-6 col-sm-12 lot-field-left divs_reatives" name="divs_new_lots" ${nuevoHTML_start}>
+
                 <div class="input-group mb-3">
-                    <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Id panell(*) :</b></span>
+                    <span class="input-group-text" id="basic-addon1"><b>Id panell(*)</b></span>
                     <input type="text" class="form-control" aria-label="TTN" id="code_panel0">
                 </div>
             </div>
-            <div class="col-lg-6 col-md-12 col-sm-12" name="divs_new_lots" ${nuevoHTML_start}>       
+            <div class="col-lg-6 col-md-12 col-sm-12 lot-field-right" name="divs_new_lots" ${nuevoHTML_start}>
                 <div class="input-group mb-3">
-                    <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Ubicació :</b></span>
+                    <span class="input-group-text is-required" id="basic-addon1"><b>Ubicació</b></span>
                     <select class="form-select" id="location0">
                         <option selected></option>
                         <option>Lab1-Extracció</option>
@@ -1974,9 +2269,9 @@
                     </select>
                 </div>
             </div>
-            <div class="col-lg-6 col-md-12 col-sm-12" name="divs_new_lots" ${nuevoHTML_start}>
+            <div class="col-lg-6 col-md-12 col-sm-12 lot-field-left" name="divs_new_lots" ${nuevoHTML_start}>
                 <div class="input-group mb-3">
-                    <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>F. compra Prov :</b></span>
+                    <span class="input-group-text is-required" id="basic-addon1"><b>F. compra Prov</b></span>
                     <select class="form-select" id="purchase_format0">
                         <option selected></option>
                         <option>kit</option>
@@ -1989,9 +2284,9 @@
                     </select>
                 </div>
             </div>
-            <div class="col-lg-6 col-md-12 col-sm-12" name="divs_new_lots" ${nuevoHTML_start}>
+            <div class="col-lg-6 col-md-12 col-sm-12 lot-field-right" name="divs_new_lots" ${nuevoHTML_start}>
                 <div class="input-group mb-3">
-                    <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Unitats format :</b></span>
+                    <span class="input-group-text" id="basic-addon1"><b>Unitats format</b></span>
                     <select class="form-select" id="units_format0">
                         <option selected>1</option>
                         {% for i in range(2, 5001) %}
@@ -2000,9 +2295,10 @@
                     </select>
                 </div>
             </div>
-            <div class="col-lg-6 col-md-6 col-sm-12" name="divs_new_lots" ${nuevoHTML_start}>       
+            <div class="col-lg-6 col-md-6 col-sm-12 lot-field-left" name="divs_new_lots" ${nuevoHTML_start}>
+
                 <div class="input-group mb-3">
-                    <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Format compra ICS:</b></span>
+                    <span class="input-group-text" id="basic-addon1"><b>Format compra ICS</b></span>
                     <select class="form-select" id="purchase_format_supplier0">
                         <option selected></option>
                         <option>kit</option>
@@ -2015,9 +2311,9 @@
                     </select>
                 </div>
             </div>
-            <div class="col-lg-6 col-md-12 col-sm-12" name="divs_new_lots" ${nuevoHTML_start}>
+            <div class="col-lg-6 col-md-12 col-sm-12 lot-field-right" name="divs_new_lots" ${nuevoHTML_start}>
                 <div class="input-group mb-3">
-                    <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Unitats format ICS :</b></span>
+                    <span class="input-group-text" id="basic-addon1"><b>Unitats format ICS</b></span>
                     <select class="form-select" id="units_format_supplier0">
                         <option selected>1</option>
                         {% for i in range(2, 5001) %}
@@ -2026,44 +2322,51 @@
                     </select>
                 </div>
             </div>
-            <div class="col-lg-6 col-md-6 col-sm-12" name="divs_new_lots" ${nuevoHTML_start}>       
+            <div class="col-lg-6 col-md-6 col-sm-12 lot-field-left" name="divs_new_lots" ${nuevoHTML_start}>
+
                 <div class="input-group mb-3">
-                    <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Import u. ICS :</b></span>
+                    <span class="input-group-text" id="basic-addon1"><b>Import u. ICS</b></span>
                     <input type="number" class="form-control" aria-label="TTN" id="import_unit_ics0">
                 </div>
             </div>
-            <div class="col-lg-6 col-md-6 col-sm-12" name="divs_new_lots" ${nuevoHTML_start}>       
+            <div class="col-lg-6 col-md-6 col-sm-12 lot-field-right" name="divs_new_lots" ${nuevoHTML_start}>
+
                 <div class="input-group mb-3">
-                    <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Import u. IDIBGI :</b></span>
+                    <span class="input-group-text" id="basic-addon1"><b>Import u. IDIBGI</b></span>
                     <input type="number" class="form-control" aria-label="TTN" id="import_unit_idibgi0">
                 </div>
             </div>
 
-            <div class="col-lg-6 col-md-6 col-sm-12" name="divs_new_lots" ${nuevoHTML_start}>       
+            <div class="col-lg-6 col-md-6 col-sm-12 lot-field-left" name="divs_new_lots" ${nuevoHTML_start}>
+
                 <div class="input-group mb-3">
-                    <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Gestió local: :</b></span>
+                    <span class="input-group-text" id="basic-addon1"><b>Gestió local</b></span>
                     <input type="text" class="form-control" aria-label="TTN" id="local_management0" value=''>
                 </div>
             </div>
-            <div class="col-lg-6 col-md-6 col-sm-12" name="divs_new_lots" ${nuevoHTML_start}>       
+            <div class="col-lg-6 col-md-6 col-sm-12 lot-field-right" name="divs_new_lots" ${nuevoHTML_start}>
+
                 <div class="input-group mb-3">
-                    <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Cmd. preferent :</b></span>
+                    <span class="input-group-text" id="basic-addon1"><b>Cmd. preferent</b></span>
                     <input type="text" class="form-control" aria-label="TTN" id="plataform_command_preferent0" value=''>
                 </div>
             </div>
-            <div class="col-lg-6 col-md-6 col-sm-12" name="divs_new_lots" ${nuevoHTML_start}>       
+            <div class="col-lg-6 col-md-6 col-sm-12 lot-field-left" name="divs_new_lots" ${nuevoHTML_start}>
+
                 <div class="input-group mb-3">
-                    <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Q. màxima :</b></span>
+                    <span class="input-group-text" id="basic-addon1"><b>Q. màxima</b></span>
                     <input type="number" class="form-control" aria-label="TTN" id="maximum_amount0">
                 </div>
             </div>
-            <div class="col-lg-6 col-md-6 col-sm-12" name="divs_new_lots" ${nuevoHTML_start}>       
-                <div class="input-group mb-3">
+            <div class="col-lg-6 col-md-6 col-sm-12 lot-field-right" name="divs_new_lots" ${nuevoHTML_start}>
+            </div>
                 </div>
             </div>
+            <div class="col-lg-12 col-md-12 col-sm-12 lot-section-footer" name="divs_new_lots"></div>
             `;
         // Agrega el nuevo conjunto debajo del div existente
         miDiv.insertAdjacentHTML('afterend', nuevoHTML);
+        rebalanceNewLotFields();
         $('#add_new_lot').modal('show');
     }
 
@@ -2082,11 +2385,14 @@
      * @returns {void} No retorna cap valor. Actualitza directament els camps del formulari.
      *
      * @descriptor La funció utilitza delegació d’esdeveniments per assegurar el funcionament encara que
-     * l’element `supplier` es creï dinàmicament (per exemple, dins d’un modal). 
-     * 
+     * l’element `supplier` es creï dinàmicament (per exemple, dins d’un modal).
+
+     *
+
      * Es valida l’existència del `datalist`, de l’opció seleccionada i del contingut de `data-full` abans
      * de processar la informació. Si el format no és l’esperat o falten dades, la funció no realitza cap acció.
-     * 
+     *
+
      * Aquesta implementació depèn del format del camp `data-full`, que ha de contenir almenys tres valors
      * separats pel delimitador `_/_` (manufacturer, NIF i contacte comercial).
      */
@@ -2116,19 +2422,29 @@
 
     /**
      * Mostra o oculta els elements amb la classe `divs_reatives` basant-se en el tipus de reactiu especificat.
-     * 
-     * Aquesta funció ajusta la visibilitat dels elements de la pàgina web amb la classe `divs_reatives` segons 
-     * el valor del paràmetre `type_reactive`. Si el valor és "Fungible", els elements es ocultaran. Si el valor 
+     *
+
+     * Aquesta funció ajusta la visibilitat dels elements de la pàgina web amb la classe `divs_reatives` segons
+
+     * el valor del paràmetre `type_reactive`. Si el valor és "Fungible", els elements es ocultaran. Si el valor
+
      * és qualsevol altre cosa, els elements es mostraran.
-     * 
-     * @param {string} type_reactive - El tipus de reactiu que determina la visibilitat dels elements. 
-     *                                 Si és "Fungible", els elements seran ocultats; si és qualsevol altre valor, 
+     *
+
+     * @param {string} type_reactive - El tipus de reactiu que determina la visibilitat dels elements.
+
+     *                                 Si és "Fungible", els elements seran ocultats; si és qualsevol altre valor,
+
      *                                 els elements seran mostrats.
-     * 
+     *
+
      * @returns {void} No retorna cap valor. Modifica la visibilitat dels elements seleccionats.
-     * 
-     * @descriptor La funció ajusta la visibilitat de tots els elements amb la classe `divs_reatives` 
-     * en funció del valor del paràmetre `type_reactive`. Utilitza `display: none` per ocultar els elements 
+     *
+
+     * @descriptor La funció ajusta la visibilitat de tots els elements amb la classe `divs_reatives`
+
+     * en funció del valor del paràmetre `type_reactive`. Utilitza `display: none` per ocultar els elements
+
      * i `display: block` per mostrar-los.
      */
     function show_reactive(type_reactive){
@@ -2138,13 +2454,43 @@
         if (type_reactive == "Fungible"){
             // Iterem sobre l'element i l'ocultem
             divsReatives.forEach(function(div) {
-                div.style.display = 'none'; 
+                div.style.display = 'none';
+
             });}
         else{
             // Iterem sobre l'element i l'ocultem
             divsReatives.forEach(function(div) {
-                div.style.display = 'block'; 
+                div.style.display = 'block';
+
             });}
+        rebalanceNewLotFields();
+    }
+
+    function rebalanceNewLotFields() {
+        const addNewLotModal = document.getElementById('add_new_lot');
+        if (!addNewLotModal) {
+            return;
+        }
+        Array.from(addNewLotModal.querySelectorAll('[name="divs_new_lots"][data-lot-section="field"]')).forEach(function (field) {
+            if (!field.querySelector('input, select, textarea')) {
+                field.style.display = 'none';
+            }
+        });
+
+        let columnIndex = 0;
+        Array.from(addNewLotModal.querySelectorAll('[name="divs_new_lots"][data-lot-section="field"]')).forEach(function (field) {
+            if (field.style.display === 'none') {
+                return;
+            }
+            if (field.classList.contains('col-lg-12')) {
+                field.classList.remove('lot-field-left', 'lot-field-right');
+                columnIndex = 0;
+                return;
+            }
+            field.classList.remove('lot-field-left', 'lot-field-right');
+            field.classList.add(columnIndex % 2 === 0 ? 'lot-field-left' : 'lot-field-right');
+            columnIndex += 1;
+        });
     }
 
 
@@ -2169,34 +2515,42 @@
      *
      * @descriptor La funció busca el contenidor amb l’ID proporcionat. Si existeix,
      * injecta una alerta de Bootstrap amb el missatge indicat i un botó per tancar-la manualment.
-     * 
+     *
+
      * També activa un temporitzador (`setTimeout`) que elimina el contingut del contenidor
      * i l’oculta després del temps especificat.
-     * 
+     *
+
      * Si el contenidor no existeix, la funció no realitza cap acció.
      */
-    function showModalMessage(message, category = 'danger', modal_id, duration = 5000) {
+    function showModalMessage(message, category = 'danger', modal_id, duration) {
         const container = document.getElementById(modal_id);
 
         if (!container) {
             return;
         }
 
+        const alertDuration = duration ?? (category === 'success' ? 6000 : 12000);
+        if (container.dataset.dismissTimer) {
+            clearTimeout(Number(container.dataset.dismissTimer));
+        }
+
         container.innerHTML = `
-            <div class="alert alert-${category} alert-dismissible fade show d-inline-block text-left" role="alert">
-                <span>${message}</span>
-                <button type="button" class="close" data-dismiss="alert">
+            <div class="alert alert-${category} alert-dismissible fade show app-inline-alert" role="alert">
+                <div class="app-inline-alert-message">${message}</div>
+                <button type="button" class="close" data-dismiss="alert" aria-label="Tancar" onclick="clearModalMessage('${modal_id}')">
                     <span>&times;</span>
                 </button>
             </div>
         `;
         container.style.display = 'block';
 
-        // ⏱️ desaparecer automáticamente
-        setTimeout(() => {
+        const timerId = setTimeout(() => {
             container.innerHTML = '';
             container.style.display = 'none';
-        }, duration);
+            delete container.dataset.dismissTimer;
+        }, alertDuration);
+        container.dataset.dismissTimer = String(timerId);
     }
 
 
@@ -2213,7 +2567,8 @@
      * @descriptor La funció busca el contenidor amb l’ID proporcionat. Si existeix,
      * elimina tot el contingut HTML (`innerHTML`) i canvia el seu estil a `display: none`
      * per ocultar-lo visualment.
-     * 
+     *
+
      * Si el contenidor no existeix, la funció no realitza cap acció.
      */
     function clearModalMessage(modal_id) {
@@ -2223,16 +2578,90 @@
             return;
         }
 
+        if (container.dataset.dismissTimer) {
+            clearTimeout(Number(container.dataset.dismissTimer));
+            delete container.dataset.dismissTimer;
+        }
         container.innerHTML = '';
         container.style.display = 'none';
+    }
+
+    function getNavbarCatalanDataTableLanguage(overrides = {}) {
+        return Object.assign({
+            emptyTable: "No hi ha dades disponibles",
+            zeroRecords: "No s'han trobat resultats",
+            info: "Mostrant _START_ a _END_ de _TOTAL_ registres",
+            infoEmpty: "Mostrant 0 a 0 de 0 registres",
+            infoFiltered: "(filtrat de _MAX_ registres totals)",
+            lengthMenu: "Mostra _MENU_ registres",
+            search: "Cercar:",
+            paginate: {
+                previous: "Anterior",
+                next: "Següent"
+            }
+        }, overrides);
+    }
+
+    function setupNavbarManagedTableControls(table, scopeSelector, globalSearchSelector, lengthSelector, clearSelector) {
+        const $scope = $(scopeSelector);
+        if ($scope.data('navbarManagedControlsReady')) {
+            return;
+        }
+        $scope.data('navbarManagedControlsReady', true);
+
+        $(scopeSelector).on('pointerdown mousedown click keydown', '.header-filter input', function (event) {
+            event.stopPropagation();
+        });
+
+        $(scopeSelector).on('keyup change clear', '.header-filter input', function () {
+            const columnIndex = Number(this.dataset.column);
+            if (!Number.isNaN(columnIndex)) {
+                table.column(columnIndex).search(this.value).draw();
+            }
+        });
+
+        $(globalSearchSelector).on('keyup change clear', function () {
+            table.search(this.value).draw();
+        });
+
+        $(lengthSelector).on('change', function () {
+            table.page.len(Number(this.value)).draw();
+        });
+
+        $(clearSelector).on('click', function () {
+            $(globalSearchSelector).val('');
+            $(`${scopeSelector} .header-filter input`).val('');
+            table.search('');
+            table.columns().search('');
+            table.order([]);
+            table.draw();
+        });
     }
 
 
     $(document).ready(function() {
         var table = $('#table_info_lots_db').DataTable( {
-            order: [ 0, 'desc' ],
-            autoWidth: true
+            order: [[0, 'desc']],
+            autoWidth: false,
+            dom: 'rtip',
+            scrollX: true,
+            scrollY: '58vh',
+            scrollCollapse: true,
+            columnDefs: [
+                { targets: [3], orderable: false, width: '120px' },
+                { targets: [4, 5], width: '300px' }
+            ],
+            language: getNavbarCatalanDataTableLanguage({
+                emptyTable: "No hi ha productes disponibles"
+            })
         } );
+        setupNavbarManagedTableControls(
+            table,
+            '#info_lots_bd',
+            '#products_lookup_global_search',
+            '#products_lookup_length_control',
+            '#products_lookup_clear_filters'
+        );
     } );
 
 
@@ -2248,27 +2677,65 @@
         var table = $('#table_search_all_year').DataTable({
             columnDefs: [
                     {
-                        targets: 4, // Índice de la columna con las fechas
+                        targets: 5,
                         type: 'numeric', // Usar orden numérico personalizado
                         render: function(data, type, row) {
                             // Transformar la fecha en formato DD/MM/YYYY a un número YYYYMMDD para ordenar
                             if (type === 'sort') {
+                                if (!data || typeof data !== 'string' || !data.includes('-')) {
+                                    return 0;
+                                }
                                 var parts = data.split('-');
-                                return parseInt(parts[2] + parts[1] + parts[0]);
+                                return parseInt(parts[2] + parts[1] + parts[0]) || 0;
                             }
                             return data; // Mantener el formato original para mostrar
                         },
                     },
                 ],
-            order: [[4, 'desc']],
-            autoWidth: true,
+            order: [[5, 'desc']],
+            autoWidth: false,
+            dom: 'rtip',
+            scrollX: true,
+            scrollY: '58vh',
+            scrollCollapse: true,
+            language: getNavbarCatalanDataTableLanguage({
+                emptyTable: "No hi ha històric disponible"
+            })
         });
+        setupNavbarManagedTableControls(
+            table,
+            '#modal_seach_all_year',
+            '#historic_stock_global_search',
+            '#historic_stock_length_control',
+            '#historic_stock_clear_filters'
+        );
         table.columns.adjust().draw();
     });
 
+    $(document).ready(function() {
+        var table = $('#table_spend_money').DataTable({
+            order: [[0, 'asc']],
+            autoWidth: false,
+            dom: 'rtip',
+            language: getNavbarCatalanDataTableLanguage({
+                emptyTable: "No hi ha indicadors disponibles"
+            })
+        });
 
-    $('#modal_seach_all_year').on('hidden.bs.modal', function () {
-        $('body').css('overflow', 'auto'); // Restablecer el desplazamiento del cuerpo
+        setupNavbarManagedTableControls(
+            table,
+            '#modal_spend_money',
+            '#spend_money_global_search',
+            '#spend_money_length_control',
+            '#spend_money_clear_filters'
+        );
+    });
+
+
+    $('#modal_spend_money').on('shown.bs.modal', function () {
+        if ($.fn.DataTable.isDataTable('#table_spend_money')) {
+            $('#table_spend_money').DataTable().columns.adjust().draw(false);
+        }
     });
 
 
@@ -2283,16 +2750,17 @@
 
     document.addEventListener("DOMContentLoaded", function () {
         const select = document.getElementById("search_data_code");
+        if (!select || select.options.length) {
+            return;
+        }
         const currentYear = new Date().getFullYear();
         const startYear = 2023;
 
-        // 🔹 Opció "Tots"
         const optionAll = document.createElement("option");
         optionAll.value = "Tots";
         optionAll.textContent = "Tots";
         select.appendChild(optionAll);
 
-        // 🔹 Anys del 2023 fins l'actual (ordre descendent)
         for (let year = currentYear; year >= startYear; year--) {
             const option = document.createElement("option");
             option.value = year;

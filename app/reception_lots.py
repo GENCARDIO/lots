@@ -519,6 +519,7 @@ def add_stock_lot():
         id_substract_command = split_id_command[0]
 
     select_command = session1.query(Commands).filter(Commands.id == id_substract_command).first()
+    command_update = None
     if select_command:
         # total_received = int(select_command.num_received) + int(list_lots[0]['units_lot'])
         # Si el lot te subreferncies no es pot contabilitzar normalment ja que cada subrerferencia pot portar un numero difrents d'unitats,
@@ -544,12 +545,19 @@ def add_stock_lot():
             select_command.date_complete = date
         elif int(total_received) < int(select_command.units):
             message_command = f"Stock guardat, encara falten productes per arribar de la comanda {select_command.code_command}"
+        command_update = {
+            "id_command": select_command.id,
+            "units": select_command.units,
+            "num_received": select_command.num_received,
+            "received": select_command.received,
+        }
     else:
         message_command = ''
 
     session1.commit()
-    send_mail(list_info_excel, select_command.user_email)
-    return f'True_{message_command}'
+    if select_command:
+        send_mail(list_info_excel, select_command.user_email)
+    return jsonify({"success": True, "message": message_command, "command": command_update})
 
 
 @app.route('/search_article_pending', methods=['POST'])
@@ -561,6 +569,7 @@ def search_article_pending():
 
     for command, lot in select_commands:
         data.append({
+            "id_command": command.id,
             "units": command.units,
             "num_received": command.num_received,
             "code_command": command.code_command,

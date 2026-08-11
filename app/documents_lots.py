@@ -1,4 +1,4 @@
-from flask import render_template, request, flash, send_file, session
+from flask import render_template, request, flash, send_file, session, jsonify
 from app import app
 from app.utils import requires_auth, list_desciption_lots, list_cost_center, instant_date, save_log
 from app.models import session1, Lots, Stock_lots
@@ -106,6 +106,48 @@ def search_all_lots():
                                list_cost_center=list_cost_center())
 
     return render_template('search_lot.html', select_lot=select_lot, show_second_bar='', type_no_search=type_no_search)
+
+
+@app.route('/search_all_lots_data', methods=['POST'])
+@requires_auth
+def search_all_lots_data():
+    type_search = request.form.get('type_search', 'Reactiu')
+    select_lot = session1.query(Stock_lots).filter(Stock_lots.react_or_fungible == type_search)\
+                                           .group_by(Stock_lots.lot, Stock_lots.reception_date).all()
+
+    data = []
+    for lot in select_lot:
+        if lot.id_reactive == '':
+            reference = lot.catalog_reference or ''
+            description = lot.description or ''
+        else:
+            reference = lot.id_reactive or ''
+            description = lot.description_subreference or ''
+
+        data.append({
+            'id': lot.id,
+            'group_insert': lot.group_insert,
+            'reference': reference,
+            'description': description,
+            'lot': lot.lot or '',
+            'internal_lot': lot.internal_lot or '',
+            'reception_date': lot.reception_date or '',
+            'date_expiry': lot.date_expiry or '',
+            'delivery_note': lot.delivery_note or '',
+            'type_doc_delivery': lot.type_doc_delivery or '',
+            'certificate': lot.certificate or '',
+            'type_doc_certificate': lot.type_doc_certificate or '',
+            'state_product': lot.state_product or '',
+            'type_doc_state_product': lot.type_doc_state_product or '',
+            'observations_inspection': lot.observations_inspection or '',
+            'catalog_reference': lot.catalog_reference or '',
+            'description_original': lot.description or '',
+            'id_reactive': lot.id_reactive or '',
+            'description_subreference': lot.description_subreference or '',
+            'manufacturer': lot.manufacturer or ''
+        })
+
+    return jsonify({'success': True, 'data': data, 'type_search': type_search})
 
 
 @app.route("/download_docs", methods=["POST"])

@@ -168,6 +168,39 @@ def search_commands():
     return render_template('commands.html', select_commands=select_commands)
 
 
+@app.route('/search_commands_data')
+@requires_auth
+def search_commands_data():
+    select_commands = session1.query(Commands, Lots).join(Lots, Commands.id_lot == Lots.key)\
+                                                    .filter(Commands.date_close == '')\
+                                                    .order_by(Commands.id.desc()).all()
+
+    commands = []
+    for command, lot in select_commands:
+        select_commands_dup = session1.query(Commands).filter(Commands.id_lot == command.id_lot)\
+                                                      .filter(Commands.cost_center == command.cost_center)\
+                                                      .filter(Commands.user_close != '')\
+                                                      .filter(Commands.received == 0).first()
+
+        commands.append({
+            'id': command.id,
+            'id_lot': command.id_lot,
+            'bloqued_recived': 'True' if select_commands_dup is not None else 'False',
+            'catalog_reference': lot.catalog_reference,
+            'description': lot.description,
+            'code_SAP': lot.code_SAP,
+            'code_LOG': lot.code_LOG,
+            'units': command.units,
+            'date_create': command.date_create,
+            'user_create': command.user_create,
+            'cost_center': command.cost_center,
+            'observations': command.observations,
+            'plataform_command_preferent': lot.plataform_command_preferent,
+        })
+
+    return jsonify({'commands': commands, 'role': session['rol']})
+
+
 @app.route('/delete_command', methods=['POST'])
 @requires_auth
 def delete_command():
@@ -403,15 +436,15 @@ def modify_order_tracking():
             select_command.received = 1
             change_delete = True
 
-    if select_command.incidence_number != incidence_number:
-        info_change = {"field": 'incidence_number', "old_info": select_command.observations, "new_info": incidence_number}
+    if 'incidence_number' in request.form and select_command.incidence_number != incidence_number:
+        info_change = {"field": 'incidence_number', "old_info": select_command.incidence_number, "new_info": incidence_number}
         dict_save_info['info'] = json.dumps(info_change)
         save_log(dict_save_info)
 
         select_command.incidence_number = incidence_number
         change_inc = True
 
-    if change_unit or change_obs or incidence_number:
+    if change_unit or change_obs or change_inc:
         session1.commit()
 
     return f'True_//_Canvi realitzat correctament_//_{change_obs}_//_{change_unit}_//_{change_delete}_//_{change_inc}'
@@ -904,4 +937,3 @@ def view_modal_lot():
             "sales_contact": select_lot.sales_contact,
         }
     })
-

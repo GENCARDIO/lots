@@ -1,16 +1,16 @@
-<div class="d-flex justify-content-center"  style="padding-top: 20px;">
-    <div class = "row mt-1 justify-content-center">
-        {% with messages = get_flashed_messages(with_categories=true) %}
+{% with messages = get_flashed_messages(with_categories=true) %}
+<div class="d-flex justify-content-center error-flash-container">
+    <div class="row mt-1 justify-content-center">
         {% if messages %}
         {% for category,message in messages %}
         <div class="alert alert-{{ category }} alert-dismissible fade show ml-3" role="alert">
-          <span>{{ message }}</span>
-          <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-            <span aria-hidden="true">&times;</span>
-          </button>
+            <span>{{ message }}</span>
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
         </div>
-        {% endfor %}                                      
-      {% endif %}
-    {% endwith %}
+        {% endfor %}
+        {% endif %}
     </div>
-</div>   
+</div>
+{% endwith %}
