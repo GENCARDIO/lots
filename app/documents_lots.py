@@ -111,9 +111,26 @@ def search_all_lots():
 @app.route('/search_all_lots_data', methods=['POST'])
 @requires_auth
 def search_all_lots_data():
-    type_search = request.form.get('type_search', 'Reactiu')
-    select_lot = session1.query(Stock_lots).filter(Stock_lots.react_or_fungible == type_search)\
-                                           .group_by(Stock_lots.lot, Stock_lots.reception_date).all()
+    type_search = request.form.getlist('type_search')
+    if not type_search:
+        type_search = ['Reactiu', 'Fungible']
+
+    select_lot = []
+    if 'Reactiu' in type_search:
+        select_lot.extend(
+            session1.query(Stock_lots)
+            .filter(Stock_lots.react_or_fungible == 'Reactiu')
+            .group_by(Stock_lots.lot, Stock_lots.reception_date)
+            .all()
+        )
+
+    if 'Fungible' in type_search:
+        select_lot.extend(
+            session1.query(Stock_lots)
+            .filter(Stock_lots.react_or_fungible == 'Fungible')
+            .group_by(Stock_lots.group_insert)
+            .all()
+        )
 
     data = []
     for lot in select_lot:
@@ -144,7 +161,8 @@ def search_all_lots_data():
             'description_original': lot.description or '',
             'id_reactive': lot.id_reactive or '',
             'description_subreference': lot.description_subreference or '',
-            'manufacturer': lot.manufacturer or ''
+            'manufacturer': lot.manufacturer or '',
+            'react_or_fungible': lot.react_or_fungible or ''
         })
 
     return jsonify({'success': True, 'data': data, 'type_search': type_search})

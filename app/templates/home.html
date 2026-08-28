@@ -2497,6 +2497,19 @@
         showActionCommandsTab('documents');
     }
 
+    function openCommandHistoryPanel() {
+        markSidebarActive('pending-commands');
+        showHomePanel('home-pending-commands-panel');
+        showManageCommandsTab('history');
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('panel') === 'command-history') {
+            openCommandHistoryPanel();
+        }
+    });
+
     function openProductManagementPanel(tabName = 'reactives') {
         markSidebarActive('product-management');
         showHomePanel('home-product-management-panel');
@@ -3192,7 +3205,10 @@
         xhr.send(formData);
     }
 
-    let currentDocumentManagementType = 'Reactiu';
+    const documentManagementTypes = {
+        Reactiu: true,
+        Fungible: true
+    };
 
     function quoteJs(value) {
         return `'${String(value ?? '')
@@ -3426,11 +3442,51 @@
         return `<button type="button" class="btn btn-outline-danger btn-sm" id="${item.id}_state_product" onclick="open_upload_documents('state_product', ${quoteJs(item.group_insert)})"><i class="fa-solid fa-file-arrow-up"></i> Pujar</button>`;
     }
 
-    function loadDocumentManagementTable(typeSearch = currentDocumentManagementType) {
-        currentDocumentManagementType = typeSearch;
+    function getActiveDocumentManagementTypes() {
+        return Object.keys(documentManagementTypes).filter(function (type) {
+            return documentManagementTypes[type];
+        });
+    }
+
+    function updateDocumentManagementTypeBadges() {
+        Object.keys(documentManagementTypes).forEach(function (type) {
+            const badge = document.querySelector(`[data-document-type-filter="${type}"]`);
+            if (!badge) {
+                return;
+            }
+            badge.classList.toggle('is-active', documentManagementTypes[type]);
+            badge.setAttribute('aria-pressed', documentManagementTypes[type] ? 'true' : 'false');
+        });
+    }
+
+    function handleDocumentManagementTypeKey(event, typeSearch) {
+        if (event.key !== 'Enter' && event.key !== ' ') {
+            return;
+        }
+        event.preventDefault();
+        event.stopPropagation();
+        toggleDocumentManagementType(typeSearch);
+    }
+
+    function toggleDocumentManagementType(typeSearch) {
+        const activeTypes = getActiveDocumentManagementTypes();
+        if (documentManagementTypes[typeSearch] && activeTypes.length === 1) {
+            Object.keys(documentManagementTypes).forEach(function (type) {
+                documentManagementTypes[type] = type !== typeSearch;
+            });
+        } else {
+            documentManagementTypes[typeSearch] = !documentManagementTypes[typeSearch];
+        }
+
+        loadDocumentManagementTable();
+    }
+
+    function loadDocumentManagementTable() {
         const table = $('#table_document_management').DataTable();
         const formData = new FormData();
-        formData.append('type_search', typeSearch);
+        getActiveDocumentManagementTypes().forEach(function (type) {
+            formData.append('type_search', type);
+        });
 
         const xhr = new XMLHttpRequest();
         xhr.open('POST', '/search_all_lots_data', true);
@@ -3466,25 +3522,12 @@
                 });
             }
 
-            const toggle = document.getElementById('document_management_type_toggle');
-            if (toggle) {
-                toggle.innerHTML = `<i class="fa-solid fa-eye-dropper"></i> Canviar a ${typeSearch === 'Reactiu' ? 'Fungible' : 'Reactiu'}`;
-            }
-            const status = document.getElementById('document_management_type_badge');
-            if (status) {
-                status.textContent = typeSearch;
-                status.classList.toggle('is-reactiu', typeSearch === 'Reactiu');
-                status.classList.toggle('is-fungible', typeSearch === 'Fungible');
-            }
+            updateDocumentManagementTypeBadges();
 
             table.draw(false);
             table.columns.adjust();
         };
         xhr.send(formData);
-    }
-
-    function toggleDocumentManagementType() {
-        loadDocumentManagementTable(currentDocumentManagementType === 'Reactiu' ? 'Fungible' : 'Reactiu');
     }
 
     function createDocumentPendingCertificatesExcel() {
@@ -4010,10 +4053,10 @@
 
                 <div class="home-sidebar-section">
                     <div class="home-sidebar-step">
-                        <button type="button" class="home-sidebar-item home-sidebar-item-main" data-sidebar-group="reception-command labels nonconforming document-management" onclick="openReceptionCommandPanel(`{{ session['acronim'] }}`,`{{ session['rol'] }}`)" title="Acció comandes">
+                        <button type="button" class="home-sidebar-item home-sidebar-item-main" data-sidebar-group="reception-command labels nonconforming document-management" onclick="openReceptionCommandPanel(`{{ session['acronim'] }}`,`{{ session['rol'] }}`)" title="Recepció">
                             <i class="fa-solid fa-list-check"></i>
                             <span class="home-sidebar-text">
-                                <b>Acció comandes</b>
+                                <b>Recepció</b>
                                 <small>Accions de recepció</small>
                             </span>
                         </button>
@@ -4025,7 +4068,7 @@
                             <small>Afegir stock</small>
                         </span>
                     </button>
-                    <button type="button" class="home-sidebar-item home-sidebar-item-child" data-sidebar-key="labels" onclick="openLabelsPanel()" title="Etiquetes">
+                    <button type="button" class="home-sidebar-item home-sidebar-item-child" data-sidebar-key="labels" onclick="openLabelsPanel()" title="Etiquetes" hidden>
                         <i class="fa-solid fa-tag"></i>
                         <span class="home-sidebar-text">
                             <b>Etiquetes</b>
@@ -4046,6 +4089,18 @@
                             <small>Tots els documents</small>
                         </span>
                     </button>
+                </div>
+
+                <div class="home-sidebar-section">
+                    <div class="home-sidebar-step">
+                        <button type="button" class="home-sidebar-item home-sidebar-item-main" data-sidebar-key="history" onclick="markSidebarActive('history'); open_modal('search_all_year')" title="Històric">
+                            <i class="fa-solid fa-database"></i>
+                            <span class="home-sidebar-text">
+                                <b>Històric</b>
+                                <small>Stock i lots</small>
+                            </span>
+                        </button>
+                    </div>
                 </div>
 
                 <div class="home-sidebar-section">
@@ -4238,7 +4293,11 @@
                             <i class="fa-solid fa-eraser"></i> Netejar filtres
                         </button>
                     </div>
-                    <div class="home-data-body table-wrapper">
+                    <div class="home-data-body table-wrapper history-table-wrapper">
+                        <div class="history-loading-indicator" id="manage_history_loading" hidden>
+                            <span class="history-loading-spinner" aria-hidden="true"></span>
+                            <span>Carregant històric comandes...</span>
+                        </div>
                         <table id="manage_command_success_table" class="lab-data-table" style="width: 100%;">
                             <thead>
                                 <tr>
@@ -4264,25 +4323,26 @@
 
             <section class="home-data-panel home-content-panel" id="home-reception-commands-panel">
                 <div class="home-data-header">
-                    <h2>Acció comandes</h2>
+                    <h2>Recepció</h2>
                 </div>
-                <div class="manage-command-tabs" role="tablist" aria-label="Acció comandes">
+                <div class="manage-command-tabs" role="tablist" aria-label="Recepció">
                     <button type="button" class="manage-command-tab-button is-active" data-action-tab="reception" onclick="showActionCommandsTab('reception')">
                         <i class="fa-solid fa-list-check"></i> Recepcionar comanda
                     </button>
-                    <button type="button" class="manage-command-tab-button" data-action-tab="labels" onclick="showActionCommandsTab('labels')">
+                    <button type="button" class="manage-command-tab-button" data-action-tab="labels" onclick="showActionCommandsTab('labels')" hidden>
                         <i class="fa-solid fa-tag"></i> Etiquetes
                     </button>
                     <button type="button" class="manage-command-tab-button" data-action-tab="nonconforming" onclick="showActionCommandsTab('nonconforming')">
                         <i class="fa-solid fa-triangle-exclamation"></i> No conforme
                     </button>
                     <button type="button" class="manage-command-tab-button" data-action-tab="documents" onclick="showActionCommandsTab('documents')">
-                        <i class="fa-solid fa-folder-open"></i> Gestió documental <span class="manage-command-tab-badge is-reactiu" id="document_management_type_badge">Reactiu</span>
+                        <span><i class="fa-solid fa-folder-open"></i> Gestió documental</span>
+                        <span class="document-type-filter-group">
+                            <span class="document-type-filter is-reactiu is-active" data-document-type-filter="Reactiu" onclick="event.stopPropagation(); toggleDocumentManagementType('Reactiu')" onkeydown="handleDocumentManagementTypeKey(event, 'Reactiu')" aria-pressed="true" role="button" tabindex="0">Reactiu</span>
+                            <span class="document-type-filter is-fungible is-active" data-document-type-filter="Fungible" onclick="event.stopPropagation(); toggleDocumentManagementType('Fungible')" onkeydown="handleDocumentManagementTypeKey(event, 'Fungible')" aria-pressed="true" role="button" tabindex="0">Fungible</span>
+                        </span>
                     </button>
                     <div class="manage-command-tab-actions">
-                        <button type="button" class="btn btn-outline-primary btn-sm manage-command-tab-action document-tab-action" data-action-tab-action="documents" id="document_management_type_toggle" onclick="toggleDocumentManagementType()" hidden>
-                            <i class="fa-solid fa-eye-dropper"></i> Canviar a Fungible
-                        </button>
                         <button type="button" class="btn btn-outline-success btn-sm manage-command-tab-action document-tab-action" data-action-tab-action="documents" onclick="createDocumentPendingCertificatesExcel()" hidden>
                             <i class="fa-solid fa-file-arrow-down"></i> Certificats pendents
                         </button>
@@ -6311,6 +6371,10 @@
     }
 
     function showManageCommandsTab(tabName) {
+        if (tabName === 'pending' || tabName === 'tracking' || tabName === 'history') {
+            markSidebarActive('pending-commands');
+        }
+
         document.querySelectorAll('#home-pending-commands-panel .manage-command-tab-button').forEach(function (button) {
             button.classList.toggle('is-active', button.dataset.tab === tabName);
         });
@@ -6352,10 +6416,38 @@
         }, 180);
     }
 
-    function commands_success() {
+    const commandHistoryCacheDurationMs = 2 * 60 * 1000;
+    let commandHistoryLastLoadedAt = 0;
+
+    function invalidateCommandHistoryCache() {
+        commandHistoryLastLoadedAt = 0;
+    }
+
+    function commands_success(forceReload = false) {
+        const tableIsReady = $.fn.DataTable.isDataTable('#manage_command_success_table');
+        const cacheIsFresh = Date.now() - commandHistoryLastLoadedAt < commandHistoryCacheDurationMs;
+        if (!forceReload && tableIsReady && cacheIsFresh) {
+            const table = $('#manage_command_success_table').DataTable();
+            adjustManagedTableColumns(table);
+            return;
+        }
+
+        const loading = document.getElementById('manage_history_loading');
+        if (loading) {
+            loading.hidden = false;
+        }
+
+        if ($.fn.DataTable.isDataTable('#manage_command_success_table')) {
+            $('#manage_command_success_table').DataTable().clear().draw(false);
+        }
+
         const xhr = new XMLHttpRequest();
         xhr.open('POST', '/command_success', true);
         xhr.onload = function () {
+            if (loading) {
+                loading.hidden = true;
+            }
+
             if (xhr.status !== 200) {
                 showModalMessage("Error, no s'ha pogut carregar l'històric de comandes.", 'danger', 'pending_commands_message_container');
                 return;
@@ -6391,6 +6483,7 @@
             });
 
             table.draw(false);
+            commandHistoryLastLoadedAt = Date.now();
             setupManagedTableControls(
                 table,
                 '#manage-command-tab-history',
@@ -6399,6 +6492,12 @@
                 '#manage_history_clear_filters'
             );
             adjustManagedTableColumns(table);
+        };
+        xhr.onerror = function () {
+            if (loading) {
+                loading.hidden = true;
+            }
+            showModalMessage("Error, no s'ha pogut carregar l'històric de comandes.", 'danger', 'pending_commands_message_container');
         };
         xhr.send(new FormData());
     }
@@ -6735,6 +6834,10 @@
             if (xhr.status === 200) {
                 const splitResponse = xhr.responseText.split('_//_');
                 if (splitResponse[0] === 'True') {
+                    if (splitResponse[4] === 'True') {
+                        invalidateCommandHistoryCache();
+                    }
+
                     const row = document.getElementById(id);
                     if (row) {
                         const cells = row.getElementsByTagName('td');
@@ -6809,6 +6912,10 @@
             if (xhr.status === 200) {
                 const splitResponse = xhr.responseText.split('_//_');
                 if (splitResponse[0] === 'True') {
+                    if (splitResponse[4] === 'True') {
+                        invalidateCommandHistoryCache();
+                    }
+
                     const row = document.getElementById(id);
                     if (row) {
                         const cells = row.getElementsByTagName('td');
@@ -6846,6 +6953,7 @@
             $('#modal_tracking_command').modal('hide');
 
             if (xhr.status === 200 && xhr.responseText.split('_//_')[0] === 'True') {
+                invalidateCommandHistoryCache();
                 $('#manage_order_tracking_table').DataTable().row(`#${idCommand}`).remove().draw(false);
                 showModalMessage("Comanda eliminada correctament.", 'success', 'pending_commands_message_container');
                 return;
@@ -6874,6 +6982,7 @@
             $('#modal_history_incidence').modal('hide');
 
             if (xhr.status === 200 && xhr.responseText.split('_//_')[0] === 'True') {
+                invalidateCommandHistoryCache();
                 const row = document.getElementById(`history_${idCommand}`);
                 if (row) {
                     const cells = row.getElementsByTagName('td');
@@ -6901,6 +7010,7 @@
         xhr.open('POST', '/revert_order_tracking', true);
         xhr.onload = function () {
             if (xhr.status === 200 && xhr.responseText.split('_//_')[0] === 'True') {
+                invalidateCommandHistoryCache();
                 if ($.fn.DataTable.isDataTable('#manage_order_tracking_table')) {
                     $('#manage_order_tracking_table').DataTable().row(`#${idCommand}`).remove().draw(false);
                 }

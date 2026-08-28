@@ -8,8 +8,8 @@
                 </a>
             </li>
             <li class="nav-item">
-                <a class="app-top-navbar-button" onclick="open_modal('search_all_year')">
-                    <i class="fa-solid fa-database"></i> Històric
+                <a class="app-top-navbar-button" onclick="openNavbarCommandHistory()">
+                    <i class="fa-solid fa-database"></i> Històric comandes
                 </a>
             </li>
             <li class="nav-item">
@@ -630,6 +630,14 @@
 
 <script>
     const navbarPageViewsWithoutSidebar = ['info_lots_bd', 'modal_seach_all_year'];
+
+    function openNavbarCommandHistory() {
+        if (typeof openCommandHistoryPanel === 'function') {
+            openCommandHistoryPanel();
+            return;
+        }
+        window.location.href = '/?panel=command-history';
+    }
 
     function setNavbarEmbeddedPageMode(isEmbedded) {
         const homeShell = document.querySelector('.home-shell');

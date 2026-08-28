@@ -271,12 +271,8 @@ def command_success():
         :return: Un missatge que indica si l'operació ha estat exitosa i, en cas afirmatiu, la info en format JSON.
         :rtype: str
     '''
-    year = year_now()
-    year_a = year - 1
-
     select_command = session1.query(Commands, Lots).join(Lots, Commands.id_lot == Lots.key)\
                                                    .filter(Commands.user_close != '')\
-                                                   .filter(or_(Commands.date_complete.like(f'%-{year}'), Commands.date_complete.like(f'%-{year_a}')))\
                                                    .filter(Commands.received == '1').all()
     if not select_command:
         return "False_//_No s'ha trobat cap comanda tramitada a l'històric"
@@ -430,10 +426,16 @@ def modify_order_tracking():
         change_unit = True
 
         if int(unit_command) <= select_command.num_received:
-            info_change = {"field": 'units', "old_info": select_command.units, "new_info": unit_command}
+            info_change = {"field": 'received', "old_info": select_command.received, "new_info": 1}
             dict_save_info['info'] = json.dumps(info_change)
             save_log(dict_save_info)
+
+            info_change = {"field": 'date_complete', "old_info": select_command.date_complete, "new_info": date}
+            dict_save_info['info'] = json.dumps(info_change)
+            save_log(dict_save_info)
+
             select_command.received = 1
+            select_command.date_complete = date
             change_delete = True
 
     if 'incidence_number' in request.form and select_command.incidence_number != incidence_number:

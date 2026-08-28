@@ -922,6 +922,51 @@ table tbody tr:hover td {
     min-width: 260px;
 }
 
+.history-loading-indicator {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transform: translate(-50%, -50%);
+    min-width: 240px;
+    justify-content: center;
+    padding: 14px 18px;
+    border: 1px solid #d8e0ec;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.96);
+    box-shadow: 0 14px 34px rgba(15, 23, 42, 0.16);
+    color: #334155;
+    font-size: 0.88rem;
+    font-weight: 700;
+}
+
+.history-loading-indicator[hidden] {
+    display: none;
+}
+
+.history-loading-spinner {
+    width: 18px;
+    height: 18px;
+    border: 2px solid #c8d3df;
+    border-top-color: #2563eb;
+    border-radius: 50%;
+    animation: history-loading-spin 0.75s linear infinite;
+}
+
+@keyframes history-loading-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.history-table-wrapper {
+    position: relative;
+    min-height: 220px;
+}
+
 #pending_commands_table tbody td,
 #manage_order_tracking_table tbody td,
 #manage_command_success_table tbody td {
@@ -1574,6 +1619,50 @@ body.app-navbar-page-embedded .app-navbar-page-view .app-navbar-table-wrapper {
 
 .document-tab-action i {
     margin-right: 6px;
+}
+
+.document-type-filter {
+    display: inline-flex;
+    align-items: center;
+    min-height: 24px;
+    padding: 3px 9px;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: 800;
+    line-height: 1.2;
+    cursor: pointer;
+    border: 1px solid #cfd6df;
+    background: #eef1f4;
+    color: #667085;
+}
+
+.document-type-filter-group {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    margin-left: 8px;
+}
+
+.document-type-filter.is-reactiu {
+    border-color: #cfd6df;
+    color: #667085;
+}
+
+.document-type-filter.is-reactiu.is-active {
+    border-color: #b9d3f4;
+    background: #eaf3ff;
+    color: #1e4f86;
+}
+
+.document-type-filter.is-fungible {
+    border-color: #cfd6df;
+    color: #667085;
+}
+
+.document-type-filter.is-fungible.is-active {
+    border-color: #bfe0cf;
+    background: #edf8f2;
+    color: #256145;
 }
 
 .manage-command-tab-badge {
