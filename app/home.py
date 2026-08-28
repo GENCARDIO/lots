@@ -1,18 +1,145 @@
-from flask import render_template, request, redirect, session, flash, jsonify, send_file
+from flask import render_template, request, redirect, session, flash, jsonify, send_file, after_this_request
 from app import app
 from app.utils import requires_auth, list_desciption_lots, list_cost_center, to_dict, save_log, instant_date, send_mail_generic
 from app.models import IP_HOME, session1, Lots, Stock_lots, Lot_consumptions, Buy_primers
 import jwt
 import json
+import re
+import urllib.error
+import urllib.request
 from sqlalchemy import and_, or_, outerjoin, func
 from datetime import datetime
-from config import main_dir
+from config import main_dir, ip_address
 import pandas as pd
-from openpyxl import load_workbook, Workbook
-from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
-from openpyxl.utils import get_column_letter
+from openpyxl import load_workbook
+from openpyxl.styles import Font, PatternFill, Alignment
 from config import main_dir_docs
 import os
+import tempfile
+import zipfile
+
+
+def parse_primer_gene_exon(sequence_name):
+    match = re.match(r'^\s*([^_]+)_([0-9]{1,2}\s*-\s*[0-9]{1,2}|[0-9]{1,2}|[XY])', sequence_name or '', re.IGNORECASE)
+    if not match:
+        raise ValueError(f"No s'ha pogut obtenir el gen i l'exó del nom del primer: {sequence_name}")
+    return match.group(1).strip(), match.group(2).strip().upper()
+
+
+def parse_primer_pair_info(sequence_name):
+    match = re.match(
+        r'^\s*([^_]+)_([0-9]{1,2}\s*-\s*[0-9]{1,2}|[0-9]{1,2}|[XY])(as|s)(?=$|[^A-Za-z])',
+        sequence_name or '',
+        re.IGNORECASE
+    )
+    if not match:
+        return None
+
+    return {
+        'gen': match.group(1).strip(),
+        'exon': match.group(2).strip().upper(),
+        'role': match.group(3).lower()
+    }
+
+
+def get_selected_primer_sense_pair(selected_primers):
+    if len(selected_primers) != 2:
+        return None
+
+    parsed_primers = []
+    for primer in selected_primers:
+        pair_info = parse_primer_pair_info(primer.sequence_name)
+        if not pair_info:
+            return None
+        parsed_primers.append((primer, pair_info))
+
+    roles = {pair_info['role'] for _, pair_info in parsed_primers}
+    same_gen_exon = (
+        parsed_primers[0][1]['gen'].lower() == parsed_primers[1][1]['gen'].lower()
+        and parsed_primers[0][1]['exon'].replace(' ', '') == parsed_primers[1][1]['exon'].replace(' ', '')
+    )
+
+    if roles != {'s', 'as'} or not same_gen_exon:
+        return None
+
+    sense = next(primer for primer, pair_info in parsed_primers if pair_info['role'] == 's')
+    antisense = next(primer for primer, pair_info in parsed_primers if pair_info['role'] == 'as')
+    return {
+        'gen': parsed_primers[0][1]['gen'],
+        'exon': parsed_primers[0][1]['exon'],
+        'sequence_name': sense.sequence_name,
+        'sense_name': sense.sequence_name,
+        'antisense_name': antisense.sequence_name,
+        'sense': sense.sequence,
+        'antisense': antisense.sequence,
+        'qpcr': '1' if re.search(r'qpcr', f"{sense.sequence_name} {antisense.sequence_name}", re.IGNORECASE) else '0',
+        'm13': '1' if re.search(r'm13', f"{sense.sequence_name} {antisense.sequence_name}", re.IGNORECASE) else '0'
+    }
+
+
+def get_isoforma_by_gene_exon(sequence_name):
+    gen, exon = parse_primer_gene_exon(sequence_name)
+    url = f'{ip_address}:5016/api/isoforma_by_gen_exon'
+    payload = json.dumps({'gen': gen, 'exon': exon}).encode('utf-8')
+    request_api = urllib.request.Request(
+        url,
+        data=payload,
+        headers={'Content-Type': 'application/json'},
+        method='POST'
+    )
+
+    try:
+        with urllib.request.urlopen(request_api, timeout=5) as response:
+            response_data = json.loads(response.read().decode('utf-8') or '{}')
+    except urllib.error.HTTPError as e:
+        try:
+            response_data = json.loads(e.read().decode('utf-8') or '{}')
+            message = response_data.get('message') or response_data.get('error') or str(e)
+        except Exception:
+            message = str(e)
+        raise ValueError(f"No s'ha pogut trobar la isoforma per {sequence_name} ({gen}_{exon}). {message}")
+    except urllib.error.URLError as e:
+        raise ValueError(f"No s'ha pogut connectar amb registres per consultar la isoforma de {sequence_name} ({gen}_{exon}). {e.reason}")
+    except Exception as e:
+        raise ValueError(f"Error consultant la isoforma de {sequence_name} ({gen}_{exon}). {e}")
+
+    isoforma = response_data.get('isoforma')
+    if not isoforma:
+        raise ValueError(f"La resposta de registres no conté cap isoforma per {sequence_name} ({gen}_{exon}).")
+    return isoforma
+
+
+def receive_primers_by_ids(list_id_primer, received_by):
+    date_now = instant_date()
+    text_email = '<p style="margin-bottom:10px;">Hem rebut els seguents primers :</p>'
+    text_header_email = 'Recepcio de primers'
+    not_found = ''
+    id_primers_change = ''
+    send_mail = []
+
+    for primer_id in list_id_primer:
+        select_primer = session1.query(Buy_primers).filter(Buy_primers.id == primer_id).first()
+        if select_primer is None:
+            not_found += str(primer_id) + ';'
+            continue
+
+        if select_primer.buy == 1 and select_primer.received == 0 and select_primer.delete == 0:
+            select_primer.received = 1
+            select_primer.received_date = date_now
+            select_primer.received_by = received_by
+
+            text_email += f"&nbsp;&nbsp;&nbsp;• {select_primer.sequence_name} - {select_primer.sequence}<br>"
+            id_primers_change += str(primer_id) + ';'
+            if select_primer.email_send not in send_mail:
+                send_mail.append(select_primer.email_send)
+
+    return {
+        'id_primers_change': id_primers_change.rstrip(';'),
+        'not_found': not_found.rstrip(';'),
+        'send_mail': send_mail,
+        'text_email': text_email,
+        'text_header_email': text_header_email
+    }
 
 
 # Pagina incial i visualització
@@ -222,6 +349,77 @@ def search_fungible():
                                list_cost_center=list_cost_center())
 
     return render_template('search_fungible.html', select_lots=select_lots)
+
+
+@app.route('/search_fungible_data', methods=['POST'])
+@requires_auth
+def search_fungible_data():
+    code_search_fungible = request.form.get('code_search_fungible', '')
+
+    try:
+        if code_search_fungible == '':
+            select_lots = session1.query(Stock_lots).filter_by(spent=0, react_or_fungible='Fungible').all()
+        else:
+            select_lots = session1.query(Stock_lots).filter_by(spent=0, react_or_fungible='Fungible', description=code_search_fungible).all()
+            if not select_lots:
+                select_lots = session1.query(Stock_lots).filter_by(spent=0, react_or_fungible='Fungible', catalog_reference=code_search_fungible).all()
+                if not select_lots:
+                    select_lots = session1.query(Stock_lots).filter_by(spent=0, react_or_fungible='Fungible', code_SAP=code_search_fungible).all()
+                    if not select_lots:
+                        select_lots = session1.query(Stock_lots).filter_by(spent=0, react_or_fungible='Fungible', code_LOG=code_search_fungible).all()
+
+        if not select_lots:
+            return jsonify({'success': False, 'message': "No hi ha cap fungible amb el codi introduït"})
+
+        data = []
+        for lot in select_lots:
+            data.append({
+                'id': lot.id,
+                'catalog_reference': lot.catalog_reference or '',
+                'id_reactive': lot.id_reactive or '',
+                'code_SAP': lot.code_SAP or '',
+                'code_LOG': lot.code_LOG or '',
+                'description': lot.description_subreference or lot.description or '',
+                'cost_center_stock': lot.cost_center_stock or '',
+                'units_lot': lot.units_lot or '',
+                'comand_number': lot.comand_number or '',
+                'has_subreference': bool(lot.id_reactive)
+            })
+    except Exception:
+        return jsonify({'success': False, 'message': "Error, no s'han pogut realitzar la cerca"})
+
+    return jsonify({'success': True, 'data': data})
+
+
+@app.route('/product_management_datalist')
+@requires_auth
+def product_management_datalist():
+    rows = session1.query(Stock_lots).filter(Stock_lots.spent == 0).all()
+    values = {'Reactiu': {}, 'Fungible': {}}
+
+    for lot in rows:
+        type_key = lot.react_or_fungible
+        if type_key not in values:
+            continue
+
+        value = (lot.description or '').strip()
+        if not value:
+            continue
+
+        if lot.id_reactive:
+            display = f"{lot.catalog_reference or ''} - {lot.id_reactive} - {lot.description or ''}"
+        else:
+            display = f"{lot.catalog_reference or ''} - {lot.description or ''}"
+
+        key = f"{value}__{display}"
+        if key not in values[type_key]:
+            values[type_key][key] = {'value': value, 'display': display}
+
+    return jsonify({
+        'success': True,
+        'reactives': list(values['Reactiu'].values()),
+        'fungibles': list(values['Fungible'].values())
+    })
 
 
 @app.route('/search_all_year', methods=['POST'])
@@ -586,7 +784,44 @@ def action_primer():
     not_found = ''
     id_primers_change = ''
     send_mail = []
+    isoformes = []
+    external_primer_verify = None
+    defer_reception_to_primers = False
     try:
+        selected_primers = []
+        if action == 'buy':
+            for primer_id in list_id_primer:
+                select_primer_pair = session1.query(Buy_primers).filter(Buy_primers.id == primer_id).first()
+                if select_primer_pair is not None:
+                    selected_primers.append(select_primer_pair)
+
+            primer_pair = get_selected_primer_sense_pair(selected_primers)
+            if primer_pair:
+                isoforma = ''
+                isoforma_error = ''
+                try:
+                    isoforma = get_isoforma_by_gene_exon(primer_pair['sequence_name'])
+                except Exception as e:
+                    isoforma_error = str(e)
+
+                isoformes.append({
+                    'sequence_name': f"{primer_pair['sense_name']} / {primer_pair['antisense_name']}",
+                    'isoforma': isoforma,
+                    'error': isoforma_error
+                })
+                external_primer_verify = {
+                    'url': f'{ip_address}:5005/external/insert-primer/verify',
+                    'gen': primer_pair['gen'],
+                    'sense': primer_pair['sense'] or '',
+                    'antisense': primer_pair['antisense'] or '',
+                    'qpcr': primer_pair['qpcr'],
+                    'm13': primer_pair['m13'],
+                    'isoforma': isoforma or '',
+                    'lots_primer_ids': id_primer,
+                    'lots_receive_url': f'{ip_address}:5017/external/receive-primers'
+                }
+                defer_reception_to_primers = True
+
         for primer_id in list_id_primer:
             select_primer = session1.query(Buy_primers).filter(Buy_primers.id == primer_id).first()
             if select_primer is None:
@@ -603,6 +838,9 @@ def action_primer():
                     if select_primer.email_send not in send_mail:
                         send_mail.append(select_primer.email_send)
                 elif action == 'buy' and select_primer.buy == 1:
+                    if defer_reception_to_primers:
+                        continue
+
                     select_primer.received = 1
                     select_primer.received_date = date_now
                     select_primer.received_by = session['acronim']
@@ -631,16 +869,58 @@ def action_primer():
             "status": "success",
             "message": "Primer posat a comprar correctament",
             "id": id_primers_change,
-            "not_found": not_found
+            "not_found": not_found,
+            "isoformes": isoformes,
+            "external_primer_verify": external_primer_verify,
+            "deferred": defer_reception_to_primers
         }), 200
 
     except Exception as e:
         session1.rollback()
         return jsonify({
             "status": "error",
-            "message": "Error, no s'ha pogut procesar la petició solicitada",
+            "message": str(e) or "Error, no s'ha pogut procesar la petició solicitada",
             "id": 'none',
             "not_found": 'none'
+        }), 500
+
+
+@app.route('/external/receive-primers', methods=['POST'])
+def external_receive_primers():
+    id_primer = request.form.get('id_primer') or request.form.get('lots_primer_ids') or ''
+    received_by = request.form.get('received_by') or request.form.get('user') or session.get('acronim') or 'Primers'
+    list_id_primer = [primer_id for primer_id in id_primer.split(';') if primer_id]
+
+    if not list_id_primer:
+        return jsonify({
+            "status": "error",
+            "message": "No s'ha rebut cap ID de primer per recepcionar.",
+            "id": "",
+            "not_found": ""
+        }), 400
+
+    try:
+        received_result = receive_primers_by_ids(list_id_primer, received_by)
+        session1.commit()
+
+        if len(received_result['send_mail']) > 0:
+            result_emails = ','.join(received_result['send_mail'])
+            send_mail_generic(result_emails, received_result['text_email'], received_result['text_header_email'])
+
+        return jsonify({
+            "status": "success",
+            "message": "Primers recepcionats correctament.",
+            "id": received_result['id_primers_change'],
+            "not_found": received_result['not_found']
+        }), 200
+
+    except Exception as e:
+        session1.rollback()
+        return jsonify({
+            "status": "error",
+            "message": str(e) or "No s'han pogut recepcionar els primers.",
+            "id": "",
+            "not_found": ""
         }), 500
 
 
@@ -1004,6 +1284,35 @@ def info_commands_primers():
     return jsonify(list_command_id)
 
 
+def create_openpyxl_safe_template_copy(template_path):
+    temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.xlsx')
+    temp_file.close()
+
+    def remove_invalid_merge_cell(match):
+        ref_match = re.search(rb'\bref="([^"]+)"', match.group(0))
+        if not ref_match:
+            return b''
+
+        ref = ref_match.group(1)
+        if re.match(rb'^[A-Z]{1,3}[0-9]+:[A-Z]{1,3}[0-9]+$', ref):
+            return match.group(0)
+
+        return b''
+
+    with zipfile.ZipFile(template_path, 'r') as source_zip, zipfile.ZipFile(temp_file.name, 'w', zipfile.ZIP_DEFLATED) as target_zip:
+        for item in source_zip.infolist():
+            content = source_zip.read(item.filename)
+
+            if item.filename.startswith('xl/worksheets/') and item.filename.endswith('.xml'):
+                content = re.sub(rb'<mergeCell[^>]*/>', remove_invalid_merge_cell, content)
+                content = re.sub(rb'<mergeCell[^>]*></mergeCell>', remove_invalid_merge_cell, content)
+                content = re.sub(rb'<mergeCells[^>]*>\s*</mergeCells>', b'', content)
+
+            target_zip.writestr(item, content)
+
+    return temp_file.name
+
+
 @app.route('/create_excel_primer', methods=['POST'])
 @requires_auth
 def create_excel_primer():
@@ -1017,9 +1326,10 @@ def create_excel_primer():
         command_id_primer = request.form.get('command_id_primer')
         command_primers_selected = request.form.get('command_primers_selected')
         if command_primers_selected == '' and not command_id_primer:
-            flash("Error, no s'ha pogut crear l'arxiu, les dades no han arribat", "danger")
-            return render_template('home.html', list_desciption_lots=list_desciption_lots(),
-                                    list_cost_center=list_cost_center())
+            return jsonify({
+                'success': False,
+                'message': "No s'ha pogut crear l'Excel: no s'ha rebut cap primer seleccionat ni cap comanda."
+            }), 400
 
         if command_primers_selected != '':
             select_primer = []
@@ -1030,97 +1340,84 @@ def create_excel_primer():
                 if select_primer_sel is not None:
                     select_primer.append(select_primer_sel)
                 else:
-                    flash("Error, no s'ha pogut recollir les dades", "danger")
-                    return render_template('home.html', list_desciption_lots=list_desciption_lots(),
-                                            list_cost_center=list_cost_center())
+                    return jsonify({
+                        'success': False,
+                        'message': f"No s'ha pogut crear l'Excel: el primer amb ID {primers_sel} no existeix o no es pot recuperar."
+                    }), 404
         else:
             select_primer = session1.query(Buy_primers).filter(Buy_primers.command_id == command_id_primer).all()
 
-        # --- Creació de l’Excel ---
-        wb = Workbook()
+        if not select_primer:
+            return jsonify({
+                'success': False,
+                'message': "No s'ha pogut crear l'Excel: no s'ha trobat cap primer amb les dades indicades."
+            }), 404
+
+        template_path = f"{main_dir_docs}/plantillas/plantilla_primers.xlsx"
+        if not os.path.exists(template_path):
+            return jsonify({
+                'success': False,
+                'message': f"No s'ha pogut crear l'Excel: no s'ha trobat la plantilla plantilla_primers.xlsx a {template_path}."
+            }), 404
+
+        safe_template_path = create_openpyxl_safe_template_copy(template_path)
+        try:
+            wb = load_workbook(safe_template_path)
+        finally:
+            if os.path.exists(safe_template_path):
+                os.remove(safe_template_path)
         sheet = wb.active
-        sheet.title = "Oligos 1"
 
-        header_fill = PatternFill(start_color="4F81BD", end_color="4F81BD", fill_type="solid")  # blau fosc suau
-        header_font = Font(bold=True, color="FFFFFF")  # blanc i negreta
-        header_alignment = Alignment(horizontal="center", vertical="center")
-        thin_border = Border(
-            left=Side(style='thin'),
-            right=Side(style='thin'),
-            top=Side(style='thin'),
-            bottom=Side(style='thin')
-        )
-
-        headers = [
-            'DNA',
-            'Sequence name',
-            'Purification',
-            'Synthesis scale',
-            'Shipping Condition',
-            '5 Modification',
-            'Sequence',
-            '3 Modification',
-            'Internal modification',
-            'Quality check Maldi',
-            'Technique'
-        ]
-
-        for col, header in enumerate(headers, start=1):
-            cell = sheet.cell(row=1, column=col, value=header)
-            cell.fill = header_fill
-            cell.font = header_font
-            cell.alignment = header_alignment
-
-        # 📏 Ajustar altura header (opcional)
-        sheet.row_dimensions[1].height = 20
+        for row in sheet.iter_rows(min_row=2, max_row=sheet.max_row, min_col=1, max_col=8):
+            for cell in row:
+                cell.value = None
 
         start = 2
         for primer in select_primer:
-            sheet.cell(row=start, column=1, value=primer.dna)
-            sheet.cell(row=start, column=2, value=primer.sequence_name)
-            sheet.cell(row=start, column=3, value=primer.purification)
-            sheet.cell(row=start, column=4, value=primer.synthesis_scale)
-            sheet.cell(row=start, column=5, value=primer.shipping_conditions)
-            sheet.cell(row=start, column=6, value=primer.modification_5)
-            sheet.cell(row=start, column=7, value=primer.sequence)
-            sheet.cell(row=start, column=8, value=primer.modification_3)
-            sheet.cell(row=start, column=9, value=primer.internal_modification)
-            sheet.cell(row=start, column=10, value=primer.quality_check_maldi)
-            sheet.cell(row=start, column=11, value=primer.technique)
+            sheet.cell(row=start, column=1, value=primer.sequence_name)
+            sheet.cell(row=start, column=2, value=primer.synthesis_scale)
+            sheet.cell(row=start, column=3, value=primer.shipping_conditions)
+            sheet.cell(row=start, column=4, value=primer.purification)
+            sheet.cell(row=start, column=5, value=primer.modification_5)
+            sheet.cell(row=start, column=6, value=primer.sequence)
+            sheet.cell(row=start, column=7, value=primer.modification_3)
+            sheet.cell(row=start, column=8, value=primer.internal_modification)
             start += 1
 
-        # Remarcar les celes
-        for row in sheet.iter_rows(min_row=1, max_row=sheet.max_row, min_col=1, max_col=sheet.max_column):
-            for cell in row:
-                cell.border = thin_border
+        name_doc_buy_primers = 'plantilla_primers'
+        output_file = tempfile.NamedTemporaryFile(delete=False, suffix='.xlsx')
+        output_file.close()
+        wb.save(output_file.name)
 
-        # 📐 Ajustar amplada automàtica de columnes
-        for col in sheet.columns:
-            max_length = 0
-            col_letter = get_column_letter(col[0].column)
+        @after_this_request
+        def cleanup_created_primer_excel(response):
+            try:
+                os.remove(output_file.name)
+            except OSError:
+                pass
+            return response
 
-            for cell in col:
-                try:
-                    if cell.value:
-                        max_length = max(max_length, len(str(cell.value)))
-                except:
-                    pass
-
-            sheet.column_dimensions[col_letter].width = max_length + 2
-
-        if select_primer[0].command_id == '':
-            name_doc_buy_primers = 'provisional_compra_primers'
-        else:
-            name_doc_buy_primers = select_primer[0].command_id
-        # 💾 Guardar fitxer
-        path = f"{main_dir_docs}/{name_doc_buy_primers}.xlsx"
-        wb.save(path)
-
-        return send_file(path, as_attachment=True)
-    except Exception:
-        flash("Error, no s'ha trobat el l'stock a la BD", "danger")
-        return render_template('home.html', list_desciption_lots=list_desciption_lots(),
-                                list_cost_center=list_cost_center())
+        return send_file(output_file.name, as_attachment=True, download_name=f"{name_doc_buy_primers}.xlsx")
+    except zipfile.BadZipFile:
+        return jsonify({
+            'success': False,
+            'message': "No s'ha pogut crear l'Excel: la plantilla plantilla_primers.xlsx no és un fitxer Excel vàlid."
+        }), 500
+    except PermissionError:
+        return jsonify({
+            'success': False,
+            'message': "No s'ha pogut crear l'Excel: no hi ha permisos per llegir la plantilla o guardar el fitxer."
+        }), 500
+    except OSError as error:
+        return jsonify({
+            'success': False,
+            'message': f"No s'ha pogut crear l'Excel: error del sistema de fitxers ({error})."
+        }), 500
+    except Exception as error:
+        return jsonify({
+            'success': False,
+            'message': f"No s'ha pogut crear l'Excel de primers: {error}"
+        }), 500
 
 
 @app.route('/get_lots', methods=['GET'])

@@ -1,4 +1,4 @@
-from flask import render_template, request, flash, session
+from flask import render_template, request, flash, session, jsonify
 from app import app
 from app.utils import requires_auth, list_desciption_lots, list_cost_center, save_log, instant_date
 from app.models import session1, Stock_lots, Lot_consumptions
@@ -46,6 +46,49 @@ def search_lots_open_close():
 
     return render_template('open_close_lots.html', select_lot=select_lot, lot=select_lot[0],
                            list_desciption_lots=list_desciption_lots())
+
+
+@app.route('/search_lots_open_close_data', methods=['POST'])
+@requires_auth
+def search_lots_open_close_data():
+    reference = request.form.get('reference', '')
+    select_lot = session1.query(Stock_lots, Lot_consumptions).\
+        outerjoin(Lot_consumptions, Stock_lots.id == Lot_consumptions.id_lot).\
+        filter(
+            or_(
+                func.lower(Stock_lots.catalog_reference) == reference.lower(),
+                func.lower(Stock_lots.id_reactive) == reference.lower(),
+                func.lower(Stock_lots.description) == reference.lower(),
+                func.lower(Stock_lots.description_subreference) == reference.lower()
+            ),
+            Stock_lots.spent == 0,
+            Stock_lots.react_or_fungible == 'Reactiu'
+        ).all()
+
+    if not select_lot:
+        return jsonify({'success': False, 'message': f"No s'ha trobat cap coincidencia amb el codi entrat --> {reference}"})
+
+    data = []
+    for lot, consumption_lot in select_lot:
+        is_special = 'Oligos' in (lot.description or '') or 'Coriel' in (lot.description or '')
+        data.append({
+            'id': lot.id,
+            'catalog_reference': lot.catalog_reference or '',
+            'id_reactive': lot.id_reactive or '',
+            'description': lot.description_subreference or lot.description or '',
+            'lot': lot.lot or '',
+            'comand_number': lot.comand_number or '',
+            'internal_lot': lot.internal_lot or '',
+            'date_expiry': lot.date_expiry or '',
+            'observations_inspection': lot.observations_inspection or '',
+            'cost_center_stock': lot.cost_center_stock or '',
+            'units_lot': lot.units_lot or 0,
+            'is_open': bool(consumption_lot and len(consumption_lot.date_open or '') > 3),
+            'is_special': is_special,
+            'has_subreference': bool(lot.id_reactive)
+        })
+
+    return jsonify({'success': True, 'data': data})
 
 
 @app.route('/open_close_lots', methods=['POST'])
@@ -235,6 +278,27 @@ def not_according():
     return render_template('wrong_lots.html', select_lot=select_lot, list_desciption_lots=list_desciption_lots())
 
 
+@app.route('/not_according_data', methods=['POST'])
+@requires_auth
+def not_according_data():
+    select_lot = session1.query(Stock_lots).filter(or_(Stock_lots.state == 'Rebutjat',
+                                                       Stock_lots.state == 'Quarentena'))\
+                                           .filter(Stock_lots.wrong_lots == 0).all()
+
+    data = []
+    for stock_lot in select_lot:
+        data.append({
+            'id': stock_lot.id,
+            'catalog_reference': stock_lot.catalog_reference or '',
+            'description': stock_lot.description_subreference or stock_lot.description or '',
+            'internal_lot': stock_lot.internal_lot or '',
+            'observations_inspection': stock_lot.observations_inspection or '',
+            'state': stock_lot.state or ''
+        })
+
+    return jsonify({'success': True, 'data': data})
+
+
 @app.route('/delete_wrong_lot', methods=['POST'])
 @requires_auth
 def delete_wrong_lot():
@@ -276,7 +340,7 @@ def delete_wrong_lot():
             info_change2 = {"field": 'observations_inspection', "old_info": select_lots.observations_inspection, "new_info": 'Mostra tancada directamente desde No conforme'}
 
             select_lots.spent = 1
-            if select_lots.observations_inspection == '':
+            if not select_lots.observations_inspection:
                 select_lots.observations_inspection = "Mostra tancada directamente desde No conforme"
             else:
                 select_lots.observations_inspection += " - Mostra tancada directamente desde No conforme"
