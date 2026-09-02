@@ -214,6 +214,7 @@ def add_stock_lot():
     list_lots_json = request.form.get("list_lots")
     id_substract_command = request.form.get("id_substract_command")
     pb_oligos = request.form.get("pb_oligos")
+    price_oligos = request.form.get("price_oligos")
     incidence_number = request.form.get("incidence_number")
     price_coriells = request.form.get("price_coriells")
 
@@ -316,6 +317,47 @@ def add_stock_lot():
         type_doc_state_product = ""
 
     list_lots = json.loads(list_lots_json)
+
+    if price_oligos not in (None, ''):
+        price_oligos = str(price_oligos).replace(',', '.')
+        oligos_updated = set()
+        for lots in list_lots:
+            if not isinstance(lots.get('description'), str) or 'oligos' not in lots['description'].lower():
+                continue
+
+            lots['import_unit_ics'] = price_oligos
+            lots['import_unit_idibgi'] = price_oligos
+
+            lot_key = lots.get('key')
+            if lot_key in oligos_updated:
+                continue
+
+            select_lots = session1.query(Lots).filter(Lots.key == lot_key).first()
+            if select_lots is None:
+                continue
+
+            dict_save_info = {
+                'id_lot': select_lots.key,
+                'type': 'modify lot',
+                'info': '',
+                'user': session['acronim'],
+                'id_user': session['idClient'],
+                'date': date
+            }
+
+            if str(select_lots.import_unit_ics) != price_oligos:
+                info_change = {"field": 'import_unit_ics', "old_info": select_lots.import_unit_ics, "new_info": price_oligos}
+                select_lots.import_unit_ics = price_oligos
+                dict_save_info['info'] = json.dumps(info_change)
+                save_log(dict_save_info)
+
+            if str(select_lots.import_unit_idibgi) != price_oligos:
+                info_change = {"field": 'import_unit_idibgi', "old_info": select_lots.import_unit_idibgi, "new_info": price_oligos}
+                select_lots.import_unit_idibgi = price_oligos
+                dict_save_info['info'] = json.dumps(info_change)
+                save_log(dict_save_info)
+
+            oligos_updated.add(lot_key)
 
     # for llo in list_lots:
     #     print(llo)

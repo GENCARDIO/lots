@@ -1,8 +1,57 @@
-from flask import request, session, render_template, flash
+from flask import request, session, render_template, flash, jsonify
 from app import app
 from app.utils import instant_date, requires_auth, save_log, list_desciption_lots, list_cost_center
 from app.models import session1, Lots, Stock_lots, Logs
+from sqlalchemy import String, cast, or_
+import html
 import json
+
+
+def parse_log_detail(info):
+    try:
+        return json.loads(info)
+    except Exception:
+        return info or ''
+
+
+def build_log_table_row(log):
+    try:
+        info_dict = json.loads(log.info)
+    except Exception:
+        info_dict = {}
+
+    field = ''
+    old_info = ''
+    new_info = ''
+
+    if isinstance(info_dict, dict) and {'field', 'old_info', 'new_info'}.issubset(info_dict):
+        field = info_dict.get('field', '')
+        old_info = info_dict.get('old_info', '')
+        new_info = info_dict.get('new_info', '')
+    elif isinstance(info_dict, dict):
+        fields = sorted({key[:-4] for key in info_dict if key.endswith('_old') and f'{key[:-4]}_new' in info_dict})
+        if len(fields) == 1:
+            field = fields[0]
+            old_info = info_dict.get(f'{field}_old', '')
+            new_info = info_dict.get(f'{field}_new', '')
+        elif fields:
+            field = ', '.join(fields)
+
+    detail_button = (
+        f'<button type="button" class="btn btn-sm btn-outline-primary" title="Veure detall" '
+        f'data-log-id="{log.id}" onclick="showLogDetail(this)">'
+        f'<i class="fa-solid fa-eye"></i></button>'
+    )
+
+    return [
+        detail_button,
+        html.escape(str(log.type or '')),
+        html.escape(str(field or '')),
+        html.escape(str(old_info or '')),
+        html.escape(str(new_info or '')),
+        html.escape(str(log.user or '')),
+        html.escape(str(log.date or ''))
+    ]
 
 
 @app.route('/edit_lot', methods=['POST'])
@@ -693,6 +742,106 @@ def show_recover_data():
                                list_cost_center=list_cost_center())
 
     return render_template('recover.html', select_log=select_log)
+
+
+@app.route('/show_logs_data')
+@requires_auth
+def show_logs_data():
+    if session.get('rol') != 'admin':
+        flash("No tens permisos per consultar els logs", "warning")
+        return render_template('home.html', list_desciption_lots=list_desciption_lots(),
+                               list_cost_center=list_cost_center())
+
+    return render_template('logs.html')
+
+
+@app.route('/logs_data')
+@requires_auth
+def logs_data():
+    if session.get('rol') != 'admin':
+        return jsonify({'draw': 0, 'recordsTotal': 0, 'recordsFiltered': 0, 'data': []}), 403
+
+    draw = int(request.args.get('draw', 0))
+    start = int(request.args.get('start', 0))
+    length = int(request.args.get('length', 10))
+    search_value = request.args.get('search[value]', '').strip()
+
+    query = session1.query(Logs)
+    records_total = query.count()
+
+    if search_value:
+        search_pattern = f'%{search_value}%'
+        query = query.filter(or_(
+            cast(Logs.id, String).like(search_pattern),
+            cast(Logs.id_lot, String).like(search_pattern),
+            Logs.type.like(search_pattern),
+            Logs.info.like(search_pattern),
+            Logs.user.like(search_pattern),
+            Logs.id_user.like(search_pattern),
+            Logs.date.like(search_pattern)
+        ))
+
+    searchable_columns = {
+        1: Logs.type,
+        5: Logs.user,
+        6: Logs.date,
+    }
+    info_columns = {2, 3, 4}
+    for column_index, column in searchable_columns.items():
+        column_search = request.args.get(f'columns[{column_index}][search][value]', '').strip()
+        if column_search:
+            query = query.filter(column.like(f'%{column_search}%'))
+
+    for column_index in info_columns:
+        column_search = request.args.get(f'columns[{column_index}][search][value]', '').strip()
+        if column_search:
+            query = query.filter(Logs.info.like(f'%{column_search}%'))
+
+    records_filtered = query.count()
+
+    order_column_index = int(request.args.get('order[0][column]', 6))
+    order_direction = request.args.get('order[0][dir]', 'desc')
+    order_columns = {
+        1: Logs.type,
+        5: Logs.user,
+        6: Logs.id,
+    }
+    order_column = order_columns.get(order_column_index, Logs.id)
+    query = query.order_by(order_column.asc() if order_direction == 'asc' else order_column.desc())
+
+    if length != -1:
+        query = query.offset(start).limit(length)
+
+    logs = query.all()
+    return jsonify({
+        'draw': draw,
+        'recordsTotal': records_total,
+        'recordsFiltered': records_filtered,
+        'data': [build_log_table_row(log) for log in logs]
+    })
+
+
+@app.route('/log_detail/<int:log_id>')
+@requires_auth
+def log_detail(log_id):
+    if session.get('rol') != 'admin':
+        return jsonify({'success': False, 'message': 'No tens permisos per consultar els logs'}), 403
+
+    log = session1.query(Logs).filter(Logs.id == log_id).first()
+    if log is None:
+        return jsonify({'success': False, 'message': "No s'ha trobat el log"}), 404
+
+    return jsonify({
+        'success': True,
+        'detail': {
+            'log': log.id,
+            'id_ref': log.id_lot,
+            'tipus': log.type,
+            'usuari': log.user,
+            'data': log.date,
+            'info': parse_log_detail(log.info)
+        }
+    })
 
 
 @app.route('/recover_data', methods=['POST'])

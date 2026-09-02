@@ -20,7 +20,7 @@ from openpyxl.styles import Font, PatternFill, Alignment
 # Authentication
 def requires_auth(f):
     @wraps(f)
-    def decorated_function(*args):
+    def decorated_function(*args, **kwargs):
         if session['rol'] == 'None' or session['rol'] is None or session['rol'] == '' or session['rol'] == 'Usuario no encontrado':
             url = f'{IP_HOME}logout/No tens permisos per entrar en aquesta a plicació'
             return redirect(url)
@@ -29,7 +29,7 @@ def requires_auth(f):
             return redirect(url)
         else:
             pass
-        return f(*args)
+        return f(*args, **kwargs)
     return decorated_function
 
 

@@ -1316,6 +1316,10 @@ table tbody tr:hover td {
     width: 100%;
 }
 
+#info_lots_bd.app-navbar-page-view .modal-dialog {
+    max-width: 96vw;
+}
+
 .app-navbar-page-view .modal-content {
     min-height: calc(100vh - 84px);
 }
