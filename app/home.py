@@ -64,6 +64,8 @@ def get_selected_primer_sense_pair(selected_primers):
 
     sense = next(primer for primer, pair_info in parsed_primers if pair_info['role'] == 's')
     antisense = next(primer for primer, pair_info in parsed_primers if pair_info['role'] == 'as')
+    pair_technique = f"{sense.technique or ''} {antisense.technique or ''}"
+
     return {
         'gen': parsed_primers[0][1]['gen'],
         'exon': parsed_primers[0][1]['exon'],
@@ -72,7 +74,7 @@ def get_selected_primer_sense_pair(selected_primers):
         'antisense_name': antisense.sequence_name,
         'sense': sense.sequence,
         'antisense': antisense.sequence,
-        'qpcr': '1' if re.search(r'qpcr', f"{sense.sequence_name} {antisense.sequence_name}", re.IGNORECASE) else '0',
+        'qpcr': '1' if re.search(r'qpcr', pair_technique, re.IGNORECASE) else '0',
         'm13': '1' if re.search(r'm13', f"{sense.sequence_name} {antisense.sequence_name}", re.IGNORECASE) else '0'
     }
 
@@ -1067,129 +1069,41 @@ def upadate_bd():
             not_found += f"<br>{key}"
         else:
             found += 1
-            if select_lot.catalog_reference != catalog_reference:
-                select_lot.catalog_reference = catalog_reference
-                dict_log['catalog_reference_new'] = catalog_reference
-                dict_log['catalog_reference_old'] = select_lot.catalog_reference
+            def update_lot_field(field, new_value, log_value=None):
+                old_value = getattr(select_lot, field)
+                if old_value != new_value:
+                    setattr(select_lot, field, new_value)
+                    dict_log[f'{field}_old'] = old_value
+                    dict_log[f'{field}_new'] = log_value if log_value is not None else new_value
 
-            if select_lot.manufacturer != manufacturer:
-                select_lot.manufacturer = manufacturer
-                dict_log['manufacturer_new'] = manufacturer
-                dict_log['manufacturer_old'] = select_lot.manufacturer
-
-            if select_lot.description != description:
-                select_lot.description = description
-                dict_log['description_new'] = description
-                dict_log['description_old'] = select_lot.description
-
-            if select_lot.analytical_technique != analytical_technique:
-                select_lot.analytical_technique = analytical_technique
-                dict_log['analytical_technique_new'] = analytical_technique
-                dict_log['analytical_technique_old'] = select_lot.analytical_technique
-
-            if select_lot.reference_units != reference_units:
-                select_lot.reference_units = reference_units
-                dict_log['reference_units_new'] = reference_units
-                dict_log['reference_units_old'] = select_lot.reference_units
-
-            if select_lot.id_reactive != id_reactive:
-                select_lot.id_reactive = id_reactive
-                dict_log['id_reactive_new'] = id_reactive
-                dict_log['id_reactive_old'] = select_lot.id_reactive
-
-            if select_lot.code_SAP != code_SAP:
-                select_lot.code_SAP = code_SAP
-                dict_log['code_SAP_new'] = code_SAP
-                dict_log['code_SAP_old'] = select_lot.code_SAP
-
-            if select_lot.code_LOG != code_LOG:
-                select_lot.code_LOG = code_LOG
-                dict_log['code_LOG_new'] = code_LOG
-                dict_log['code_LOG_old'] = select_lot.code_LOG
-
-            if select_lot.active != int(active):
-                select_lot.active = int(active)
-                dict_log['active_new'] = active
-                dict_log['active_old'] = select_lot.active
-
-            if select_lot.temp_conservation != temp_conservation:
-                select_lot.temp_conservation = temp_conservation
-                dict_log['temp_conservation_new'] = temp_conservation
-                dict_log['temp_conservation_old'] = select_lot.temp_conservation
-
-            if select_lot.description_subreference != description_subreference:
-                select_lot.description_subreference = description_subreference
-                dict_log['description_subreference_new'] = description_subreference
-                dict_log['description_subreference_old'] = select_lot.description_subreference
-
-            if select_lot.react_or_fungible != react_or_fungible:
-                select_lot.react_or_fungible = react_or_fungible
-                dict_log['react_or_fungible_new'] = react_or_fungible
-                dict_log['react_or_fungible_old'] = select_lot.react_or_fungible
-
-            if select_lot.code_panel != code_panel:
-                select_lot.code_panel = code_panel
-                dict_log['code_panel_new'] = code_panel
-                dict_log['code_panel_old'] = select_lot.code_panel
-                
-            if select_lot.location != location:
-                select_lot.location = location
-                dict_log['location_new'] = location
-                dict_log['location_old'] = select_lot.location
-
-            if select_lot.supplier != supplier:
-                select_lot.supplier = supplier
-                dict_log['supplier_new'] = supplier
-                dict_log['supplier_old'] = select_lot.supplier
-
-            if select_lot.purchase_format != purchase_format:
-                select_lot.purchase_format = purchase_format
-                dict_log['purchase_format_new'] = purchase_format
-                dict_log['purchase_format_old'] = select_lot.purchase_format
-
-            if select_lot.units_format != int(units_format):
-                select_lot.units_format = int(units_format)
-                dict_log['units_format_new'] = units_format
-                dict_log['units_format_old'] = select_lot.units_format
-
-            if select_lot.import_unit_ics != import_unit_ics:
-                select_lot.import_unit_ics = import_unit_ics
-                dict_log['import_unit_ics_new'] = import_unit_ics
-                dict_log['import_unit_ics_old'] = select_lot.import_unit_ics
-
-            if select_lot.import_unit_idibgi != import_unit_idibgi:
-                select_lot.import_unit_idibgi = import_unit_idibgi
-                dict_log['import_unit_idibgi_new'] = import_unit_idibgi
-                dict_log['import_unit_idibgi_old'] = select_lot.import_unit_idibgi
-
-            if select_lot.local_management != local_management:
-                select_lot.local_management = local_management
-                dict_log['local_management_new'] = local_management
-                dict_log['local_management_old'] = select_lot.local_management
-
-            if select_lot.plataform_command_preferent != plataform_command_preferent:
-                select_lot.plataform_command_preferent = plataform_command_preferent
-                dict_log['plataform_command_preferent_new'] = plataform_command_preferent
-                dict_log['plataform_command_preferent_old'] = select_lot.plataform_command_preferent
-
+            update_lot_field('catalog_reference', catalog_reference)
+            update_lot_field('manufacturer', manufacturer)
+            update_lot_field('description', description)
+            update_lot_field('analytical_technique', analytical_technique)
+            update_lot_field('reference_units', reference_units)
+            update_lot_field('id_reactive', id_reactive)
+            update_lot_field('code_SAP', code_SAP)
+            update_lot_field('code_LOG', code_LOG)
+            update_lot_field('active', int(active), active)
+            update_lot_field('temp_conservation', temp_conservation)
+            update_lot_field('description_subreference', description_subreference)
+            update_lot_field('react_or_fungible', react_or_fungible)
+            update_lot_field('code_panel', code_panel)
+            update_lot_field('location', location)
+            update_lot_field('supplier', supplier)
+            update_lot_field('purchase_format', purchase_format)
+            update_lot_field('units_format', int(units_format), units_format)
+            update_lot_field('import_unit_ics', import_unit_ics)
+            update_lot_field('import_unit_idibgi', import_unit_idibgi)
+            update_lot_field('local_management', local_management)
+            update_lot_field('plataform_command_preferent', plataform_command_preferent)
             try:
-                if select_lot.maximum_amount != int(maximum_amount):
-                    select_lot.maximum_amount = int(maximum_amount)
-                    dict_log['maximum_amount_new'] = maximum_amount
-                    dict_log['maximum_amount_old'] = select_lot.maximum_amount
+                update_lot_field('maximum_amount', int(maximum_amount), maximum_amount)
             except:
                 print(select_lot.maximum_amount)
-
-            if select_lot.purchase_format_supplier != purchase_format_supplier:
-                select_lot.purchase_format_supplier = purchase_format_supplier
-                dict_log['purchase_format_supplier_new'] = purchase_format_supplier
-                dict_log['purchase_format_supplier_old'] = select_lot.purchase_format_supplier
-
+            update_lot_field('purchase_format_supplier', purchase_format_supplier)
             try:
-                if select_lot.units_format_supplier != int(units_format_supplier):
-                    select_lot.units_format_supplier = int(units_format_supplier)
-                    dict_log['units_format_supplier_new'] = units_format_supplier
-                    dict_log['units_format_supplier_old'] = select_lot.units_format_supplier
+                update_lot_field('units_format_supplier', int(units_format_supplier), units_format_supplier)
             except:
                 print(select_lot.units_format_supplier)
 
@@ -1214,9 +1128,7 @@ def upadate_bd():
             #     dict_log['observations_old'] = select_lot.observations
 
             if ubicació != '':
-                select_lot.location = ubicació
-                dict_log['location_new'] = location
-                dict_log['location_old'] = select_lot.location
+                update_lot_field('location', ubicació)
 
             select_stock = session1.query(Stock_lots).filter(Stock_lots.id_lot == key).all()
             for stock in select_stock:
@@ -1257,7 +1169,7 @@ def upadate_bd():
                                   'user': session['acronim'],
                                   'info': json.dumps(dict_log),
                                   'id_user': session['idClient'],
-                                  'date': '03-03-2025'}
+                                  'date': instant_date()}
 
                 save_log(dict_save_info)
 

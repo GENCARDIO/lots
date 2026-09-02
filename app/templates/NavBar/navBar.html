@@ -23,6 +23,13 @@
                         <i class="fa-solid fa-money-check-dollar"></i> Preus
                     </a>
                 </li>
+                <li class="nav-item">
+                    <form action="/show_logs_data" id="show_logs">
+                        <a class="app-top-navbar-button" onclick="document.getElementById('show_logs').submit(); return false;">
+                            <i class="fa-solid fa-clipboard-list"></i> Logs
+                        </a>
+                    </form>
+                </li>
             {% endif %}
             {% if session['rol'] == 'admin' and session['user'] == 'Adria' %}
                 <li class="nav-item">
@@ -62,8 +69,12 @@
       <div class="modal-content document-action-modal-content">
         <div class="modal-header">
           <h5 class="modal-title" id="products_lookup_title"><i class="fa-solid fa-boxes-stacked"></i> Productes</h5>
-          <button type="button" class="btn btn-outline-success btn-sm ml-2" onclick="show_new_article()"><i class="fa-solid fa-plus"></i> Nou producte</button>
-          <button type="button" class="close" aria-label="Close" onclick="hideNavbarPageView('info_lots_bd')"><span aria-hidden="true">&times;</span></button>
+          <div class="home-data-actions">
+            <button type="button" class="btn btn-outline-success btn-sm" onclick="show_new_article()"><i class="fa-solid fa-plus"></i> Nou producte</button>
+            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="hideNavbarPageView('info_lots_bd')">
+                <i class="fa-solid fa-arrow-left"></i> Tornar
+            </button>
+          </div>
         </div>
         <div class="modal-body">
             <div class="table-toolbar app-navbar-table-toolbar" id="products_lookup_toolbar">

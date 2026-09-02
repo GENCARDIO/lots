@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    {% include 'Header/header.html' %}
+    <style>
+        body {
+            background: #eef3f8;
+            padding-top: 0;
+        }
+
+        body .error-flash-container:not(:has(.alert)) {
+            display: none !important;
+        }
+
+        .logs-page-shell {
+            bottom: 0;
+            left: 0;
+            overflow: auto;
+            padding: 18px;
+            position: fixed;
+            right: 0;
+            top: 48px;
+        }
+
+        .logs-value-cell {
+            max-width: 340px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        #logs_table_wrapper,
+        #logs_table {
+            visibility: hidden;
+        }
+
+        .logs-table-ready #logs_table_wrapper,
+        .logs-table-ready #logs_table {
+            visibility: visible;
+        }
+
+        #log_detail_modal .logs-detail-dialog {
+            width: 70vw !important;
+            max-width: 1180px !important;
+            min-width: min(760px, calc(100vw - 32px));
+            margin: 32px auto !important;
+        }
+
+        .logs-detail-body {
+            background: #f7fafc;
+            padding: 28px 30px 30px;
+        }
+
+        .logs-detail-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            column-gap: 18px;
+            row-gap: 24px;
+            max-height: calc(100vh - 160px);
+            overflow: auto;
+            padding: 10px 4px 4px;
+        }
+
+        .logs-detail-field {
+            position: relative;
+            min-width: 0;
+        }
+
+        .logs-detail-field.is-wide {
+            grid-column: 1 / -1;
+        }
+
+        .logs-detail-field label {
+            position: absolute;
+            top: -9px;
+            left: 13px;
+            z-index: 2;
+            margin: 0;
+            max-width: calc(100% - 26px);
+            padding: 0 7px;
+            background: #f7fafc;
+            color: #3f5778;
+            font-size: 12px;
+            font-weight: 800;
+            line-height: 1.1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .logs-detail-field input,
+        .logs-detail-field textarea {
+            width: 100%;
+            border: 1px solid #cfdbe8;
+            border-radius: 6px;
+            background: #ffffff;
+            color: #17212f;
+            font-size: 0.9rem;
+            min-height: 46px;
+            padding: 14px 12px 10px;
+        }
+
+        .logs-detail-field textarea {
+            min-height: 190px;
+            resize: vertical;
+            white-space: pre;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+        }
+
+        @media (max-width: 992px) {
+            .logs-detail-grid {
+                grid-template-columns: 1fr;
+            }
+            #log_detail_modal .logs-detail-dialog {
+                width: calc(100vw - 24px) !important;
+                min-width: 0;
+                margin: 12px auto !important;
+            }
+        }
+    </style>
+    <script>
+        function getCatalanDataTableLanguage(overrides = {}) {
+            return Object.assign({
+                search: "Cerca:",
+                lengthMenu: "Mostra _MENU_ registres",
+                info: "Mostrant _START_ a _END_ de _TOTAL_ registres",
+                infoEmpty: "Mostrant 0 a 0 de 0 registres",
+                infoFiltered: "(filtrat de _MAX_ registres totals)",
+                zeroRecords: "No s'han trobat registres",
+                emptyTable: "No hi ha logs",
+                paginate: {
+                    first: "Primer",
+                    last: "Últim",
+                    next: "Següent",
+                    previous: "Anterior"
+                }
+            }, overrides);
+        }
+
+        async function showLogDetail(button) {
+            try {
+                const logId = button.dataset.logId;
+                const response = await fetch(`/log_detail/${logId}`);
+                const data = await response.json();
+                if (!response.ok || !data.success) {
+                    alert(data.message || "No s'ha pogut carregar el detall del log");
+                    return;
+                }
+
+                const container = document.getElementById('log_detail_content');
+                container.innerHTML = '';
+                buildLogDetailFields(container, data.detail);
+                $('#log_detail_modal').modal('show');
+            } catch (error) {
+                alert("No s'ha pogut carregar el detall del log");
+            }
+        }
+
+        function buildLogDetailFields(container, value, prefix = '') {
+            if (value && typeof value === 'object' && !Array.isArray(value)) {
+                Object.entries(value).forEach(([key, itemValue]) => {
+                    const label = prefix ? `${prefix}.${key}` : key;
+                    if (itemValue && typeof itemValue === 'object' && !Array.isArray(itemValue)) {
+                        buildLogDetailFields(container, itemValue, label);
+                    } else {
+                        appendLogDetailField(container, label, itemValue);
+                    }
+                });
+                return;
+            }
+
+            appendLogDetailField(container, prefix || 'info', value);
+        }
+
+        function appendLogDetailField(container, label, value) {
+            const field = document.createElement('div');
+            const isObject = value && typeof value === 'object';
+            const displayValue = isObject ? JSON.stringify(value, null, 2) : String(value ?? '');
+            const isWideInfoValue = ['info.old_info', 'info.new_info'].includes(label);
+            field.className = `logs-detail-field${isWideInfoValue || isObject || displayValue.length > 140 ? ' is-wide' : ''}`;
+
+            const labelElement = document.createElement('label');
+            labelElement.textContent = label;
+            field.appendChild(labelElement);
+
+            if (isObject || displayValue.includes('\n') || displayValue.length > 140) {
+                const textarea = document.createElement('textarea');
+                textarea.readOnly = true;
+                textarea.value = displayValue;
+                field.appendChild(textarea);
+            } else {
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.readOnly = true;
+                input.value = displayValue;
+                field.appendChild(input);
+            }
+
+            container.appendChild(field);
+        }
+    </script>
+</head>
+<body>
+    {% include 'NavBar/navBar.html' %}
+    {% include 'ErrorFlash/errorFlash.html' %}
+
+    <main class="logs-page-shell">
+        <section class="home-data-panel home-content-panel is-active">
+            <div class="home-data-header">
+                <h2>Logs</h2>
+                <div class="home-data-actions">
+                    <a class="btn btn-outline-secondary btn-sm" href="/">
+                        <i class="fa-solid fa-arrow-left"></i> Tornar
+                    </a>
+                </div>
+            </div>
+
+            <div class="table-toolbar" id="logs-table-toolbar">
+                <label class="toolbar-field toolbar-field-show">
+                    <span>Mostra</span>
+                    <select id="logs_length_control">
+                        <option value="10" selected>10</option>
+                        <option value="25">25</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                    </select>
+                </label>
+                <label class="toolbar-field toolbar-field-search">
+                    <span>Cercar</span>
+                    <input type="search" id="logs_global_search" placeholder="Cerca en tota la taula">
+                </label>
+                <button type="button" class="toolbar-clear-button" id="logs_clear_filters">
+                    <i class="fa-solid fa-eraser"></i> Netejar filtres
+                </button>
+            </div>
+
+            <div class="home-data-body table-wrapper">
+                <table id="logs_table" class="lab-data-table" style="width: 100%;">
+                    <thead>
+                        <tr>
+                            <th>Detall</th>
+                            <th><div class="header-filter"><span class="header-title">Tipus <span class="sort-icon">↕</span></span><input type="text" data-column="1"></div></th>
+                            <th><div class="header-filter"><span class="header-title">Camp <span class="sort-icon">↕</span></span><input type="text" data-column="2"></div></th>
+                            <th><div class="header-filter"><span class="header-title">Valor antic <span class="sort-icon">↕</span></span><input type="text" data-column="3"></div></th>
+                            <th><div class="header-filter"><span class="header-title">Valor nou <span class="sort-icon">↕</span></span><input type="text" data-column="4"></div></th>
+                            <th><div class="header-filter"><span class="header-title">Usuari <span class="sort-icon">↕</span></span><input type="text" data-column="5"></div></th>
+                            <th><div class="header-filter"><span class="header-title">Data <span class="sort-icon">↕</span></span><input type="text" data-column="6"></div></th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <div class="modal fade document-action-modal" id="log_detail_modal" tabindex="-1" role="dialog" aria-labelledby="log_detail_title" aria-hidden="true">
+        <div class="modal-dialog modal-xl logs-detail-dialog" role="document">
+            <div class="modal-content document-action-modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="log_detail_title"><i class="fa-solid fa-clipboard-list"></i> Detall del log</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="$('#log_detail_modal').modal('hide')">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body logs-detail-body">
+                    <div class="logs-detail-grid" id="log_detail_content"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        $(document).ready(function() {
+            const table = $('#logs_table').DataTable({
+                orderCellsTop: true,
+                fixedHeader: true,
+                autoWidth: false,
+                scrollX: true,
+                scrollY: 'calc(100vh - 330px)',
+                scrollCollapse: true,
+                pageLength: 10,
+                dom: 'rtip',
+                processing: true,
+                serverSide: true,
+                ajax: '/logs_data',
+                order: [[6, 'desc']],
+                columnDefs: [
+                    { targets: 0, orderable: false, width: '78px' }
+                ],
+                language: getCatalanDataTableLanguage()
+            });
+            document.body.classList.add('logs-table-ready');
+
+            $('#logs_global_search').on('keyup change clear', function() {
+                table.search(this.value).draw();
+            });
+
+            $('#logs_length_control').on('change', function() {
+                table.page.len(this.value).draw();
+            });
+
+            $('#logs_clear_filters').on('click', function() {
+                $('#logs_global_search').val('');
+                $('#logs_table .header-filter input').val('');
+                table.search('');
+                table.columns().search('');
+                table.draw();
+            });
+
+            $('#logs_table').on('keyup change clear', '.header-filter input', function() {
+                table.column($(this).data('column')).search(this.value).draw();
+            });
+
+            $('#logs_table').on('click', '.header-filter', function(event) {
+                if ($(event.target).is('input')) {
+                    return;
+                }
+
+                const columnIndex = Number($(this).find('input').data('column'));
+                const currentOrder = table.order();
+                const currentDirection = currentOrder.length && currentOrder[0][0] === columnIndex ? currentOrder[0][1] : 'desc';
+                const nextDirection = currentDirection === 'asc' ? 'desc' : 'asc';
+                table.order([columnIndex, nextDirection]).draw();
+                $('#logs_table .sort-icon').text('↕').removeClass('is-active');
+                $(this).find('.sort-icon').text(nextDirection === 'asc' ? '↑' : '↓').addClass('is-active');
+            });
+        });
+    </script>
+
+    <script src="/static/js/bootstrap.js"></script>
+</body>
+</html>

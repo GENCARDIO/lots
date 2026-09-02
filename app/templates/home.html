@@ -322,6 +322,7 @@
                         document.getElementById('incidence_number').value = ''
                         updateCommandRequirementByIncidence();
                         document.getElementById('price_coriells').value = 0
+                        document.getElementById('price_oligos').value = 0
                         document.getElementById('number_total_lot_discount').value = 0
                         document.getElementById('subreference_active').value = 'False'
                         document.getElementById('file_state_product').value = ''
@@ -369,6 +370,7 @@
                         if (lower_description_coriells.includes("oligos")) {
                             document.getElementById('oligos_div1').style.display = "block";
                             document.getElementById('oligos_div2').style.display = "block";
+                            document.getElementById('price_oligos').value = list_info_lots[0]['import_unit_ics'] || 0;
                         }
 
                         // Mirem tenen subreferencies i si ho son fem visible el camp
@@ -1545,6 +1547,7 @@
         const observations  = document.getElementById('observations_fix').value
 
         const pb_oligos  = document.getElementById('pb_oligos').value
+        const price_oligos  = document.getElementById('price_oligos').value
         const price_coriells  = document.getElementById('price_coriells').value
         const number_total_lot_discount  = document.getElementById('number_total_lot_discount').value
         const subreference_active  = document.getElementById('subreference_active').value
@@ -1712,6 +1715,7 @@
         form_data.append('unit_total_command', unit_total_command)
         form_data.append('id_substract_command', id_substract_command)
         form_data.append('pb_oligos', pb_oligos)
+        form_data.append('price_oligos', price_oligos)
         form_data.append('incidence_number', incidence_number)
         form_data.append('price_coriells', price_coriells)
         form_data.append('number_total_lot_discount', number_total_lot_discount)
@@ -5118,6 +5122,8 @@
                     </div>
                     <div class="col-lg-6 col-md-6 col-sm-12" style="display: none;" id="oligos_div2">
                         <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1" style="width: 145px;"><b>Preu oligos:</b></span>
+                            <input type="number" class="form-control" id='price_oligos' aria-label="TTN" aria-describedby="basic-addon1" min="0" step="0.01">
                         </div>
                     </div>
 
@@ -6152,7 +6158,12 @@
                     <div class="col-lg-6 col-md-12 col-sm-12">
                         <div class="input-group mb-3">
                             <span class="input-group-text" id="basic-addon1" style="width: 155px;"><b>Tecnica *</b></span>
-                            <input type="text" class="form-control" id="technique_bp" aria-label="TTN">
+                            <input type="text" class="form-control" id="technique_bp" list="datalist-technique" aria-label="TTN">
+                            <datalist id="datalist-technique">
+                                <option value="qPCR">qPCR</option>
+                                <option value="Sanger">Sanger</option>
+                                <option value="Tagman">Tagman</option>
+                            </datalist>
                         </div>
                     </div>
                     <div class="col-lg-12 col-md-12 col-sm-12">
