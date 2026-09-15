@@ -1444,6 +1444,7 @@
                                 '</button>';
             flashContainer.appendChild(newFlash);
             flashContainer.style.paddingTop = "20px";
+
         }
 
         xhr.send(form_data)
@@ -1777,6 +1778,7 @@
                                 '</button>';
             flashContainer.appendChild(newFlash);
             flashContainer.style.paddingTop = "20px";
+
         }
 
         xhr.send(form_data)
@@ -2311,7 +2313,10 @@
         form_data.append('new_cost_center', new_cost_center)
         form_data.append('observations_command', observations_command)
 
-        showHomePanel('home-command-table-panel');
+        const isPrimerPurchaseRequest = Boolean(window.pendingPrimerPurchase);
+        if (!isPrimerPurchaseRequest) {
+            showHomePanel('home-command-table-panel');
+        }
 
         // Creeem l'objecte per l'ajax
         var xhr = new XMLHttpRequest();
@@ -2330,13 +2335,31 @@
                         message = `Error, no s'ha pogut inserir el lot a la bd. <button type="button" class="btn btn-link btn-sm" onclick="open_modal('add_lot_info')">lot</button>`}}
                 else if (response === 'True'){
                     message = "La comanda s'ha introduït correctament."
-                    alert_type = 'success'} 
+                    alert_type = 'success'
+
+                    if (window.pendingPrimerPurchase) {
+                        const pendingPurchase = window.pendingPrimerPurchase;
+                        window.pendingPrimerPurchase = null;
+                        showHomePanel('home-primer-table-panel');
+                        action_primer(
+                            pendingPurchase.primerIds,
+                            'tramited',
+                            false,
+                            true,
+                            pendingPurchase.commandReference
+                        );
+                    }
+                }
                 else{
                     message = `Error inesperat.`
                     alert_type = 'danger'}}
             else {
                 message = `Error, No s'ha pogut realitzar l'operació.`
                 alert_type = 'danger' }
+
+            if (response === 'True' && isPrimerPurchaseRequest) {
+                return;
+            }
 
             var flashContainer = document.querySelector(".d-flex.justify-content-center .row");
             // Eliminar la alerta anterior, si existe
@@ -2352,6 +2375,15 @@
                                 '</button>';
             flashContainer.appendChild(newFlash);
             flashContainer.style.paddingTop = "20px";
+
+            if (response === 'True' && !isPrimerPurchaseRequest) {
+                setTimeout(() => {
+                    newFlash.remove();
+                    if (!flashContainer.children.length) {
+                        flashContainer.style.paddingTop = '';
+                    }
+                }, 4000);
+            }
         }
 
         xhr.send(form_data)
@@ -3779,40 +3811,171 @@
         form.remove();
     }
 
+    function showManualPrimerInsertionModal(id_primer, action, reason, selectedCount) {
+        const message = document.getElementById('manual_primer_insertion_message');
+        if (reason === 'selection_count') {
+            message.textContent = selectedCount === 1
+                ? "S'ha seleccionat un sol primer. Amb aquesta selecció no es pot fer la inserció automàtica a Primers."
+                : `S'han seleccionat ${selectedCount} primers. Amb aquesta selecció no es pot fer la inserció automàtica a Primers.`;
+        } else {
+            message.textContent = "Els dos primers seleccionats no compleixen els requisits per iniciar la inserció automàtica a Primers.";
+        }
 
-    async function action_primer(id_primer, action) {
+        const continueButton = document.getElementById('continue_manual_primer_reception');
+        continueButton.onclick = () => {
+            $('#modal_manual_primer_insertion').modal('hide');
+            action_primer(id_primer, action, true);
+        };
+        $('#modal_manual_primer_insertion').modal('show');
+    }
+
+    function closeManualPrimerInsertionModal() {
+        $('#modal_manual_primer_insertion').modal('hide');
+    }
+
+    async function preparePrimerPurchaseCommand(primerIds) {
+        const requestData = new FormData();
+        requestData.append('id_primer', primerIds);
+
+        try {
+            const preparationResponse = await fetch('/prepare_primer_purchase_request', {
+                method: 'POST',
+                body: requestData
+            });
+            const preparation = await preparationResponse.json();
+            if (!preparationResponse.ok || preparation.status !== 'success') {
+                showModalMessage(preparation.message || "No s'ha pogut preparar la petició de compra.", 'danger', 'modal_message_container');
+                return;
+            }
+
+            const productData = new FormData();
+            productData.append('code_search', preparation.catalog_reference);
+            productData.append('code_panel', '');
+            const productResponse = await fetch('/search_add_command', {
+                method: 'POST',
+                body: productData
+            });
+            const productResponseText = await productResponse.text();
+            const productParts = productResponseText.split('_//_');
+            if (!productResponse.ok || productParts[0] !== 'True' || !productParts[1]) {
+                showModalMessage("No s'ha pogut carregar l'article oligos_ref per crear la comanda.", 'danger', 'modal_message_container');
+                return;
+            }
+
+            const oligos = JSON.parse(productParts[1]);
+            document.getElementById('catalog_reference_command').value = oligos.catalog_reference || '';
+            document.getElementById('code_sap_command').value = oligos.code_SAP || '';
+            document.getElementById('code_loc_command').value = oligos.code_LOG || '';
+            document.getElementById('description_command').value = oligos.description || '';
+            document.getElementById('key_lot_command').value = oligos.key || '';
+            document.getElementById('cost_center').value = '--';
+            document.getElementById('cost_center_name').value = '';
+            document.getElementById('div_ceco_manual').style.display = 'none';
+            document.getElementById('info_purchase_format').value = `Unitats màximes -> ${oligos.maximum_amount || ''} ${oligos.purchase_format || ''}`;
+
+            const unitsInput = document.getElementById('units_command');
+            unitsInput.removeAttribute('readonly');
+            unitsInput.removeAttribute('min');
+            unitsInput.removeAttribute('max');
+            unitsInput.value = preparation.units;
+            document.getElementById('observations_command').value = preparation.observations;
+
+            window.pendingPrimerPurchase = {
+                primerIds,
+                commandReference: preparation.observations
+            };
+            showHomePanel('home-command-form-panel');
+        } catch (error) {
+            console.error('Error preparant la petició de compra de primers:', error);
+            showModalMessage("No s'ha pogut preparar la petició de compra.", 'danger', 'modal_message_container');
+        }
+    }
+
+    function showPrimerPurchaseConfirmation(primerIds) {
+        const continueButton = document.getElementById('continue_primer_purchase_request');
+        continueButton.onclick = () => {
+            $('#modal_primer_purchase_request').modal('hide');
+            preparePrimerPurchaseCommand(primerIds);
+        };
+        $('#modal_primer_purchase_request').modal('show');
+    }
+
+    function returnFromCommandForm() {
+        window.pendingPrimerPurchase = null;
+        showHomePanel('home-command-table-panel');
+    }
+
+
+    const selectedPrimerIds = new Set();
+
+    function syncPrimerSelection(table = $('#table_primers').DataTable()) {
+        if (!table || !table.rows) {
+            return;
+        }
+
+        const visibleCheckboxes = table.rows({ page: 'current' }).nodes().to$()
+            .find('input[name="select_multiple"]');
+        visibleCheckboxes.each(function () {
+            this.checked = selectedPrimerIds.has(String(this.value));
+        });
+
+        const selectAllCheckbox = document.getElementById('all_checkbox');
+        if (selectAllCheckbox) {
+            selectAllCheckbox.checked = visibleCheckboxes.length > 0
+                && visibleCheckboxes.toArray().every(checkbox => checkbox.checked);
+        }
+    }
+
+    function clearPrimerSelection() {
+        selectedPrimerIds.clear();
+        syncPrimerSelection();
+    }
+
+    $(document).on('change', '#table_primers input[name="select_multiple"]', function () {
+        if (this.checked) {
+            selectedPrimerIds.add(String(this.value));
+        } else {
+            selectedPrimerIds.delete(String(this.value));
+        }
+        syncPrimerSelection();
+    });
+
+    async function action_primer(id_primer, action, manualReceptionConfirmed = false, skipSelectionCheck = false, primerCommandId = '') {
         const form_data = new FormData();
 
-        const checked = document.querySelectorAll('.form-check-input:checked');
+        const values = Array.from(selectedPrimerIds);
 
-        if (checked.length !== 0) {
-            // agafar els valors
-            const values = Array.from(checked).map(cb => cb.value);
-
+        if (values.length !== 0) {
             // convertir a string separat per ;
             const ids_primers_cb = values.join(';');
 
             // 🔍 comprovar si id_primer està dins dels seleccionats
-            if (!values.includes(String(id_primer))) {
+            if (!manualReceptionConfirmed && !skipSelectionCheck && !values.includes(String(id_primer))) {
                 return; // no fem res
             }
 
-            if (action === 'buy' && values.length === 1) {
-                const confirmSinglePrimer = confirm("Estàs segur de tramitar aquest primer sol? No es farà la inserció automàtica d'aquesta manera.");
-                if (!confirmSinglePrimer) {
-                    return;
-                }
-            }
-
             // 🔁 substituir id_primer pel conjunt seleccionat
-            id_primer = ids_primers_cb;
-        } else {
+            if (!skipSelectionCheck) {
+                id_primer = ids_primers_cb;
+            }
+        } else if (!skipSelectionCheck) {
             showModalMessage("S'ha de seleccionar com a mínim un primer", 'warning', 'modal_message_container');
             return
         }
 
+        if (action === 'tramited' && !skipSelectionCheck) {
+            showPrimerPurchaseConfirmation(id_primer);
+            return;
+        }
+
         form_data.append('id_primer', id_primer);
         form_data.append('action', action);
+        if (manualReceptionConfirmed) {
+            form_data.append('manual_reception_confirmed', '1');
+        }
+        if (primerCommandId) {
+            form_data.append('primer_command_id', primerCommandId);
+        }
 
         try {
             const response = await fetch('/action_primer', {
@@ -3827,6 +3990,16 @@
                 return;
             }
 
+            if (data.status === 'manual_insertion_confirmation_required') {
+                showManualPrimerInsertionModal(
+                    id_primer,
+                    action,
+                    data.manual_insertion_reason,
+                    data.selected_count
+                );
+                return;
+            }
+
             if (data.status === 'success') {
                 if (action === 'buy' && Array.isArray(data.isoformes) && data.isoformes.length > 0) {
                     openExternalPrimerVerify(data.external_primer_verify);
@@ -3836,6 +4009,7 @@
                 const table = $('#table_primers').DataTable();
 
                 list_ids.forEach(id_primer_change => {
+                    selectedPrimerIds.delete(String(id_primer_change));
                     const row = document.getElementById(id_primer_change);
                     if (!row) return;
 
@@ -3877,9 +4051,13 @@
                         table.row(row).remove().draw(false);
                     }
                 });
+                syncPrimerSelection(table);
 
                 if (action === 'tramited'){
-                    showModalMessage("El primer s'ha tramitat correctament", data.status, 'modal_message_container');
+                    const successMessage = primerCommandId
+                        ? "La comanda i els primers s'han tramitat correctament."
+                        : "El primer s'ha tramitat correctament";
+                    showModalMessage(successMessage, data.status, 'modal_message_container');
                 } else if (action === 'buy' && data.deferred) {
                     showModalMessage("S'ha obert Primers. La recepció es confirmarà quan Primers acabi correctament.", data.status, 'modal_message_container');
                 } else if (action === 'buy') {
@@ -3901,14 +4079,20 @@
 
 
     function select_all_checkbox(checkbox){
+        const table = $('#table_primers').DataTable();
+        const visibleCheckboxes = table.rows({ page: 'current' }).nodes().to$()
+            .find('input[name="select_multiple"]');
+
         if (!checkbox.checked) {
-            const check_boxes = document.querySelectorAll('input[name="select_multiple"]:checked');
-            check_boxes.forEach(cb => cb.checked = false);
+            visibleCheckboxes.each(function () {
+                selectedPrimerIds.delete(String(this.value));
+            });
         } else {
-            const unchecked_boxes = document.querySelectorAll('input[name="select_multiple"]:not(:checked)');
-            unchecked_boxes.forEach(cb => cb.checked = true);
-            const check_boxes = document.querySelectorAll('input[name="select_multiple"]:checked');
+            visibleCheckboxes.each(function () {
+                selectedPrimerIds.add(String(this.value));
+            });
         }
+        syncPrimerSelection(table);
     }
 
 
@@ -4161,7 +4345,7 @@
             <section class="home-data-panel home-content-panel" id="home-command-form-panel">
                 <div class="home-data-header">
                     <h2>Afegeix comanda</h2>
-                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="showHomePanel('home-command-table-panel')">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="returnFromCommandForm()">
                         <i class="fa-solid fa-arrow-left"></i> Tornar
                     </button>
                 </div>
@@ -4518,8 +4702,11 @@
                             <button type="button" class="btn btn-link btn-sm ml-2" onclick="showHomePanel('home-primer-form-panel')">
                                 <i class="fa-solid fa-plus"></i> Nou primer
                             </button>
+                        {% else %}
+                            <small class="ml-2 text-danger">Diagnòstic: idClient={{ session.get('idClient') }} ({{ session.get('idClient').__class__.__name__ }})</small>
                         {% endif %}
                     </div>
+                    <div id="home-primer-header-message" class="primer-header-message"></div>
                     <div class="home-data-actions">
                         <button type="button" class="btn btn-outline-success btn-sm" onclick="prepare_buy_primer()">
                             <i class="fa-solid fa-file-arrow-down"></i> Seleccionats
@@ -4854,6 +5041,11 @@
                 <div class="home-data-body home-form-grid" id="home-primer-form-body"></div>
             </section>
         </main>
+    </div>
+
+    <div class="primer-initial-loading" id="primer_initial_loading" hidden>
+        <span class="history-loading-spinner" aria-hidden="true"></span>
+        <span>Carregant primers...</span>
     </div>
 
 
@@ -5833,6 +6025,8 @@
                 {% set lista = [1, 5, 9, 12, 13, 16, 18, 23, 24] %}
                 {% if session['idClient'] in lista%}
                     <button type="button" class="btn btn-link btn-sm" onclick="open_modal('modal_buy_primer')" style="margin-left: 10px; margin-top: 2px;"><i class="fa-solid fa-plus"></i> Nou primer</button>
+                {% else %}
+                    <small class="ml-2 text-danger">Diagnòstic: idClient={{ session.get('idClient') }} ({{ session.get('idClient').__class__.__name__ }})</small>
                 {% endif %}
                 <div class="d-flex ml-auto">
                     <button type="button" class="btn btn-outline-success btn-sm" onclick="prepare_buy_primer()" style="margin-right: 10px;"><i class="fa-solid fa-file-arrow-down"></i> Seleccionats</button>
@@ -5875,6 +6069,49 @@
                 </div>
             </div>
           </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modal_manual_primer_insertion" tabindex="-1" role="dialog" aria-labelledby="manualPrimerInsertionTitle" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="manualPrimerInsertionTitle">Inserció automàtica a Primers no disponible</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Tancar" onclick="closeManualPrimerInsertionModal()"><span aria-hidden="true">&times;</span></button>
+                </div>
+                <div class="modal-body">
+                    <p id="manual_primer_insertion_message"></p>
+                    <p class="mb-2">Per poder fer la inserció automàtica, cal seleccionar exactament dos primers:</p>
+                    <ul>
+                        <li>del mateix gen i exó;</li>
+                        <li>amb les orientacions <em>sense</em> i <em>antisense</em>;</li>
+                        <li>amb el nom en el format <code>GEN_EXÓs</code> i <code>GEN_EXÓas</code>, amb <code>s</code> o <code>as</code> just després de l'exó.</li>
+                    </ul>
+                    <p class="mb-0">Si premeu <strong>Següent</strong>, es recepcionaran els primers a Lots, però la inserció a Primers s'haurà de fer manualment.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-dismiss="modal" onclick="closeManualPrimerInsertionModal()">Cancel·lar</button>
+                    <button type="button" class="btn btn-primary" id="continue_manual_primer_reception">Següent</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modal_primer_purchase_request" tabindex="-1" role="dialog" aria-labelledby="primerPurchaseRequestTitle" aria-hidden="true">
+        <div class="modal-dialog" role="document" style="max-width: 640px;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="primerPurchaseRequestTitle">Petició de compra de primers</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Tancar" onclick="$('#modal_primer_purchase_request').modal('hide')"><span aria-hidden="true">&times;</span></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-0">Voleu crear la petició de compra dels primers seleccionats?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-dismiss="modal" onclick="$('#modal_primer_purchase_request').modal('hide')">Cancel·lar</button>
+                    <button type="button" class="btn btn-primary" id="continue_primer_purchase_request">Continuar</button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -5945,9 +6182,9 @@
                             <span class="input-group-text" id="basic-addon1" style="width: 150px;"><b>Purificació *</b></span>
                             <input type="text" class="form-control" id="purification_bp" list="datalist-purification" aria-label="TTN">
                             <datalist id="datalist-purification">
-                                <option value="Desalted">Desalted</option>
+                                <option value="Desalado">Desalado</option>
                                 <option value="HPLC">HPLC</option>
-                                <option value="OPC">OPC</option>
+                                <option value="Cartucho">Cartucho</option>
                             </datalist>
                         </div>
                     </div>
@@ -5956,10 +6193,10 @@
                             <span class="input-group-text" id="basic-addon1" style="width: 155px;" name="span_units_command"><b>Escala sintesis *</b></span>
                             <input type="text" class="form-control" id="synthesis_scale_bp" aria-label="TTN" list="datalist-synthesis">
                             <datalist id="datalist-synthesis">
-                                <option value="0,02 µmol">0,02 µmol</option>
-                                <option value="0,04 µmol">0,04 µmol</option>
-                                <option value="0,2 µmol">0,2 µmol</option>
-                                <option value="1 µmol">1 µmol</option>
+                                <option value="20nm">20nm</option>
+                                <option value="40nm">40nm</option>
+                                <option value="200nm">200nm</option>
+                                <option value="1um">1um</option>
                             </datalist>
                         </div>
                     </div>
@@ -6008,12 +6245,12 @@
                             <span class="input-group-text" id="basic-addon1" style="width: 155px;"><b>Condició compra *</b></span>
                             <input type="text" class="form-control" id="shipping_conditions_bp" aria-label="TTN" list="datalist-shipping">
                             <datalist id="datalist-shipping">
-                                <option value="dry">dry</option>
-                                <option value="diss. 50 µM">diss. 50 µM</option>
-                                <option value="diss. 100 µM">diss. 100 µM</option>
-                                <option value="diss. 200 µM">diss. 200 µM</option>
-                                <option value="diss. 300 µM">diss. 300 µM</option>
-                                <option value="diss. 400 µM">diss. 400 µM</option>
+                                <option value="Dry">Dry</option>
+                                <option value="50uM">50uM</option>
+                                <option value="100uM">100uM</option>
+                                <option value="200uM">200uM</option>
+                                <option value="300uM">300uM</option>
+                                <option value="400uM">400uM</option>
                             </datalist>
                         </div>
                     </div>
@@ -6243,6 +6480,7 @@
 
     async function openCommandPanel(acronim, rol) {
         markSidebarActive('command-register');
+        window.pendingPrimerPurchase = null;
         showHomePanel('home-command-table-panel');
 
         const res = await fetch("/info_description_lots");
@@ -7122,13 +7360,37 @@
         });
     }
 
+    let primerPanelLoadedOnce = false;
+
     async function openPrimerPanel() {
         markSidebarActive('primers');
         showHomePanel('home-primer-table-panel');
+        const primerPanel = document.getElementById('home-primer-table-panel');
+        const hideUntilReady = !primerPanelLoadedOnce;
+        if (hideUntilReady && primerPanel) {
+            primerPanel.style.visibility = 'hidden';
+            setPrimerInitialLoading(true);
+        }
         clearModalMessage('modal_message_container');
+        clearPrimerSelection();
 
-        const res = await fetch("/info_management_primers");
-        const rows = await res.json();
+        let rows;
+        try {
+            const res = await fetch("/info_management_primers");
+            if (!res.ok) {
+                throw new Error('No s\'han pogut carregar els primers.');
+            }
+            rows = await res.json();
+        } catch (error) {
+            console.error('Error carregant primers:', error);
+            if (primerPanel) {
+                primerPanel.style.visibility = '';
+            }
+            setPrimerInitialLoading(false);
+            showModalMessage("No s'han pogut carregar els primers.", 'danger', 'modal_message_container');
+            return;
+        }
+
         const table = $('#table_primers').DataTable();
         table.clear();
         table.columns().visible(true);
@@ -7215,7 +7477,19 @@
             table.columns.adjust().draw(false);
             updatePrimerSortIcons(table);
             guardPrimerHeaderFilters();
+            if (hideUntilReady && primerPanel) {
+                primerPanel.style.visibility = '';
+                primerPanelLoadedOnce = true;
+                setPrimerInitialLoading(false);
+            }
         }, 60);
+    }
+
+    function setPrimerInitialLoading(isLoading) {
+        const indicator = document.getElementById('primer_initial_loading');
+        if (indicator) {
+            indicator.hidden = !isLoading;
+        }
     }
 
     function updateCommandSortIcons(table) {
@@ -7329,7 +7603,7 @@
 
     moveElementToPanel('#table_commands', 'home-command-table-body');
     moveElementToPanel('#add_command .modal-body > .row', 'home-command-form-body');
-    moveElementToPanel('#modal_message_container', 'home-primer-table-body');
+    moveElementToPanel('#modal_message_container', 'home-primer-header-message');
     moveElementToPanel('#table_primers', 'home-primer-table-body');
     moveElementToPanel('#modal_message_container_add_primer', 'home-primer-form-body');
     moveElementToPanel('#modal_buy_primer .modal-body > .row', 'home-primer-form-body');
@@ -7556,6 +7830,7 @@
         table.on('draw.dt column-visibility.dt', function () {
             updatePrimerSortIcons(table);
             guardPrimerHeaderFilters();
+            syncPrimerSelection(table);
         });
 
         updatePrimerSortIcons(table);
