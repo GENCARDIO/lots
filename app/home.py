@@ -1,7 +1,7 @@
 from flask import render_template, request, redirect, session, flash, jsonify, send_file, after_this_request
 from app import app
 from app.utils import requires_auth, list_desciption_lots, list_cost_center, to_dict, save_log, instant_date, send_mail_generic
-from app.models import IP_HOME, session1, Lots, Stock_lots, Lot_consumptions, Buy_primers
+from app.models import IP_HOME, session1, Lots, Stock_lots, Lot_consumptions, Buy_primers, Commands
 import jwt
 import json
 import re
@@ -20,7 +20,7 @@ import zipfile
 
 
 def parse_primer_gene_exon(sequence_name):
-    match = re.match(r'^\s*([^_]+)_([0-9]{1,2}\s*-\s*[0-9]{1,2}|[0-9]{1,2}|[XY])', sequence_name or '', re.IGNORECASE)
+    match = re.match(r'^\s*([^_]+)_([0-9]{1,3}\s*-\s*[0-9]{1,3}|[0-9]{1,3}|[XY])', sequence_name or '', re.IGNORECASE)
     if not match:
         raise ValueError(f"No s'ha pogut obtenir el gen i l'exó del nom del primer: {sequence_name}")
     return match.group(1).strip(), match.group(2).strip().upper()
@@ -28,7 +28,7 @@ def parse_primer_gene_exon(sequence_name):
 
 def parse_primer_pair_info(sequence_name):
     match = re.match(
-        r'^\s*([^_]+)_([0-9]{1,2}\s*-\s*[0-9]{1,2}|[0-9]{1,2}|[XY])(as|s)(?=$|[^A-Za-z])',
+        r'^\s*([^_]+)_([0-9]{1,3}\s*-\s*[0-9]{1,3}|[0-9]{1,3}|[XY])(as|s)(?=$|[^A-Za-z])',
         sequence_name or '',
         re.IGNORECASE
     )
@@ -142,6 +142,25 @@ def receive_primers_by_ids(list_id_primer, received_by):
         'text_email': text_email,
         'text_header_email': text_header_email
     }
+
+
+def get_next_oligos_order_reference():
+    """Return the next internal order reference used for the oligos article."""
+    oligos_commands = (
+        session1.query(Commands.observations)
+        .join(Lots, Commands.id_lot == Lots.key)
+        .filter(func.lower(Lots.catalog_reference) == 'oligos_ref')
+        .order_by(Commands.id.desc())
+        .all()
+    )
+
+    for (observations,) in oligos_commands:
+        matches = re.findall(r'(?<!\w)([A-Za-z0-9]+)-(\d+)(?!\w)', observations or '')
+        if matches:
+            prefix, sequence = matches[-1]
+            return f'{prefix}-{int(sequence) + 1}'
+
+    return '4430954989-1'
 
 
 # Pagina incial i visualització
@@ -640,7 +659,6 @@ def info_description_lots():
 @app.route("/info_management_primers")
 @requires_auth
 def info_management_primers():
-    lots = list_desciption_lots()
     primers = session1.query(Buy_primers).filter(Buy_primers.received == 0).filter(Buy_primers.delete == 0).all()
 
     data = [
@@ -756,25 +774,15 @@ def add_buy_primer():
 def action_primer():
     id_primer = request.form.get('id_primer', '')
     action = request.form.get('action', '')
+    manual_reception_confirmed = request.form.get('manual_reception_confirmed') == '1'
+    primer_command_id = request.form.get('primer_command_id', '').strip()
 
-    list_id_primer = id_primer.split(';')
+    list_id_primer = [primer_id for primer_id in id_primer.split(';') if primer_id]
     if action == 'tramited':
         text_email = '<p style="margin-bottom:10px;">Els següents primers han estat comprats :</p>'
         text_header_email = 'Compra de primers'
 
-        select_command = session1.query(Buy_primers).filter(Buy_primers.command_id.like('4430954989-%')).all()
-        max_num = 0
-        for row in select_command:
-            if row.command_id:
-                try:
-                    num = int(row.command_id.split('-')[-1])
-                    if num > max_num:
-                        max_num = num
-                except:
-                    continue
-
-        next_num = max_num + 1
-        new_command_id = f"4430954989-{next_num}"
+        new_command_id = primer_command_id or get_next_oligos_order_reference()
     elif action == 'buy':
         text_email = '<p style="margin-bottom:10px;">Hem rebut els seguents primers :</p>'
         text_header_email = 'Recepcio de primers'
@@ -798,7 +806,20 @@ def action_primer():
                     selected_primers.append(select_primer_pair)
 
             primer_pair = get_selected_primer_sense_pair(selected_primers)
-            if primer_pair:
+            automatic_insertion_available = (
+                len(list_id_primer) == 2
+                and len(selected_primers) == 2
+                and primer_pair is not None
+            )
+            if not automatic_insertion_available and not manual_reception_confirmed:
+                return jsonify({
+                    "status": "manual_insertion_confirmation_required",
+                    "manual_insertion_reason": "invalid_pair" if len(list_id_primer) == 2 else "selection_count",
+                    "selected_count": len(list_id_primer),
+                    "message": "Els primers seleccionats no compleixen els requisits per a la inserció automàtica a Primers."
+                }), 200
+
+            if automatic_insertion_available:
                 isoforma = ''
                 isoforma_error = ''
                 try:
@@ -885,6 +906,24 @@ def action_primer():
             "id": 'none',
             "not_found": 'none'
         }), 500
+
+
+@app.route('/prepare_primer_purchase_request', methods=['POST'])
+@requires_auth
+def prepare_primer_purchase_request():
+    primer_ids = [primer_id for primer_id in request.form.get('id_primer', '').split(';') if primer_id]
+    if not primer_ids:
+        return jsonify({
+            'status': 'error',
+            'message': "No s'ha seleccionat cap primer per tramitar."
+        }), 400
+
+    return jsonify({
+        'status': 'success',
+        'units': len(primer_ids),
+        'observations': get_next_oligos_order_reference(),
+        'catalog_reference': 'oligos_ref'
+    }), 200
 
 
 @app.route('/external/receive-primers', methods=['POST'])
