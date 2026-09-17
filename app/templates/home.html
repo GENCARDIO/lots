@@ -3907,6 +3907,81 @@
 
 
     const selectedPrimerIds = new Set();
+    let pendingExternalPrimerIds = new Set();
+    let pendingExternalPrimerPoll = null;
+    let pendingExternalPrimerPollInFlight = false;
+
+    function canPollPendingExternalPrimers() {
+        const primerPanel = document.getElementById('home-primer-table-panel');
+        return primerPanel?.offsetParent !== null
+            && pendingExternalPrimerIds.size === 2
+            && Array.from(pendingExternalPrimerIds).every(primerId => {
+                const row = document.getElementById(primerId);
+                return selectedPrimerIds.has(primerId)
+                    && row?.classList.contains('primer-pending-external');
+            });
+    }
+
+    function stopPendingExternalPrimerPolling() {
+        if (pendingExternalPrimerPoll) {
+            clearInterval(pendingExternalPrimerPoll);
+            pendingExternalPrimerPoll = null;
+        }
+    }
+
+    async function checkPendingExternalPrimers() {
+        if (!canPollPendingExternalPrimers()) {
+            stopPendingExternalPrimerPolling();
+            return;
+        }
+        if (pendingExternalPrimerPollInFlight) {
+            return;
+        }
+
+        pendingExternalPrimerPollInFlight = true;
+        try {
+            const response = await fetch('/info_management_primers');
+            if (!response.ok) {
+                throw new Error('No s\'ha pogut consultar l\'estat dels primers.');
+            }
+
+            const activePrimerIds = new Set((await response.json()).map(primer => String(primer.id)));
+            const confirmedPrimerIds = Array.from(pendingExternalPrimerIds)
+                .filter(primerId => !activePrimerIds.has(primerId));
+
+            if (confirmedPrimerIds.length > 0 && canPollPendingExternalPrimers()) {
+                const table = $('#table_primers').DataTable();
+                confirmedPrimerIds.forEach(primerId => {
+                    const row = document.getElementById(primerId);
+                    if (row) {
+                        table.row(row).remove();
+                    }
+                    selectedPrimerIds.delete(primerId);
+                    pendingExternalPrimerIds.delete(primerId);
+                });
+                table.draw(false);
+                syncPrimerSelection(table);
+            }
+        } catch (error) {
+            console.error('Error comprovant la recepció de Primers:', error);
+        } finally {
+            pendingExternalPrimerPollInFlight = false;
+            if (!canPollPendingExternalPrimers()) {
+                stopPendingExternalPrimerPolling();
+            }
+        }
+    }
+
+    function startPendingExternalPrimerPolling() {
+        if (!canPollPendingExternalPrimers()) {
+            stopPendingExternalPrimerPolling();
+            return;
+        }
+        if (!pendingExternalPrimerPoll) {
+            checkPendingExternalPrimers();
+            pendingExternalPrimerPoll = setInterval(checkPendingExternalPrimers, 2500);
+        }
+    }
 
     function syncPrimerSelection(table = $('#table_primers').DataTable()) {
         if (!table || !table.rows) {
@@ -3929,6 +4004,7 @@
     function clearPrimerSelection() {
         selectedPrimerIds.clear();
         syncPrimerSelection();
+        stopPendingExternalPrimerPolling();
     }
 
     $(document).on('change', '#table_primers input[name="select_multiple"]', function () {
@@ -3938,6 +4014,11 @@
             selectedPrimerIds.delete(String(this.value));
         }
         syncPrimerSelection();
+        if (canPollPendingExternalPrimers()) {
+            startPendingExternalPrimerPolling();
+        } else {
+            stopPendingExternalPrimerPolling();
+        }
     });
 
     async function action_primer(id_primer, action, manualReceptionConfirmed = false, skipSelectionCheck = false, primerCommandId = '') {
@@ -4001,7 +4082,15 @@
             }
 
             if (data.status === 'success') {
-                if (action === 'buy' && Array.isArray(data.isoformes) && data.isoformes.length > 0) {
+                if (action === 'buy' && data.deferred) {
+                    pendingExternalPrimerIds = new Set(id_primer.split(';').filter(Boolean));
+                    pendingExternalPrimerIds.forEach(primerId => {
+                        const row = document.getElementById(primerId);
+                        if (row) {
+                            row.classList.add('primer-pending-external');
+                        }
+                    });
+                    startPendingExternalPrimerPolling();
                     openExternalPrimerVerify(data.external_primer_verify);
                 }
 

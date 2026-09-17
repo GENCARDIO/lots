@@ -1571,6 +1571,12 @@ body.app-navbar-page-embedded .app-navbar-page-view .app-navbar-table-wrapper {
     background: #f6f8fb;
 }
 
+/* Parella enviada a Primers i pendent de la confirmació de recepció. */
+#table_primers tbody tr.primer-pending-external td,
+#table_primers tbody tr.primer-pending-external td:first-child {
+    background-color: #ffe0a3 !important;
+}
+
 #table_primers tbody tr:hover td:first-child {
     background-color: #ffeb99 !important;
 }

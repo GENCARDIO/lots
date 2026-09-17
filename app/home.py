@@ -28,7 +28,7 @@ def parse_primer_gene_exon(sequence_name):
 
 def parse_primer_pair_info(sequence_name):
     match = re.match(
-        r'^\s*([^_]+)_([0-9]{1,3}\s*-\s*[0-9]{1,3}|[0-9]{1,3}|[XY])(as|s)(?=$|[^A-Za-z])',
+        r'^\s*([^_]+)_([0-9]{1,3}\s*-\s*[0-9]{1,3}|[0-9]{1,3}|[XY])(as|s)',
         sequence_name or '',
         re.IGNORECASE
     )
