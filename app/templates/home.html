@@ -4787,7 +4787,9 @@
                     <div class="d-flex align-items-center">
                         <h2>Primers</h2>
                         {% set lista = [1, 5, 9, 12, 13, 16, 18, 23, 24] %}
-                        {% if session['idClient'] in lista%}
+                        {% set lista_text = lista | map('string') | list %}
+                        {% set id_client = session.get('idClient') %}
+                        {% if id_client in lista or id_client|string in lista_text %}
                             <button type="button" class="btn btn-link btn-sm ml-2" onclick="showHomePanel('home-primer-form-panel')">
                                 <i class="fa-solid fa-plus"></i> Nou primer
                             </button>
