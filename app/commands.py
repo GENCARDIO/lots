@@ -4,11 +4,77 @@ from app.utils import instant_date, requires_auth, create_excel, save_log, to_di
 from app.models import session1, Lots, Commands, Cost_center, Stock_lots
 from sqlalchemy import func, or_
 from config import main_dir_docs
+from werkzeug.utils import secure_filename
 import json
+import os
 from datetime import datetime
 import pandas as pd
 from openpyxl import load_workbook
 from openpyxl.styles import Font, PatternFill, Alignment
+
+
+def save_command_incidence(command, incidence_number, image_files):
+    """Append a command incidence and its images, keeping both linked by filename."""
+    incidence_number = (incidence_number or '').strip()
+    image_files = [image_file for image_file in image_files if image_file and image_file.filename]
+
+    if not incidence_number and not image_files:
+        return {}
+    if not incidence_number or not image_files:
+        raise ValueError("Cal informar el N. d'incidencia i adjuntar com a minim una foto.")
+
+    safe_incidence_number = secure_filename(incidence_number)
+    if not safe_incidence_number:
+        raise ValueError("El N. d'incidencia no es valid per crear els noms de les fotos.")
+
+    prepared_files = []
+    for image_file in image_files:
+        original_name = secure_filename(image_file.filename)
+        _, extension = os.path.splitext(original_name)
+        if not original_name or not extension:
+            raise ValueError("Totes les fotos han de tenir una extensio valida.")
+        prepared_files.append((image_file, extension.lower()))
+
+    max_number = 0
+    image_rows = session1.query(Commands.incidence_image_command).filter(
+        Commands.incidence_image_command.isnot(None),
+        func.length(Commands.incidence_image_command) > 0
+    ).all()
+    for (image_list,) in image_rows:
+        for name in image_list.split(';'):
+            stem, _ = os.path.splitext(name.strip())
+            prefix = stem.split('-', 1)[0]
+            if prefix.isdigit():
+                max_number = max(max_number, int(prefix))
+
+    destination = os.path.join(main_dir_docs, 'estat_comandes')
+    os.makedirs(destination, exist_ok=True)
+    next_number = max_number + 1
+    new_images = []
+    for image_file, extension in prepared_files:
+        filename = f'{next_number}-{safe_incidence_number}{extension}'
+        image_file.save(os.path.join(destination, filename))
+        new_images.append(filename)
+        next_number += 1
+
+    existing_numbers = [number.strip() for number in (command.incidence_number or '').split(';') if number.strip()]
+    existing_images = [name.strip() for name in (command.incidence_image_command or '').split(';') if name.strip()]
+    updated_numbers = existing_numbers + [incidence_number]
+    updated_images = existing_images + new_images
+
+    changes = {
+        'incidence_number': {
+            'old_info': command.incidence_number or '',
+            'new_info': ';'.join(updated_numbers)
+        },
+        'incidence_image_command': {
+            'old_info': command.incidence_image_command or '',
+            'new_info': ';'.join(updated_images)
+        }
+    }
+    command.incidence_number = ';'.join(updated_numbers)
+    command.incidence_image_command = ';'.join(updated_images)
+    return changes
 
 
 @app.route('/search_add_command', methods=['POST'])
@@ -294,7 +360,8 @@ def command_success():
                          'date_close': command.date_close,
                          'user_close': command.user_close,
                          'cost_center': command.cost_center,
-                         'incidence_number': command.incidence_number}
+                         'incidence_number': command.incidence_number,
+                         'incidence_image_command': command.incidence_image_command or ''}
 
         list_commands.append(dict_commands)
 
@@ -362,7 +429,8 @@ def order_tracking():
                          'local_management': lot.local_management,
                          'observations': command.observations,
                          'plataform_command_preferent': lot.plataform_command_preferent,
-                         'incidence_number': command.incidence_number}
+                         'incidence_number': command.incidence_number,
+                         'incidence_image_command': command.incidence_image_command or ''}
 
         list_commands.append(dict_commands)
 
@@ -393,6 +461,7 @@ def modify_order_tracking():
     unit_command = request.form.get("units")
     observations_command = request.form.get("observations")
     incidence_number = request.form.get("incidence_number")
+    image_files = request.files.getlist("incidence_image_command")
     change_unit = False
     change_obs = False
     change_inc = False
@@ -438,18 +507,21 @@ def modify_order_tracking():
             select_command.date_complete = date
             change_delete = True
 
-    if 'incidence_number' in request.form and select_command.incidence_number != incidence_number:
-        info_change = {"field": 'incidence_number', "old_info": select_command.incidence_number, "new_info": incidence_number}
+    try:
+        incidence_changes = save_command_incidence(select_command, incidence_number, image_files)
+    except ValueError as error:
+        return f"False_//_{error}_//_none_//_none_//_none_//_none"
+
+    if incidence_changes:
+        info_change = {"fields": incidence_changes}
         dict_save_info['info'] = json.dumps(info_change)
         save_log(dict_save_info)
-
-        select_command.incidence_number = incidence_number
         change_inc = True
 
     if change_unit or change_obs or change_inc:
         session1.commit()
 
-    return f'True_//_Canvi realitzat correctament_//_{change_obs}_//_{change_unit}_//_{change_delete}_//_{change_inc}'
+    return f'True_//_Canvi realitzat correctament_//_{change_obs}_//_{change_unit}_//_{change_delete}_//_{change_inc}_//_{select_command.incidence_number or ""}_//_{select_command.incidence_image_command or ""}'
 
 
 @app.route('/delete_order_tracking', methods=['POST'])
@@ -859,6 +931,7 @@ def add_incidence_command_succes():
     '''
     id_command = request.form.get("id")
     incidence_number_command = request.form.get("incidence_number_command")
+    image_files = [file for file in request.files.getlist("incidence_image_command") if file and file.filename]
 
     date = instant_date()
     dict_save_info = {'id_lot': id_command,
@@ -871,17 +944,20 @@ def add_incidence_command_succes():
     if not select_command:
         return "False_//_No s'ha trobat la comanda a la BD"
 
-    if select_command.incidence_number != incidence_number_command and incidence_number_command != 'null':
-        info_change = {"field": 'incidence_number', "old_info": select_command.incidence_number, "new_info": incidence_number_command}
+    try:
+        changes = save_command_incidence(select_command, incidence_number_command, image_files)
+    except ValueError as error:
+        return f"False_//_{error}"
+
+    if changes:
+        info_change = {"fields": changes}
         dict_save_info['info'] = json.dumps(info_change)
         save_log(dict_save_info)
-
-        select_command.incidence_number = incidence_number_command
         session1.commit()
     else:
         return "False_//_No s'ha detectat cap canvi_//_none_//_none_//_none_//_none"
 
-    return 'True_//_Canvi realitzat correctament'
+    return f'True_//_Canvi realitzat correctament_//_{select_command.incidence_number or ""}_//_{select_command.incidence_image_command or ""}'
 
 
 @app.route('/view_modal_lot', methods=['POST'])

@@ -3255,7 +3255,7 @@
     }
 
     function download_doc(dirName, nameDoc, typeDoc) {
-        if (dirName === 'estat_productes' || dirName === 'state_product') {
+        if (dirName === 'estat_productes' || dirName === 'state_product' || dirName === 'estat_comandes') {
             document.getElementById('name_doc').value = `${nameDoc}_//_${typeDoc}`;
         } else {
             document.getElementById('name_doc').value = `${nameDoc}${typeDoc}`;
@@ -4544,6 +4544,7 @@
                                     <th><div class="header-filter"><span class="header-title">Gestió Local <span class="sort-icon">↕</span></span><input type="text" data-column="9"></div></th>
                                     <th><div class="header-filter"><span class="header-title">Observacions <span class="sort-icon">↕</span></span><input type="text" data-column="10"></div></th>
                                     <th><div class="header-filter"><span class="header-title">N. Incidència <span class="sort-icon">↕</span></span><input type="text" data-column="11"></div></th>
+                                    <th>F. Incidència</th>
                                 </tr>
                             </thead>
                             <tbody></tbody>
@@ -4588,6 +4589,7 @@
                                     <th><div class="header-filter"><span class="header-title">Usuari <span class="sort-icon">↕</span></span><input type="text" data-column="7"></div></th>
                                     <th><div class="header-filter"><span class="header-title">CECO <span class="sort-icon">↕</span></span><input type="text" data-column="8"></div></th>
                                     <th><div class="header-filter"><span class="header-title">N. Incidència <span class="sort-icon">↕</span></span><input type="text" data-column="9"></div></th>
+                                    <th>F. Incidència</th>
                                 </tr>
                             </thead>
                             <tbody></tbody>
@@ -5655,11 +5657,21 @@
         <div class="modal-dialog modal-lg" tabindex="-1" role="document">
           <div class="modal-content">
             <div class="modal-header">
-              <h5 class="modal-title" id="title">Modificar/Eliminar Comanda</h5>
+              <h5 class="modal-title" id="title">Gestió de comanda</h5>
               <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="close_modal('modal_tracking_command')"><span aria-hidden="true">&times;</span></button>
             </div>
             <div class="modal-body home-form-grid">
-                <div class="row">
+                <div class="reception-stepper mb-4" role="tablist" aria-label="Gestió comanda tramitada">
+                    <button type="button" class="reception-step-button tracking-command-tab-choice btn btn-primary is-active" data-tracking-tab="command" onclick="showTrackingCommandTab('command')">
+                        <i class="fa-solid fa-file-pen" aria-hidden="true"></i>
+                        <span class="reception-step-copy"><b>Comanda</b><small>Modificar, eliminar o revertir</small></span>
+                    </button>
+                    <button type="button" class="reception-step-button tracking-command-tab-choice btn btn-secondary" data-tracking-tab="incidence" onclick="showTrackingCommandTab('incidence')">
+                        <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+                        <span class="reception-step-copy"><b>Incidències</b><small>Afegir número i fotos</small></span>
+                    </button>
+                </div>
+                <div class="row" id="tracking-command-tab-command">
                     <div class="col-lg-12 col-md-12 col-sm-12">
                         <div class="input-group mb-3">
                             <span class="input-group-text" id="basic-addon1"><b>Unitats</b></span>
@@ -5672,12 +5684,6 @@
                             <textarea class="form-control" id='observations_tracking_command' name='observations_tracking_command' aria-label="TTN" aria-describedby="basic-addon1" rows="3"></textarea>
                         </div>
                     </div>
-                    <div class="col-lg-12 col-md-12 col-sm-12">
-                        <div class="input-group mb-3">
-                            <span class="input-group-text" id="basic-addon1"><b>N. Incidència</b></span>
-                            <input type="text" class="form-control" id='incidence_tracking_command' name='incidence_tracking_command' aria-label="TTN" aria-describedby="basic-addon1">
-                        </div>
-                    </div>
                     <div class="col-lg-12 col-md-12 col-sm-12 text-center">
                         <input type="hidden" id="id_tracking_command" value=""/>
                         <div class="d-inline-block">
@@ -5685,6 +5691,31 @@
                             <button type="button" class="btn btn-outline-danger btn-sm" onclick="delete_tracking_command()" style="margin-right: 10px;"><i class="fa-solid fa-trash-alt"></i> Eliminar</button>
                             <button type="button" class="btn btn-outline-secondary btn-sm" id="revert_tramited"><i class="fa-solid fa-rotate-left"></i> Revertir tramitació</button>
                         </div>
+                    </div>
+                </div>
+                <div class="row" id="tracking-command-tab-incidence" hidden>
+                    <div class="col-lg-12 col-md-12 col-sm-12">
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1"><b>N. Incidència</b></span>
+                            <input type="text" class="form-control" id='incidence_tracking_command' name='incidence_tracking_command' aria-label="TTN" aria-describedby="basic-addon1">
+                        </div>
+                        <small class="form-text text-muted mb-3" id="tracking_existing_incidence"></small>
+                    </div>
+                    <div class="col-lg-12 col-md-12 col-sm-12">
+                        <div class="input-group mb-3">
+                            <span class="input-group-text"><b>Fotos incidència</b></span>
+                            <label class="reception-file-control">
+                                <input type="file" id="tracking_incidence_image_command" accept="image/*" multiple onchange="updateReceptionFileName(this)">
+                                <span class="reception-file-button"><i class="fa-solid fa-paperclip"></i> Seleccionar fotos</span>
+                                <span class="reception-file-name">Cap foto seleccionada</span>
+                            </label>
+                        </div>
+                        <button type="button" class="btn btn-outline-success btn-sm mb-3" id="tracking_incidence_download_images" hidden>
+                            <i class="fa-solid fa-file-arrow-down"></i> Baixar fotos
+                        </button>
+                    </div>
+                    <div class="col-lg-12 col-md-12 col-sm-12 text-center">
+                        <button type="button" class="btn btn-outline-success btn-sm" id="tracking_incidence_save_btn" onclick="save_tracking_incidence()" disabled><i class="fa-solid fa-share-from-square"></i> Afegir incidència</button>
                     </div>
                 </div>
             </div>
@@ -5706,6 +5737,20 @@
                             <span class="input-group-text" id="basic-addon1"><b>N. Incidència</b></span>
                             <input type="text" class="form-control" id='incidence_history_command' name='incidence_history_command' aria-label="TTN" aria-describedby="basic-addon1">
                         </div>
+                        <small class="form-text text-muted mb-3" id="history_existing_incidence"></small>
+                    </div>
+                    <div class="col-lg-12 col-md-12 col-sm-12">
+                        <div class="input-group mb-3">
+                            <span class="input-group-text"><b>Fotos comanda</b></span>
+                            <label class="reception-file-control">
+                                <input type="file" id="incidence_image_command" name="incidence_image_command" accept="image/*" multiple onchange="updateReceptionFileName(this)">
+                                <span class="reception-file-button"><i class="fa-solid fa-paperclip"></i> Seleccionar fotos</span>
+                                <span class="reception-file-name">Cap foto seleccionada</span>
+                            </label>
+                        </div>
+                        <button type="button" class="btn btn-outline-success btn-sm mb-3" id="history_incidence_download_images" hidden>
+                            <i class="fa-solid fa-file-arrow-down"></i> Baixar fotos
+                        </button>
                     </div>
                     <div class="col-lg-12 col-md-12 col-sm-12 text-center">
                         <input type="hidden" id="id_history_command" value=""/>
@@ -6802,7 +6847,8 @@
             const rows = JSON.parse(splitResponse[1]);
             const table = ensureSimpleDataTable('#manage_command_success_table', 6, [
                 { targets: 1, width: '420px' },
-                { targets: 9, width: '260px' }
+                { targets: 9, width: '160px', className: 'command-incidence-column' },
+                { targets: 10, width: '70px', orderable: false }
             ]);
             table.clear();
 
@@ -6817,7 +6863,8 @@
                     escapeHtml(row.date_close),
                     escapeHtml(row.user_close),
                     escapeHtml(row.cost_center),
-                    escapeHtml(row.incidence_number)
+                    escapeHtml(row.incidence_number),
+                    buildHistoryIncidenceImagesAction(row)
                 ]).node();
                 rowNode.id = `history_${row.id}`;
             });
@@ -6861,7 +6908,8 @@
             const table = ensureSimpleDataTable('#manage_order_tracking_table', 6, [
                 { targets: 1, width: '420px' },
                 { targets: 10, width: '380px' },
-                { targets: 11, width: '260px' }
+                { targets: 11, width: '160px', className: 'command-incidence-column' },
+                { targets: 12, width: '70px', orderable: false }
             ]);
             table.clear();
 
@@ -6878,7 +6926,8 @@
                     escapeHtml(row.cost_center),
                     escapeHtml(row.local_management),
                     escapeHtml(row.observations),
-                    escapeHtml(row.incidence_number)
+                    escapeHtml(row.incidence_number),
+                    buildHistoryIncidenceImagesAction(row)
                 ]).node();
                 rowNode.id = row.id;
             });
@@ -7013,7 +7062,8 @@
         return {
             units: document.getElementById('units_tracking_command').value,
             observations: document.getElementById('observations_tracking_command').value,
-            incidenceNumber: document.getElementById('incidence_tracking_command').value
+            incidenceNumber: document.getElementById('incidence_tracking_command').value,
+            incidenceImages: document.getElementById('tracking_incidence_image_command').files.length
         };
     }
 
@@ -7036,7 +7086,25 @@
     }
 
     function updateTrackingCommandModifyState() {
-        updateCommandModifyState('tracking_command_modify_btn', trackingCommandOriginalValues, getTrackingCommandValues());
+        const currentValues = getTrackingCommandValues();
+        const originalValues = trackingCommandOriginalValues || {};
+        const commandChanged = currentValues.units !== originalValues.units || currentValues.observations !== originalValues.observations;
+        const commandButton = document.getElementById('tracking_command_modify_btn');
+        const incidenceButton = document.getElementById('tracking_incidence_save_btn');
+
+        commandButton.disabled = !commandChanged || Number(currentValues.units) <= 0;
+        incidenceButton.disabled = !currentValues.incidenceNumber.trim() || currentValues.incidenceImages === 0;
+    }
+
+    function showTrackingCommandTab(tabName) {
+        document.querySelectorAll('#modal_tracking_command [data-tracking-tab]').forEach(function (button) {
+            const isActive = button.dataset.trackingTab === tabName;
+            button.classList.toggle('is-active', isActive);
+            button.classList.toggle('btn-primary', isActive);
+            button.classList.toggle('btn-secondary', !isActive);
+        });
+        document.getElementById('tracking-command-tab-command').hidden = tabName !== 'command';
+        document.getElementById('tracking-command-tab-incidence').hidden = tabName !== 'incidence';
     }
 
     function open_edit_command(id, units, observations) {
@@ -7059,13 +7127,22 @@
         open_edit_command(button.dataset.id, button.dataset.units, button.dataset.observations);
     }
 
-    function open_tracking_command(id, units, observations, incidenceNumber = '') {
+    function open_tracking_command(id, units, observations, incidenceNumber = '', incidenceImages = '') {
         document.getElementById('units_tracking_command').value = units;
         document.getElementById('observations_tracking_command').value = observations;
-        document.getElementById('incidence_tracking_command').value = incidenceNumber;
+        document.getElementById('incidence_tracking_command').value = '';
+        document.getElementById('tracking_incidence_image_command').value = '';
+        updateReceptionFileName(document.getElementById('tracking_incidence_image_command'));
+        document.getElementById('tracking_existing_incidence').textContent = incidenceNumber ? 'Incidencies actuals: ' + incidenceNumber : 'Sense incidencies registrades.';
+        const downloadButton = document.getElementById('tracking_incidence_download_images');
+        downloadButton.hidden = !incidenceImages;
+        downloadButton.onclick = incidenceImages ? function () {
+            download_doc('estat_comandes', incidenceImages, '');
+        } : null;
         document.getElementById('id_tracking_command').value = id;
         trackingCommandOriginalValues = getTrackingCommandValues();
         updateTrackingCommandModifyState();
+        showTrackingCommandTab('command');
 
         const btn = document.getElementById('revert_tramited');
         btn.onclick = () => {
@@ -7077,7 +7154,7 @@
     }
 
     function open_tracking_command_from_button(button) {
-        open_tracking_command(button.dataset.id, button.dataset.units, button.dataset.observations, button.dataset.incidenceNumber || '');
+        open_tracking_command(button.dataset.id, button.dataset.units, button.dataset.observations, button.dataset.incidenceNumber || '', button.dataset.incidenceImages || '');
     }
 
     let historyIncidenceOriginalValue = '';
@@ -7089,25 +7166,35 @@
             return;
         }
 
-        button.disabled = field.value === historyIncidenceOriginalValue;
+        const imageField = document.getElementById('incidence_image_command');
+        button.disabled = !field.value.trim() || !imageField || imageField.files.length === 0;
     }
 
-    function open_history_incidence(id, incidenceNumber = '') {
+    function open_history_incidence(id, incidenceNumber = '', incidenceImages = '') {
         document.getElementById('id_history_command').value = id;
-        document.getElementById('incidence_history_command').value = incidenceNumber;
-        historyIncidenceOriginalValue = incidenceNumber;
+        document.getElementById('incidence_history_command').value = '';
+        document.getElementById('incidence_image_command').value = '';
+        updateReceptionFileName(document.getElementById('incidence_image_command'));
+        document.getElementById('history_existing_incidence').textContent = incidenceNumber ? 'Incidencies actuals: ' + incidenceNumber : 'Sense incidencies registrades.';
+        historyIncidenceOriginalValue = '';
+        const downloadButton = document.getElementById('history_incidence_download_images');
+        downloadButton.hidden = !incidenceImages;
+        downloadButton.onclick = incidenceImages ? function () {
+            download_doc('estat_comandes', incidenceImages, '');
+        } : null;
         updateHistoryIncidenceSaveState();
         $('#modal_history_incidence').modal('show');
     }
 
     function open_history_incidence_from_button(button) {
-        open_history_incidence(button.dataset.id, button.dataset.incidenceNumber || '');
+        open_history_incidence(button.dataset.id, button.dataset.incidenceNumber || '', button.dataset.incidenceImages || '');
     }
 
     function buildHistoryIncidenceAction(row) {
         const id = escapeHtml(row.id);
         const reference = escapeHtml(row.catalog_reference);
         const incidenceNumber = escapeHtml(row.incidence_number);
+        const incidenceImages = escapeHtml(row.incidence_image_command || '');
 
         return `
             <div class="tracking-command-reference">
@@ -7118,10 +7205,32 @@
                     title="Afegir incidència"
                     data-id="${id}"
                     data-incidence-number="${incidenceNumber}"
+                    data-incidence-images="${incidenceImages}"
                     onclick="open_history_incidence_from_button(this)">
                     <i class="fa-solid fa-pen-to-square"></i>
                 </button>
             </div>`;
+    }
+
+    function download_history_incidence_images(button) {
+        download_doc('estat_comandes', button.dataset.incidenceImages, '');
+    }
+
+    function buildHistoryIncidenceImagesAction(row) {
+        const incidenceImages = escapeHtml(row.incidence_image_command || '');
+        if (!incidenceImages) {
+            return '<span class="text-muted">—</span>';
+        }
+
+        return `
+            <button
+                type="button"
+                class="btn btn-outline-success btn-sm"
+                title="Descarregar"
+                data-incidence-images="${incidenceImages}"
+                onclick="download_history_incidence_images(this)">
+                <i class="fa-solid fa-file-arrow-down"></i>
+            </button>`;
     }
 
     function buildTrackingCommandAction(row) {
@@ -7130,6 +7239,7 @@
         const units = escapeHtml(row.units);
         const observations = escapeHtml(row.observations);
         const incidenceNumber = escapeHtml(row.incidence_number);
+        const incidenceImages = escapeHtml(row.incidence_image_command || '');
 
         return `
             <div class="tracking-command-reference">
@@ -7142,6 +7252,7 @@
                     data-units="${units}"
                     data-observations="${observations}"
                     data-incidence-number="${incidenceNumber}"
+                    data-incidence-images="${incidenceImages}"
                     onclick="open_tracking_command_from_button(this)">
                     <i class="fa-solid fa-pen-to-square"></i>
                 </button>
@@ -7225,17 +7336,32 @@
     }
 
     function edit_tracking_command() {
+        submit_tracking_command('command');
+    }
+
+    function save_tracking_incidence() {
+        submit_tracking_command('incidence');
+    }
+
+    function submit_tracking_command(action) {
         const id = document.getElementById('id_tracking_command').value;
         const units = document.getElementById('units_tracking_command').value;
         const observations = document.getElementById('observations_tracking_command').value;
         const incidenceNumber = document.getElementById('incidence_tracking_command').value;
+        const incidenceImages = document.getElementById('tracking_incidence_image_command').files;
+        const isIncidenceAction = action === 'incidence';
+        const actionButton = document.getElementById(isIncidenceAction ? 'tracking_incidence_save_btn' : 'tracking_command_modify_btn');
 
-        if (document.getElementById('tracking_command_modify_btn').disabled) {
+        if (actionButton.disabled) {
             return;
         }
 
-        if (units <= 0) {
+        if (!isIncidenceAction && units <= 0) {
             showModalMessage('No està permès posar 0 o nombres negatius', 'warning', 'pending_commands_message_container');
+            return;
+        }
+        if (isIncidenceAction && (!incidenceNumber.trim() || incidenceImages.length === 0)) {
+            showModalMessage('Per afegir una incidència cal informar el número i adjuntar com a mínim una foto.', 'warning', 'pending_commands_message_container');
             return;
         }
 
@@ -7243,7 +7369,12 @@
         formData.append('id', id);
         formData.append('units', units);
         formData.append('observations', observations);
-        formData.append('incidence_number', incidenceNumber);
+        if (isIncidenceAction) {
+            formData.append('incidence_number', incidenceNumber);
+            for (const imageFile of incidenceImages) {
+                formData.append('incidence_image_command', imageFile);
+            }
+        }
 
         const xhr = new XMLHttpRequest();
         xhr.open('POST', '/modify_order_tracking', true);
@@ -7262,18 +7393,22 @@
                         const cells = row.getElementsByTagName('td');
                         cells[5].textContent = units;
                         cells[10].textContent = observations;
-                        cells[11].textContent = incidenceNumber;
+                        cells[11].textContent = splitResponse[6] || '';
+                        cells[12].innerHTML = buildHistoryIncidenceImagesAction({
+                            incidence_image_command: splitResponse[7] || ''
+                        });
                         row.style.backgroundColor = 'yellow';
 
                         const trackingButton = row.querySelector('.tracking-command-action');
                         if (trackingButton) {
                             trackingButton.dataset.units = units;
                             trackingButton.dataset.observations = observations;
-                            trackingButton.dataset.incidenceNumber = incidenceNumber;
+                            trackingButton.dataset.incidenceNumber = splitResponse[6] || '';
+                            trackingButton.dataset.incidenceImages = splitResponse[7] || '';
                         }
                     }
 
-                    showModalMessage("Canvis guardats correctament.", 'success', 'pending_commands_message_container');
+                    showModalMessage(isIncidenceAction ? "Incidència guardada correctament." : "Canvis guardats correctament.", 'success', 'pending_commands_message_container');
                     return;
                 }
             }
@@ -7308,14 +7443,22 @@
     function save_history_incidence() {
         const idCommand = document.getElementById('id_history_command').value;
         const incidenceNumber = document.getElementById('incidence_history_command').value;
+        const imageFiles = document.getElementById('incidence_image_command').files;
 
         if (document.getElementById('history_incidence_save_btn').disabled) {
+            return;
+        }
+        if (!incidenceNumber.trim() || imageFiles.length === 0) {
+            showModalMessage('Per afegir una incidència cal informar el número i adjuntar com a mínim una foto.', 'warning', 'pending_commands_message_container');
             return;
         }
 
         const formData = new FormData();
         formData.append('id', idCommand);
         formData.append('incidence_number_command', incidenceNumber);
+        for (const imageFile of imageFiles) {
+            formData.append('incidence_image_command', imageFile);
+        }
 
         const xhr = new XMLHttpRequest();
         xhr.open('POST', '/add_incidence_command_succes', true);
@@ -7327,11 +7470,16 @@
                 const row = document.getElementById(`history_${idCommand}`);
                 if (row) {
                     const cells = row.getElementsByTagName('td');
-                    cells[9].textContent = incidenceNumber;
+                    const splitResponse = xhr.responseText.split('_//_');
+                    cells[9].textContent = splitResponse[2] || '';
+                    cells[10].innerHTML = buildHistoryIncidenceImagesAction({
+                        incidence_image_command: splitResponse[3] || ''
+                    });
 
                     const incidenceButton = row.querySelector('.tracking-command-action');
                     if (incidenceButton) {
-                        incidenceButton.dataset.incidenceNumber = incidenceNumber;
+                        incidenceButton.dataset.incidenceNumber = splitResponse[2] || '';
+                        incidenceButton.dataset.incidenceImages = splitResponse[3] || '';
                     }
                 }
                 showModalMessage("Incidència guardada correctament.", 'success', 'pending_commands_message_container');
@@ -7382,10 +7530,18 @@
                 field.addEventListener('change', updateTrackingCommandModifyState);
             }
         });
+        const trackingIncidenceImageField = document.getElementById('tracking_incidence_image_command');
+        if (trackingIncidenceImageField) {
+            trackingIncidenceImageField.addEventListener('change', updateTrackingCommandModifyState);
+        }
         const historyIncidenceField = document.getElementById('incidence_history_command');
         if (historyIncidenceField) {
             historyIncidenceField.addEventListener('input', updateHistoryIncidenceSaveState);
             historyIncidenceField.addEventListener('change', updateHistoryIncidenceSaveState);
+        }
+        const historyIncidenceImageField = document.getElementById('incidence_image_command');
+        if (historyIncidenceImageField) {
+            historyIncidenceImageField.addEventListener('change', updateHistoryIncidenceSaveState);
         }
     });
 

@@ -106,6 +106,7 @@ class Stock_lots(Base):
     labels_print = Column(Integer())
     state_product = Column(String())
     type_doc_state_product = Column(String())
+    incidence_number_stock = Column(String())
     name_logaritme = Column(String())
     units_for_discount = Column(Integer())
     units_measurement = Column(String())
@@ -160,6 +161,7 @@ class Commands(Base):
     date_complete = Column(String())
     user_email = Column(String())
     supplier = Column(String())
+    incidence_image_command = Column(String())
 
 
 class Cost_center(Base):

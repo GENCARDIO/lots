@@ -182,8 +182,8 @@ def download_docs():
 
     base_dir = os.path.join(main_dir_docs, dir_name)
 
-    # Cas multi-fitxer: estat_productes
-    if dir_name == "estat_productes":
+    # Multi-file case: product and command status
+    if dir_name in ("estat_productes", "estat_comandes"):
         # Esperem: "1;2;3_//_.pdf;.jpg;.png"
         parts = name_doc.split("_//_")
         if len(parts) != 2:
@@ -191,6 +191,10 @@ def download_docs():
 
         list_names = parts[0].split(";")
         list_exts = parts[1].split(";")
+
+        # Command incidences store full filenames in one field.
+        if dir_name == "estat_comandes":
+            list_exts = [''] * len(list_names)
 
         if len(list_names) != len(list_exts):
             return "Noms i extensions no coincideixen", 400
@@ -202,10 +206,12 @@ def download_docs():
                 n = n.strip()
                 ext = ext.strip()
 
-                if not n or not ext:
+                if not n or (dir_name != "estat_comandes" and not ext):
                     continue
 
-                filename = f"{n}{ext}"  # ext ja inclou el punt: ".pdf"
+                filename = secure_filename(f"{n}{ext}")
+                if not filename:
+                    continue
                 path = os.path.join(base_dir, filename)
 
                 if os.path.exists(path):
