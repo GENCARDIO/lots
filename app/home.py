@@ -14,6 +14,7 @@ import pandas as pd
 from openpyxl import load_workbook
 from openpyxl.styles import Font, PatternFill, Alignment
 from config import main_dir_docs
+from werkzeug.utils import secure_filename
 import os
 import tempfile
 import zipfile
@@ -532,6 +533,69 @@ def search_all_year():
 
     # return f'True_//_{list_info_stock}'
     return jsonify({"success": True, "data": list_info_stock_aux})
+
+
+@app.route('/add_stock_incidence', methods=['POST'])
+@requires_auth
+def add_stock_incidence():
+    stock_lot_id = request.form.get('id')
+    incidence_number = (request.form.get('incidence_number_stock') or '').strip()
+    image_files = [image_file for image_file in request.files.getlist('incidence_image_stock') if image_file and image_file.filename]
+
+    if not incidence_number or not image_files:
+        return jsonify({'success': False, 'message': "Cal informar el N. d'incidencia i adjuntar com a minim una foto."}), 400
+
+    stock_lot = session1.query(Stock_lots).filter_by(id=stock_lot_id).first()
+    if not stock_lot:
+        return jsonify({'success': False, 'message': "No s'ha trobat el lot."}), 404
+
+    safe_incidence = secure_filename(incidence_number)
+    if not safe_incidence:
+        return jsonify({'success': False, 'message': "El N. d'incidencia no es valid."}), 400
+
+    prepared_files = []
+    for image_file in image_files:
+        _, extension = os.path.splitext(secure_filename(image_file.filename))
+        if not extension:
+            return jsonify({'success': False, 'message': "Totes les fotos han de tenir una extensio valida."}), 400
+        prepared_files.append((image_file, extension.lower()))
+
+    max_number = 0
+    for (image_list,) in session1.query(Stock_lots.state_product).filter(
+        Stock_lots.state_product.isnot(None), func.length(Stock_lots.state_product) > 0
+    ).all():
+        for name in image_list.split(';'):
+            prefix = os.path.splitext(name.strip())[0].split('-', 1)[0]
+            if prefix.isdigit():
+                max_number = max(max_number, int(prefix))
+
+    destination = os.path.join(main_dir_docs, 'estat_productes')
+    os.makedirs(destination, exist_ok=True)
+    next_number = max_number + 1
+    new_names, new_extensions = [], []
+    for image_file, extension in prepared_files:
+        name = f'{next_number}-{safe_incidence}'
+        image_file.save(os.path.join(destination, f'{name}{extension}'))
+        new_names.append(name)
+        new_extensions.append(extension)
+        next_number += 1
+
+    old_numbers = [value.strip() for value in (stock_lot.incidence_number_stock or '').split(';') if value.strip()]
+    old_names = [value.strip() for value in (stock_lot.state_product or '').split(';') if value.strip()]
+    old_extensions = [value.strip() for value in (stock_lot.type_doc_state_product or '').split(';') if value.strip()]
+    stock_lot.incidence_number_stock = ';'.join(old_numbers + [incidence_number])
+    stock_lot.state_product = ';'.join(old_names + new_names)
+    stock_lot.type_doc_state_product = ';'.join(old_extensions + new_extensions)
+    save_log({
+        'id_lot': stock_lot.id, 'type': 'add stock incidence', 'user': session['acronim'],
+        'id_user': session['idClient'], 'date': instant_date(),
+        'info': json.dumps({'incidence_number_stock': stock_lot.incidence_number_stock, 'state_product': stock_lot.state_product})
+    })
+    session1.commit()
+    return jsonify({
+        'success': True, 'incidence_number_stock': stock_lot.incidence_number_stock,
+        'state_product': stock_lot.state_product, 'type_doc_state_product': stock_lot.type_doc_state_product
+    })
 
 
 @app.route('/download_certificate_pending', methods=['POST'])

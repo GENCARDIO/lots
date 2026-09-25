@@ -514,6 +514,8 @@
                                 <th><div class="header-filter"><span class="header-title">Preu <span class="sort-icon">↕</span></span><input type="text" data-column="11"></div></th>
                                 <th><div class="header-filter"><span class="header-title">Tècnica <span class="sort-icon">↕</span></span><input type="text" data-column="12"></div></th>
                                 <th><div class="header-filter"><span class="header-title">Observacions <span class="sort-icon">↕</span></span><input type="text" data-column="13"></div></th>
+                                <th><div class="header-filter"><span class="header-title">N. Incidència <span class="sort-icon">↕</span></span><input type="text" data-column="14"></div></th>
+                                <th>F. Incidència</th>
                             </tr>
                         </thead>
                         <tbody></tbody>
@@ -521,6 +523,36 @@
             </div>
         </div>
       </div>
+    </div>
+</div>
+
+<div class="modal fade document-action-modal app-navbar-modal" id="modal_stock_incidence" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content document-action-modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fa-solid fa-triangle-exclamation"></i> Afegir incidència de stock</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            </div>
+            <div class="modal-body home-form-grid">
+                <div class="input-group mb-3">
+                    <span class="input-group-text"><b>N. Incidència</b></span>
+                    <input type="text" class="form-control" id="stock_incidence_number">
+                </div>
+                <small class="form-text text-muted mb-3" id="stock_existing_incidence"></small>
+                <div class="input-group mb-3">
+                    <span class="input-group-text"><b>Fotos incidència</b></span>
+                    <label class="reception-file-control">
+                        <input type="file" id="stock_incidence_images" accept="image/*" multiple onchange="updateReceptionFileName(this)">
+                        <span class="reception-file-button"><i class="fa-solid fa-paperclip"></i> Seleccionar fotos</span>
+                        <span class="reception-file-name">Cap foto seleccionada</span>
+                    </label>
+                </div>
+                <input type="hidden" id="stock_incidence_lot_id">
+                <div class="text-center">
+                    <button type="button" class="btn btn-outline-success btn-sm" onclick="save_stock_incidence()"><i class="fa-solid fa-share-from-square"></i> Afegir incidència</button>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -1865,6 +1897,8 @@
                             '<div class="text-center">' + item['import_unit_ics'] + '</div>',
                             '<div class="text-center">' + item['analytical_technique'] + '</div>',
                             '<div class="text-center">' + item['observations_inspection'] + '</div>',
+                            '<div class="d-inline-flex align-items-center gap-2"><span id="stock_incidence_' + item['id'] + '">' + format_stock_incidences(item['incidence_number_stock']) + '</span><button type="button" class="btn btn-link btn-sm p-0" title="Afegir incidència" data-id="' + item['id'] + '" data-incidences="' + stock_data_attribute(item['incidence_number_stock'] || '') + '" onclick="open_stock_incidence_from_button(this)"><i class="fa-solid fa-pen-to-square"></i></button></div>',
+                            build_stock_incidence_download(item)
                         ]);
                     });
 
@@ -1894,6 +1928,68 @@
         }
 
         xhr.send(form_data)
+    }
+
+    function build_stock_incidence_download(item) {
+        if (!item['state_product']) {
+            return '<span class="text-muted">—</span>';
+        }
+        return '<button type="button" class="btn btn-outline-success btn-sm" title="Descarregar" data-names="' + stock_data_attribute(item['state_product']) + '" data-extensions="' + stock_data_attribute(item['type_doc_state_product'] || '') + '" onclick="download_stock_incidence_images_from_button(this)"><i class="fa-solid fa-file-arrow-down"></i></button>';
+    }
+
+    function stock_data_attribute(value) {
+        return String(value).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    function format_stock_incidences(value) {
+        return String(value || '').split(';').map(function (incidence) {
+            return incidence.trim();
+        }).filter(Boolean).join(' · ');
+    }
+
+    function download_stock_incidence_images_from_button(button) {
+        download_doc('estat_productes', button.dataset.names, button.dataset.extensions);
+    }
+
+    function open_stock_incidence(id, existingIncidences) {
+        document.getElementById('stock_incidence_lot_id').value = id;
+        document.getElementById('stock_incidence_number').value = '';
+        document.getElementById('stock_incidence_images').value = '';
+        updateReceptionFileName(document.getElementById('stock_incidence_images'));
+        document.getElementById('stock_existing_incidence').textContent = existingIncidences ? 'Incidències actuals: ' + existingIncidences : 'Sense incidències registrades.';
+        $('#modal_stock_incidence').modal('show');
+    }
+
+    function open_stock_incidence_from_button(button) {
+        open_stock_incidence(button.dataset.id, button.dataset.incidences || '');
+    }
+
+    function save_stock_incidence() {
+        const incidenceNumber = document.getElementById('stock_incidence_number').value.trim();
+        const images = document.getElementById('stock_incidence_images').files;
+        if (!incidenceNumber || images.length === 0) {
+            alert('Cal informar el N. d’incidència i adjuntar com a mínim una foto.');
+            return;
+        }
+        const formData = new FormData();
+        formData.append('id', document.getElementById('stock_incidence_lot_id').value);
+        formData.append('incidence_number_stock', incidenceNumber);
+        for (const image of images) {
+            formData.append('incidence_image_stock', image);
+        }
+        fetch('/add_stock_incidence', { method: 'POST', body: formData })
+            .then(response => response.json())
+            .then(data => {
+                if (!data.success) {
+                    alert(data.message || 'No s’ha pogut guardar la incidència.');
+                    return;
+                }
+                const id = document.getElementById('stock_incidence_lot_id').value;
+                document.getElementById('stock_incidence_' + id).textContent = format_stock_incidences(data.incidence_number_stock);
+                $('#modal_stock_incidence').modal('hide');
+                search_all_year();
+            })
+            .catch(() => alert('No s’ha pogut guardar la incidència.'));
     }
 
 
