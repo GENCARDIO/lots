@@ -704,19 +704,30 @@ def download_certificate_pending():
 def info_description_lots():
     lots = list_desciption_lots()
 
-    data = [
-        {
-            "catalog_reference": x.catalog_reference,
-            "description": x.description,
-            "analytical_technique": x.analytical_technique,
-            "id_reactive": x.id_reactive,
-            "description_subreference": x.description_subreference,
-            "code_panel": x.code_panel,
-            "name_logaritme": x.name_logaritme,
-            "supplier": x.supplier,
-        }
-        for x in lots
-    ]
+    data = []
+    groups = {}
+    for lot in lots:
+        # The command lookup uses description and panel, so subreferences with
+        # the same values would open the same article from this list.
+        group = ((lot.description or '').casefold(), (lot.code_panel or '').casefold())
+        if group in groups:
+            row = data[groups[group]]
+            if row['id_reactive'] != lot.id_reactive:
+                row['id_reactive'] = 'Diverses'
+            if row['description_subreference'] != lot.description_subreference:
+                row['description_subreference'] = 'Diverses'
+            continue
+        groups[group] = len(data)
+        data.append({
+            "catalog_reference": lot.catalog_reference,
+            "description": lot.description,
+            "analytical_technique": lot.analytical_technique,
+            "id_reactive": lot.id_reactive,
+            "description_subreference": lot.description_subreference,
+            "code_panel": lot.code_panel,
+            "name_logaritme": lot.name_logaritme,
+            "supplier": lot.supplier,
+        })
     return jsonify(data)
 
 

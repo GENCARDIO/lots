@@ -415,6 +415,8 @@ def add_stock_lot():
     # es reactiu s'insereixen un linia per cada unitat i si es fungible una row amb el numero total d'unitas.
     list_info_excel = []
     subrefernce_count = 0
+    stock_types = {lot.get('react_or_fungible') for lot in list_lots}
+    mixed_subreferences = subreference_active == 'True' and {'Reactiu', 'Fungible'} <= stock_types
     for lots in list_lots:
         print(lots)
         try:
@@ -433,6 +435,8 @@ def add_stock_lot():
                 return 'False_reactive'
             if select_lot and (select_lot.import_unit_ics != lots['import_unit_ics'] or
                                select_lot.import_unit_idibgi != lots['import_unit_idibgi']):
+                select_lot = None
+            if mixed_subreferences and lots['react_or_fungible'] == 'Fungible':
                 select_lot = None
             if select_lot:
                 select_lot.units_lot = int(select_lot.units_lot) + int(lots['units_lot'])
@@ -492,15 +496,19 @@ def add_stock_lot():
                             filename_certificate = select_lot_certificate.certificate
                             type_doc_certificate = select_lot_certificate.type_doc_certificate
 
-                    # Mirem si el lot te subreferencies, si en te mirem cuantes d'elles aniran amb preu i quantes no, com que son subreferencies nomes una de cada lot pot anar amb preu, sino es contabilitzarien extra
+                    # En una barreja, els fungibles guarden diverses unitats en una fila;
+                    # només els reactius poden representar una unitat amb preu per fila.
                     if subreference_active == 'True':
-                        if int(number_total_lot_discount) > int(subrefernce_count):
+                        price_this_row = (subrefernce_count < int(number_total_lot_discount)
+                                          and (not mixed_subreferences or lots['react_or_fungible'] == 'Reactiu'))
+                        if price_this_row:
                             ics_price_aux = lots['import_unit_ics']
                             idibgi_price_aux = lots['import_unit_idibgi']
                         else:
                             ics_price_aux = f"subref_{lots['import_unit_ics']}"
                             idibgi_price_aux = f"subref_{lots['import_unit_idibgi']}"
-                        subrefernce_count += 1
+                        if not mixed_subreferences or lots['react_or_fungible'] == 'Reactiu':
+                            subrefernce_count += 1
                     else:
                         ics_price_aux = lots['import_unit_ics']
                         idibgi_price_aux = lots['import_unit_idibgi']
