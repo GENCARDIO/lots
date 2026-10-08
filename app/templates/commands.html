@@ -266,11 +266,8 @@
                         for (var i = 0; i < list_lots.length; i++) {
                             var new_row_data = [];
                             // Crea un nuevo elemento td para cada valor en la lista
-                            for (var key in list_lots[i]) {
-                                if (list_lots[i].hasOwnProperty(key)) {
-                                    if (key !== 'id' && key !== 'id_lot') {
-                                        new_row_data.push(list_lots[i][key]) }
-                                }
+                            for (var key of ['catalog_reference', 'description', 'code_command', 'code_SAP', 'code_LOG', 'units', 'date_close', 'date_complete', 'user_close', 'cost_center', 'import_unit_ics', 'import_unit_idibgi', 'incidence_number']) {
+                                new_row_data.push(list_lots[i][key] == null ? '' : list_lots[i][key]);
                             }
                             var new_row = table.row.add(new_row_data).draw(false).node();
                             $(new_row).attr('id', list_lots[i].id) // Usa 'id' o 'id_lot' según corresponda
@@ -279,7 +276,7 @@
 
                         }
                         // Aplicar estilos CSS para centrar el contenido de las primeras cuatro columnas
-                        for (var j = 0; j < 10; j++) {
+                        for (var j = 0; j < 13; j++) {
                             if (j !== 1) {
                                 table.column(j).nodes().to$().addClass('text-center');}
                         }
@@ -1416,8 +1413,11 @@
                                     <!-- <th style="width: 80px;">Data creació</th>
                                     <th style="width: 80px;">Usuari</th> -->
                                     <th style="width: 80px;">Data Tramitació</th>
+                                    <th style="width: 80px;">Data recepció</th>
                                     <th style="width: 80px;">Usuari</th>
                                     <th style="width: 80px;">CECO</th>
+                                    <th style="width: 80px;">Preu ICS</th>
+                                    <th style="width: 80px;">Preu IDIBGI</th>
                                     <th style="width: 80px;">N. Incidència</th>
                                 </tr>
                             </thead>

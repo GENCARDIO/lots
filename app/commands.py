@@ -2,6 +2,7 @@ from flask import request, session, render_template, flash, send_file, jsonify
 from app import app
 from app.utils import instant_date, requires_auth, create_excel, save_log, to_dict, year_now, list_desciption_lots, list_cost_center, send_mail_generic
 from app.models import session1, Lots, Commands, Cost_center, Stock_lots
+from app.command_prices import command_price
 from sqlalchemy import func, or_
 from config import main_dir_docs
 from werkzeug.utils import secure_filename
@@ -162,6 +163,10 @@ def add_command():
     new_cost_center = request.form.get("new_cost_center")
     observations_command = request.form.get("observations_command")
 
+    lot = session1.query(Lots).filter(Lots.key == key_lot).first()
+    if lot is None:
+        return 'False_error'
+
     if new_cost_center == 'true':
         select_COCE = session1.query(Cost_center).filter(func.lower(Cost_center.name) == cost_center.lower()).first()
         if not select_COCE:
@@ -181,6 +186,8 @@ def add_command():
                                   user_close='',
                                   user_id_close='',
                                   cost_center=cost_center,
+                                  import_unit_ics=lot.import_unit_ics,
+                                  import_unit_idibgi=lot.import_unit_idibgi,
                                   received=0,
                                   num_received=0,
                                   code_command='',
@@ -358,6 +365,9 @@ def command_success():
                          # 'date_create': command.date_create,
                          # 'user_create': command.user_create,
                          'date_close': command.date_close,
+                         'date_complete': command.date_complete,
+                         'import_unit_ics': command_price(command, lot, 'import_unit_ics'),
+                         'import_unit_idibgi': command_price(command, lot, 'import_unit_idibgi'),
                          'user_close': command.user_close,
                          'cost_center': command.cost_center,
                          'incidence_number': command.incidence_number,
@@ -664,10 +674,12 @@ def download_order_success():
                 'LOG': [],
                 'Unitats': [],
                 'Data tramitació': [],
+                'Data recepció': [],
                 'Usuari creació': [],
                 'Usuari tramitació': [],
                 'CECO': [],
                 'Preu ICS': [],
+                'Preu IDIBGI': [],
                 'Incidencies': [],
                 'Proveïdor': [],
                 'Id comanda ext.': []
@@ -695,10 +707,12 @@ def download_order_success():
                 data['LOG'].append(lot.code_LOG)
                 data['Unitats'].append(command.units)
                 data['Data tramitació'].append(command.date_close)
+                data['Data recepció'].append(command.date_complete)
                 data['Usuari creació'].append(command.user_create)
                 data['Usuari tramitació'].append(command.user_close)
                 data['CECO'].append(command.cost_center)
-                data['Preu ICS'].append(lot.import_unit_ics)
+                data['Preu ICS'].append(command_price(command, lot, 'import_unit_ics'))
+                data['Preu IDIBGI'].append(command_price(command, lot, 'import_unit_idibgi'))
                 data['Incidencies'].append(command.incidence_number)
                 data['Proveïdor'].append(lot.supplier)
                 data['Id comanda ext.'].append(command_numbers_str)
@@ -837,6 +851,7 @@ def download_follow_commands():
                 'Usuari tramitació': [],
                 'CECO': [],
                 'Preu ICS': [],
+                'Preu IDIBGI': [],
                 'N. Incidència': [],
                 'Gestió local': []
             }
@@ -854,7 +869,8 @@ def download_follow_commands():
                 data['Usuari creació'].append(command.user_create)
                 data['Usuari tramitació'].append(command.user_close)
                 data['CECO'].append(command.cost_center)
-                data['Preu ICS'].append(lot.import_unit_ics)
+                data['Preu ICS'].append(command_price(command, lot, 'import_unit_ics'))
+                data['Preu IDIBGI'].append(command_price(command, lot, 'import_unit_idibgi'))
                 data['N. Incidència'].append(command.incidence_number)
                 data['Gestió local'].append(lot.local_management)
 
