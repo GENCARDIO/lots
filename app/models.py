@@ -154,6 +154,8 @@ class Commands(Base):
     user_close = Column(String())
     user_id_close = Column(String())
     cost_center = Column(String())
+    import_unit_ics = Column(String())
+    import_unit_idibgi = Column(String())
     received = Column(Integer())
     num_received = Column(Integer())
     observations = Column(String())
@@ -162,6 +164,17 @@ class Commands(Base):
     user_email = Column(String())
     supplier = Column(String())
     incidence_image_command = Column(String())
+
+
+def ensure_command_price_columns():
+    """Add price snapshots to existing SQLite databases without changing old orders."""
+    with engine.begin() as connection:
+        columns = {row[1] for row in connection.exec_driver_sql('PRAGMA table_info(commands)')}
+        if not columns:
+            return
+        for name in ('import_unit_ics', 'import_unit_idibgi'):
+            if name not in columns:
+                connection.exec_driver_sql(f'ALTER TABLE commands ADD COLUMN {name} VARCHAR')
 
 
 class Cost_center(Base):

@@ -374,8 +374,8 @@
                         }
 
                         // Mirem tenen subreferencies i si ho son fem visible el camp
-                        let description_subreff = list_info_lots[0]['description_subreference'];
-                        if (description_subreff !== '') {
+                        const has_subreferences = list_info_lots.some(lot => (lot.description_subreference || '').trim() !== '');
+                        if (has_subreferences) {
                             document.getElementById('div_subreff').style.display = "block";
                             document.getElementById('div_subreff2').style.display = "block";
                             document.getElementById('subreference_active').value = 'True'
@@ -526,7 +526,7 @@
                                     <div class="input-group mb-3">
                                         <span class="input-group-text" id="basic-addon1" style="width: 148px;"><b>Unitats rebudes</b></span>
                                         <select class="form-select" id="units_lot0_${i}">
-                                            <option>0</option>
+                                            ${document.getElementById('subreference_active').value === 'True' ? '<option>0</option>' : ''}
                                             <option selected>1</option>
                                             {% for i in range(2, 1001) %}
                                                 <option>{{ i }}</option>
@@ -1114,7 +1114,7 @@
                             <div class="input-group mb-3">
                                 <span class="input-group-text" id="basic-addon1" style="width: 145px;"><b>Unitats rebudes</b></span>
                                 <select class="form-select" id="units_lot${x}_${i}">
-                                    <option>0</option>
+                                    ${document.getElementById('subreference_active').value === 'True' ? '<option>0</option>' : ''}
                                     <option selected>1</option>
                                     {% for i in range(2, 1001) %}
                                         <option>{{ i }}</option>
@@ -1749,6 +1749,8 @@
                     alert_type = 'danger'
                     if (response === 'False_duplicate'){
                         message = `Error, un o més lots ja estan entrats a la bd, no s'ha inserit cap camp, revisa els duplicats i tornar a inserir-lo. <button type="button" class="btn btn-link btn-sm" onclick="open_modal('add_lot_info')">lot</button>`}
+                    else if (response === 'False_zero_units'){
+                        message = `Error, no es poden rebre 0 unitats d'un article sense subreferències. <button type="button" class="btn btn-link btn-sm" onclick="open_modal('add_lot_info')">lot</button>`}
                     else if (response === 'reactive'){
                         message = "Error, els reactius no poden sumar-se"}
                     else{
@@ -4586,9 +4588,12 @@
                                     <th><div class="header-filter"><span class="header-title">Codi LOG <span class="sort-icon">↕</span></span><input type="text" data-column="4"></div></th>
                                     <th><div class="header-filter"><span class="header-title">Unitats <span class="sort-icon">↕</span></span><input type="text" data-column="5"></div></th>
                                     <th><div class="header-filter"><span class="header-title">Data Tramitació <span class="sort-icon">↕</span></span><input type="text" data-column="6"></div></th>
-                                    <th><div class="header-filter"><span class="header-title">Usuari <span class="sort-icon">↕</span></span><input type="text" data-column="7"></div></th>
-                                    <th><div class="header-filter"><span class="header-title">CECO <span class="sort-icon">↕</span></span><input type="text" data-column="8"></div></th>
-                                    <th><div class="header-filter"><span class="header-title">N. Incidència <span class="sort-icon">↕</span></span><input type="text" data-column="9"></div></th>
+                                    <th><div class="header-filter"><span class="header-title">Data recepció <span class="sort-icon">↕</span></span><input type="text" data-column="7"></div></th>
+                                    <th><div class="header-filter"><span class="header-title">Usuari <span class="sort-icon">↕</span></span><input type="text" data-column="8"></div></th>
+                                    <th><div class="header-filter"><span class="header-title">CECO <span class="sort-icon">↕</span></span><input type="text" data-column="9"></div></th>
+                                    <th><div class="header-filter"><span class="header-title">Preu ICS <span class="sort-icon">↕</span></span><input type="text" data-column="10"></div></th>
+                                    <th><div class="header-filter"><span class="header-title">Preu IDIBGI <span class="sort-icon">↕</span></span><input type="text" data-column="11"></div></th>
+                                    <th><div class="header-filter"><span class="header-title">N. Incidència <span class="sort-icon">↕</span></span><input type="text" data-column="12"></div></th>
                                     <th>F. Incidència</th>
                                 </tr>
                             </thead>
@@ -5824,8 +5829,11 @@
                                     <th>Codi LOG</th>
                                     <th>Unitats</th>
                                     <th>Data Tramitació</th>
+                                    <th>Data recepció</th>
                                     <th>Usuari</th>
                                     <th>CECO</th>
+                                    <th>Preu ICS</th>
+                                    <th>Preu IDIBGI</th>
                                     <th>N. Incidència</th>
                                 </tr>
                             </thead>
@@ -6847,8 +6855,8 @@
             const rows = JSON.parse(splitResponse[1]);
             const table = ensureSimpleDataTable('#manage_command_success_table', 6, [
                 { targets: 1, width: '420px' },
-                { targets: 9, width: '160px', className: 'command-incidence-column' },
-                { targets: 10, width: '70px', orderable: false }
+                { targets: 12, width: '160px', className: 'command-incidence-column' },
+                { targets: 13, width: '70px', orderable: false }
             ]);
             table.clear();
 
@@ -6861,8 +6869,11 @@
                     escapeHtml(row.code_LOG),
                     escapeHtml(row.units),
                     escapeHtml(row.date_close),
+                    escapeHtml(row.date_complete),
                     escapeHtml(row.user_close),
                     escapeHtml(row.cost_center),
+                    escapeHtml(row.import_unit_ics),
+                    escapeHtml(row.import_unit_idibgi),
                     escapeHtml(row.incidence_number),
                     buildHistoryIncidenceImagesAction(row)
                 ]).node();

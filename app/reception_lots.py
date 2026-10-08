@@ -2,6 +2,7 @@ from flask import request, session, jsonify, flash, render_template, send_file
 from app import app
 from app.utils import instant_date, requires_auth, save_log, send_mail, list_desciption_lots, list_cost_center
 from app.models import session1, Lots, Stock_lots, Commands
+from app.command_prices import command_price
 from sqlalchemy import func, Integer, and_
 from sqlalchemy.sql import cast
 from werkzeug.utils import secure_filename
@@ -221,6 +222,18 @@ def add_stock_lot():
     number_total_lot_discount = request.form.get("number_total_lot_discount")
     subreference_active = request.form.get("subreference_active")
 
+    try:
+        list_lots = json.loads(list_lots_json)
+        if not isinstance(list_lots, list) or not list_lots:
+            return 'False_error'
+        lot_keys = {lot_data['key'] for lot_data in list_lots}
+        catalog_lots = session1.query(Lots).filter(Lots.key.in_(lot_keys)).all()
+        has_subreferences = any((lot.description_subreference or '').strip() for lot in catalog_lots)
+        if not has_subreferences and any(int(lot_data['units_lot']) <= 0 for lot_data in list_lots):
+            return 'False_zero_units'
+    except (TypeError, ValueError, KeyError):
+        return 'False_error'
+
     date = instant_date()
 
     max_number_group_insert = session1.query(func.max(Stock_lots.group_insert)).scalar()
@@ -316,7 +329,16 @@ def add_stock_lot():
         filename_state_product = ""
         type_doc_state_product = ""
 
-    list_lots = json.loads(list_lots_json)
+    # The selected order can differ from other pending orders for the same product.
+    if id_substract_command == 'none':
+        id_substract_command = list_lots[0]['id_command'].split(';')[0]
+    select_command = session1.query(Commands).filter(Commands.id == id_substract_command).first()
+
+    for lot_data in list_lots:
+        catalog_lot = session1.query(Lots).filter(Lots.key == lot_data['key']).first()
+        if catalog_lot is not None:
+            lot_data['import_unit_ics'] = command_price(select_command, catalog_lot, 'import_unit_ics')
+            lot_data['import_unit_idibgi'] = command_price(select_command, catalog_lot, 'import_unit_idibgi')
 
     if price_oligos not in (None, ''):
         price_oligos = str(price_oligos).replace(',', '.')
@@ -359,6 +381,10 @@ def add_stock_lot():
 
             oligos_updated.add(lot_key)
 
+        if oligos_updated and select_command is not None:
+            select_command.import_unit_ics = price_oligos
+            select_command.import_unit_idibgi = price_oligos
+
     # for llo in list_lots:
     #     print(llo)
 
@@ -393,12 +419,23 @@ def add_stock_lot():
         print(lots)
         try:
             json_lots = json.dumps(lots)
+            # Coriells use the price entered at reception, without updating Lots.
+            if isinstance(lots.get('description'), str) and 'coriel' in lots['description'].lower():
+                lots['import_unit_ics'] = price_coriells
+                lots['import_unit_idibgi'] = price_coriells
+                if select_command is not None:
+                    select_command.import_unit_ics = price_coriells
+                    select_command.import_unit_idibgi = price_coriells
+
             select_lot = session1.query(Stock_lots).filter_by(code_SAP=lots['code_SAP'], code_LOG=lots['code_LOG'], lot=lots['lot'], date_expiry=lots['date_expiry'], internal_lot=lots['internal_lot'], spent=0).first()
+            if select_lot and select_lot.react_or_fungible == 'Reactiu':
+                session1.rollback()
+                return 'False_reactive'
+            if select_lot and (select_lot.import_unit_ics != lots['import_unit_ics'] or
+                               select_lot.import_unit_idibgi != lots['import_unit_idibgi']):
+                select_lot = None
             if select_lot:
-                if select_lot.react_or_fungible != 'Reactiu':
-                    select_lot.units_lot = int(select_lot.units_lot) + int(lots['units_lot'])
-                else:
-                    return 'False_reactive'
+                select_lot.units_lot = int(select_lot.units_lot) + int(lots['units_lot'])
                 type_log = 'insert add stock'
                 dict_info_excel = {'catalog_reference': lots['catalog_reference'],
                                    'description': lots['description'],
@@ -454,11 +491,6 @@ def add_stock_lot():
                         if select_lot_certificate is not None:
                             filename_certificate = select_lot_certificate.certificate
                             type_doc_certificate = select_lot_certificate.type_doc_certificate
-
-                    # Si són coriels el preu el posen directament i no es pot fer servir el que hi ha a l'article mare
-                    if isinstance(lots.get('description'), str) and 'coriel' in lots['description'].lower():
-                        lots['import_unit_ics'] = price_coriells
-                        lots['import_unit_idibgi'] = price_coriells
 
                     # Mirem si el lot te subreferencies, si en te mirem cuantes d'elles aniran amb preu i quantes no, com que son subreferencies nomes una de cada lot pot anar amb preu, sino es contabilitzarien extra
                     if subreference_active == 'True':
@@ -554,13 +586,6 @@ def add_stock_lot():
             session1.rollback()
             return 'False_error'
 
-    # Si id_substract_command es none voldra dir que nomes hi ha un lot a descontar i haurem de buscar el id de la comanda normalment,
-    # si hi ha mes d'un lot l'usuari ja haura seleccionat de quin es i ja tindrem aquest pas fet.
-    if id_substract_command == 'none':
-        split_id_command = list_lots[0]['id_command'].split(';')
-        id_substract_command = split_id_command[0]
-
-    select_command = session1.query(Commands).filter(Commands.id == id_substract_command).first()
     command_update = None
     if select_command:
         # total_received = int(select_command.num_received) + int(list_lots[0]['units_lot'])
