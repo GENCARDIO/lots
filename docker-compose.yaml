@@ -1,0 +1,22 @@
+name: lots
+
+services:
+  app:
+    build: .
+    ports:
+      - "5017:5017"
+    environment:
+      LOTS_ENV: production
+      LOTS_IP_ADDRESS: http://172.16.83.23
+      LOTS_DATA_DIR: /lots/DB
+      LOTS_DOCS_DIR: /lots/DB/docs
+      LOTS_DEBUG: "false"
+      TZ: Europe/Madrid
+    volumes:
+      - type: bind
+        source: /home/gencardio/Desktop/apps_db/lots_db
+        target: /lots/DB
+        bind:
+          create_host_path: false
+    command: ["python3", "lots.py"]
+    restart: unless-stopped

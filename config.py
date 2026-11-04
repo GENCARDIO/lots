@@ -2,9 +2,26 @@
 import os
 
 main_dir = os.path.dirname(os.path.abspath(__file__))
-ip_address = 'http://172.16.82.46'
-main_dir = f'{main_dir}_db'
-main_dir_docs = f"{main_dir}/docs"
+LOTS_ENV = os.environ.get('LOTS_ENV', 'production').strip().lower()
+
+if LOTS_ENV == 'production':
+    ip_address = 'http://172.16.83.23'
+    main_dir = f'{main_dir}/DB'
+elif LOTS_ENV == 'development':
+    ip_address = 'http://172.16.82.45'
+    main_dir = f'{main_dir}_db'
+else:
+    raise ValueError('LOTS_ENV ha de ser production o development')
+
+ip_address = os.environ.get('LOTS_IP_ADDRESS', ip_address).rstrip('/')
+main_dir = os.environ.get('LOTS_DATA_DIR', main_dir)
+main_dir_docs = os.environ.get('LOTS_DOCS_DIR', f'{main_dir}/docs')
+
+# Desenvolupament anterior (referència)
+# main_dir = os.path.dirname(os.path.abspath(__file__))
+# ip_address = 'http://172.16.82.45'
+# main_dir = f'{main_dir}_db'
+# main_dir_docs = f"{main_dir}/docs"
 
 # Docker
 # ip_address = 'http://172.16.78.83'
@@ -18,9 +35,11 @@ main_dir_docs = f"{main_dir}/docs"
 
 
 class Config(object):
+    DEPLOYMENT_ENV = LOTS_ENV
     SECRET_KEY = 'lablam.2017'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    DEBUG = True
+    DEBUG = os.environ.get('LOTS_DEBUG', 'false').lower() in {'1', 'true', 'yes'}
+    TESTING = False
 
 
 class ProductionConfig(Config):
@@ -28,6 +47,7 @@ class ProductionConfig(Config):
 
 
 class DevelopmentConfig(Config):
+    DEBUG = os.environ.get('LOTS_DEBUG', 'true').lower() in {'1', 'true', 'yes'}
     SQLALCHEMY_DATABASE_URI = 'postgresql://db_user:db_pass@dev_host:port/db_name'
 
 

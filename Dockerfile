@@ -1,7 +1,9 @@
 FROM python:3.10-slim
 
 
-ENV TZ=Europe/Berlin
+ENV TZ=Europe/Madrid \
+    PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1
 
 
 RUN pip3 install --upgrade pip
@@ -23,6 +25,8 @@ RUN pip3 --default-timeout=180 --no-cache-dir install -r requirements.txt
 
 
 VOLUME /lots/DB
+
+EXPOSE 5017
 
 
 CMD ["python3", "lots.py"]
