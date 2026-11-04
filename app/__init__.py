@@ -1,10 +1,13 @@
 # coding=utf-8
 from flask import Flask
+from config import LOTS_ENV
 
 # FLASK
 app = Flask(__name__)
 app.test_client()
-app.config.from_object("config.TestingConfig")
+app.config.from_object(
+    'config.DevelopmentConfig' if LOTS_ENV == 'development' else 'config.ProductionConfig'
+)
 
 from app import models
 
