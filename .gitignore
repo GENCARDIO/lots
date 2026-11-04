@@ -2,3 +2,4 @@ __pycache__/
 *.pyc
 *.pyo
 /docker-compose-alex.yaml
+/docker-compose-adria.yaml
