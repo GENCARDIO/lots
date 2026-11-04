@@ -12,6 +12,10 @@
     box-shadow: none;
 }
 
+.app-top-navbar.app-top-navbar-development {
+    background: #dc2626;
+}
+
 .app-top-navbar-brand {
     align-items: center;
     border-right: 1px solid rgba(255, 255, 255, 0.55);

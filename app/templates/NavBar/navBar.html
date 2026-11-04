@@ -1,4 +1,4 @@
-<nav class="navbar app-top-navbar navbar-expand-sm fixed-top mb-3" rel="preload">
+<nav class="navbar app-top-navbar{% if config.DEPLOYMENT_ENV != 'production' %} app-top-navbar-development{% endif %} navbar-expand-sm fixed-top mb-3" rel="preload">
     <a class="navbar-brand app-top-navbar-brand" href="/"><b>COMANDES</b></a>
     <div class="collapse navbar-collapse app-top-navbar-content" id="navbarNavDarkDropdown">
         <ul class="navbar-nav app-top-navbar-menu">
