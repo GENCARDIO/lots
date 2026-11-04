@@ -14,7 +14,7 @@ services:
       TZ: Europe/Madrid
     volumes:
       - type: bind
-        source: /home/gencardio/Desktop/apps_db/lots_db
+        source: /home/udmmp/Desktop/apps_db/lots_db
         target: /lots/DB
         bind:
           create_host_path: false
