@@ -3700,6 +3700,7 @@
                             <button class="btn btn-sm btn-danger" title="Eliminar Compra" onclick="action_primer(${data.id}, 'delete')">
                                 <i class="fa-solid fa-trash"></i>
                             </button>
+                            ${primerDateUpdateButton(data.id)}
                         </div>
                     </div>`,
                     `<div class="text-center">${dna ?? ''}</div>`,
@@ -3717,6 +3718,8 @@
 
                 // aquí asignas el id al <tr>
                 rowNode.id = `${data.id}`;
+                rowNode.dataset.primerSequence = sequence;
+                rowNode.dataset.primerSequenceName = sequence_name;
 
                 // 👉 highlight
                 rowNode.classList.add('table-warning');
@@ -3909,6 +3912,170 @@
 
 
     const selectedPrimerIds = new Set();
+    let primerDateUpdateIds = [];
+    let primerDateUpdateInFlight = false;
+
+    function primerDateUpdateButton(primerId) {
+        return `<button type="button" class="btn btn-sm btn-primary"
+                        title="Actualitzar dates" aria-label="Actualitzar dates"
+                        onclick="openPrimerDateUpdate(${primerId})">
+                    <i class="fa-solid fa-arrows-rotate" aria-hidden="true"></i>
+                </button>`;
+    }
+
+    function getPrimerDateUpdateRows(primerIds) {
+        const rows = $('#table_primers').DataTable().rows().nodes().toArray();
+        return primerIds.map(id => rows.find(row => row.id === id));
+    }
+
+    function closePrimerDateUpdate() {
+        close_modal('modal_primer_date_update');
+    }
+
+    function openPrimerDateUpdate(primerId) {
+        if (primerDateUpdateInFlight) {
+            showModalMessage('Hi ha una actualització de dates en curs. Espereu que acabi.', 'warning', 'modal_message_container');
+            return;
+        }
+        const ids = Array.from(selectedPrimerIds);
+        if (ids.length < 1 || ids.length > 2) {
+            showModalMessage('Seleccioneu un o dos primers per actualitzar les dates (màxim 2).', 'warning', 'modal_message_container');
+            return;
+        }
+        if (!ids.includes(String(primerId))) {
+            showModalMessage('Premeu el botó d’actualització d’un dels primers seleccionats.', 'warning', 'modal_message_container');
+            return;
+        }
+        const rows = getPrimerDateUpdateRows(ids);
+        if (rows.some(row => !row || !row.dataset.primerSequence)) {
+            showModalMessage('No s’han pogut recuperar les seqüències seleccionades. Torneu a carregar Primers.', 'warning', 'modal_message_container');
+            return;
+        }
+
+        primerDateUpdateIds = ids;
+        document.getElementById('form_primer_date_update').reset();
+        const fields = document.getElementById('primer_date_update_fields');
+        fields.replaceChildren();
+        rows.forEach((row, index) => {
+            const suffix = rows.length === 1 ? '' : `_${index + 1}`;
+            const group = document.createElement('section');
+            group.className = 'primer-date-group';
+            group.setAttribute('aria-labelledby', `primer_date_heading${suffix}`);
+
+            const heading = document.createElement('h6');
+            heading.id = `primer_date_heading${suffix}`;
+            heading.className = 'primer-date-heading';
+            heading.textContent = row.dataset.primerSequenceName;
+            group.appendChild(heading);
+
+            const sequence = document.createElement('p');
+            sequence.className = 'primer-date-sequence';
+            sequence.textContent = row.dataset.primerSequence;
+            group.appendChild(sequence);
+
+            const dates = document.createElement('div');
+            dates.className = 'primer-date-inputs';
+            ['buydate', 'hydrodate'].forEach(field => {
+                const name = `${field}${suffix}`;
+                const floating = document.createElement('div');
+                floating.className = 'primer-date-floating';
+                const input = document.createElement('input');
+                input.type = 'date';
+                input.className = 'form-control';
+                input.id = `primer_${name}`;
+                input.name = name;
+                input.required = true;
+                const label = document.createElement('label');
+                label.htmlFor = input.id;
+                label.textContent = `${name} *`;
+                floating.append(input, label);
+                dates.appendChild(floating);
+            });
+            group.appendChild(dates);
+            fields.appendChild(group);
+        });
+        $('#modal_primer_date_update').modal('show');
+    }
+
+    async function submitPrimerDateUpdate() {
+        if (primerDateUpdateInFlight) {
+            return;
+        }
+        const form = document.getElementById('form_primer_date_update');
+        if (!form.reportValidity()) {
+            return;
+        }
+        const rows = getPrimerDateUpdateRows(primerDateUpdateIds);
+        if (rows.length < 1 || rows.length > 2 || rows.some(row => !row || !row.dataset.primerSequence)) {
+            closePrimerDateUpdate();
+            showModalMessage('La selecció ja no està disponible. Seleccioneu un o dos primers.', 'warning', 'modal_message_container');
+            return;
+        }
+
+        const dates = {};
+        rows.forEach((row, index) => {
+            const suffix = rows.length === 1 ? '' : `_${index + 1}`;
+            ['buydate', 'hydrodate'].forEach(field => {
+                const name = `${field}${suffix}`;
+                dates[name] = form.elements.namedItem(name).value;
+            });
+        });
+        const payload = {
+            ...dates,
+            primers: rows.map(row => ({
+                id: row.id,
+                sequence_name: row.dataset.primerSequenceName,
+                sequence: row.dataset.primerSequence
+            }))
+        };
+
+        const submitButton = form.querySelector('button[type="submit"]');
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 25000);
+        primerDateUpdateInFlight = true;
+        submitButton.disabled = true;
+        form.setAttribute('aria-busy', 'true');
+        clearModalMessage('modal_message_container');
+        try {
+            const response = await fetch('/update_primer_dates', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(payload),
+                signal: controller.signal
+            });
+            const data = await response.json().catch(() => {
+                throw new Error('El servidor ha retornat una resposta no vàlida. Comproveu la sessió i torneu-ho a provar.');
+            });
+            if (!response.ok || data.status !== 'success') {
+                throw new Error(data.message || `No s’han pogut actualitzar les dates (HTTP ${response.status}).`);
+            }
+
+            const table = $('#table_primers').DataTable();
+            rows.forEach(row => {
+                table.row(row).remove();
+                selectedPrimerIds.delete(row.id);
+                pendingExternalPrimerIds.delete(row.id);
+            });
+            table.draw(false);
+            syncPrimerSelection(table);
+            if (!canPollPendingExternalPrimers()) {
+                stopPendingExternalPrimerPolling();
+            }
+            showModalMessage('Les dates dels primers s’han actualitzat correctament.', 'success', 'modal_message_container');
+        } catch (error) {
+            const message = error.name === 'AbortError'
+                ? 'S’ha esgotat el temps d’espera de l’actualització de dates.'
+                : error.message || 'No s’ha pogut connectar amb el servidor per actualitzar les dates.';
+            showModalMessage(escapeHtml(message), 'danger', 'modal_message_container');
+        } finally {
+            clearTimeout(timeout);
+            primerDateUpdateInFlight = false;
+            submitButton.disabled = false;
+            form.removeAttribute('aria-busy');
+            closePrimerDateUpdate();
+        }
+    }
+
     let pendingExternalPrimerIds = new Set();
     let pendingExternalPrimerPoll = null;
     let pendingExternalPrimerPollInFlight = false;
@@ -4120,6 +4287,7 @@
                                     onclick="action_primer(${id_primer_change}, 'delete')">
                                 <i class="fa-solid fa-trash"></i>
                             </button>
+                            ${primerDateUpdateButton(id_primer_change)}
                         `;
                         // sustituir contenido
                         actionsCell.innerHTML = newButtons;
@@ -6216,6 +6384,27 @@
         </div>
     </div>
 
+    <div class="modal fade" id="modal_primer_date_update" tabindex="-1" role="dialog" aria-labelledby="primerDateUpdateTitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered primer-date-dialog" role="document">
+            <div class="modal-content primer-date-content">
+                <form id="form_primer_date_update" onsubmit="event.preventDefault(); submitPrimerDateUpdate();">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="primerDateUpdateTitle">Actualitzar dates de primers</h5>
+                        <button type="button" class="close" onclick="closePrimerDateUpdate()" aria-label="Tancar"><span aria-hidden="true">&times;</span></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="primer-date-description">Les dates de compra i d’hidratació són obligatòries per a cada primer seleccionat.</p>
+                        <div id="primer_date_update_fields"></div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" onclick="closePrimerDateUpdate()">Cancel·lar</button>
+                        <button type="submit" class="btn btn-primary"><i class="fa-solid fa-arrows-rotate" aria-hidden="true"></i> Enviar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <div class="modal fade" id="modal_manual_primer_insertion" tabindex="-1" role="dialog" aria-labelledby="manualPrimerInsertionTitle" aria-hidden="true">
         <div class="modal-dialog" role="document">
             <div class="modal-content">
@@ -7679,7 +7868,7 @@
             const rowNode = table.row.add([
                 `<div class="primer-control-cell">
                     <div class="form-check primer-checkbox-cell"><input class="form-check-input primer-select-checkbox" type="checkbox" name="select_multiple" value=${r.id} id="${r.id}_cb_primer"></div>
-                    <div class="primer-row-actions">${actionButton} ${deleteButton}</div>
+                    <div class="primer-row-actions">${actionButton} ${deleteButton} ${primerDateUpdateButton(r.id)}</div>
                 </div>`,
                 `<div class="text-center">${r.dna ?? ''}</div>`,
                 `<div class="text-center">${r.sequence_name ?? ''}</div>`,
@@ -7695,6 +7884,8 @@
             ]).node();
 
             rowNode.id = `${r.id}`;
+            rowNode.dataset.primerSequence = r.sequence ?? '';
+            rowNode.dataset.primerSequenceName = r.sequence_name ?? '';
         }
 
         table.draw(false);

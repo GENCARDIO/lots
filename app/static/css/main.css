@@ -1527,8 +1527,8 @@ body.app-navbar-page-embedded .app-navbar-page-view .app-navbar-table-wrapper {
 }
 
 .primer-actions-header {
-    min-width: 118px;
-    width: 118px !important;
+    min-width: 154px;
+    width: 154px !important;
 }
 
 .primer-checkbox-cell {
@@ -1610,6 +1610,96 @@ body.app-navbar-page-embedded .app-navbar-page-view .app-navbar-table-wrapper {
     gap: 8px;
     min-height: 28px;
     white-space: nowrap;
+}
+
+#modal_primer_date_update .primer-date-dialog {
+    max-width: 580px;
+}
+
+#modal_primer_date_update .primer-date-content {
+    border: 0;
+    border-radius: 14px;
+    overflow: hidden;
+}
+
+#modal_primer_date_update .modal-header,
+#modal_primer_date_update .modal-footer {
+    background: #f4f7fb;
+    padding: 18px 24px;
+}
+
+#modal_primer_date_update .modal-body {
+    padding: 24px;
+}
+
+#modal_primer_date_update .primer-date-description {
+    color: #63758c;
+    font-size: 14px;
+    margin-bottom: 24px;
+}
+
+#modal_primer_date_update .primer-date-group + .primer-date-group {
+    border-top: 1px solid #e2e8f0;
+    margin-top: 24px;
+    padding-top: 24px;
+}
+
+#modal_primer_date_update .primer-date-heading {
+    color: #15283b;
+    font-weight: 700;
+    overflow-wrap: anywhere;
+}
+
+#modal_primer_date_update .primer-date-sequence {
+    color: #63758c;
+    font-family: monospace;
+    font-size: 12px;
+    margin-bottom: 20px;
+    overflow-wrap: anywhere;
+}
+
+#modal_primer_date_update .primer-date-inputs {
+    display: grid;
+    gap: 18px;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
+}
+
+#modal_primer_date_update .primer-date-floating {
+    min-width: 0;
+    position: relative;
+}
+
+#modal_primer_date_update .primer-date-floating input {
+    background: #ffffff;
+    border: 1px solid #b8c8d8;
+    border-radius: 8px;
+    height: 54px;
+    min-width: 0;
+    padding: 14px 12px 8px;
+    width: 100%;
+}
+
+#modal_primer_date_update .primer-date-floating label {
+    background: #ffffff;
+    color: #53657c;
+    font-size: 12px;
+    font-weight: 600;
+    left: 10px;
+    line-height: 1;
+    margin: 0;
+    padding: 0 5px;
+    position: absolute;
+    top: 0;
+    transform: translateY(-50%);
+}
+
+#modal_primer_date_update .primer-date-floating input:focus {
+    border-color: #2382d6;
+    box-shadow: 0 0 0 3px rgba(35, 130, 214, 0.12);
+}
+
+#modal_primer_date_update .primer-date-floating:focus-within label {
+    color: #2382d6;
 }
 
 .pending-command-actions .tracking-command-action {

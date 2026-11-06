@@ -761,6 +761,77 @@ def info_management_primers():
     return jsonify(data)
 
 
+def primer_dates_api_message(body, fallback):
+    text = body.decode('utf-8', errors='replace').strip()
+    try:
+        data = json.loads(text)
+    except ValueError:
+        return text[:500] or fallback
+    if isinstance(data, dict):
+        for field in ('message', 'error', 'detail'):
+            if data.get(field):
+                message = data[field]
+                return message if isinstance(message, str) else json.dumps(message, ensure_ascii=False)
+    return fallback
+
+
+@app.route('/update_primer_dates', methods=['POST'])
+@requires_auth
+def update_primer_dates():
+    payload = request.get_json(silent=True)
+    primers = payload.get('primers') if isinstance(payload, dict) else None
+    if not isinstance(primers, list) or not 1 <= len(primers) <= 2:
+        return jsonify(status='error', message='Seleccioneu un o dos primers per actualitzar les dates.'), 400
+
+    api_payload = {}
+    for index, primer in enumerate(primers):
+        if (not isinstance(primer, dict) or not isinstance(primer.get('sequence'), str)
+                or not primer['sequence'].strip()):
+            return jsonify(status='error', message='Falten les dades dels primers seleccionats.'), 400
+        sequence_key = f'sequence{index + 1}'
+        api_payload[sequence_key] = primer['sequence']
+        suffix = '' if len(primers) == 1 else f'_{index + 1}'
+        # The modal uses hydrodate; the external API requires hidrodate.
+        for field, api_field in (('buydate', 'buydate'), ('hydrodate', 'hidrodate')):
+            name = f'{field}{suffix}'
+            value = payload.get(name)
+            try:
+                if not isinstance(value, str) or not re.fullmatch(r'\d{4}-\d{2}-\d{2}', value):
+                    raise ValueError()
+                datetime.strptime(value, '%Y-%m-%d')
+            except ValueError:
+                return jsonify(status='error', message=f'La data {name} no és vàlida. Utilitzeu YYYY-MM-DD.'), 400
+            api_payload[f'{api_field}_{sequence_key}'] = value
+
+    request_api = urllib.request.Request(
+        'http://172.16.82.46:5005/api/primers/update-dates-by-sequence',
+        data=json.dumps(api_payload).encode('utf-8'),
+        headers={'Content-Type': 'application/json', 'Accept': 'application/json'},
+        method='POST'
+    )
+    try:
+        with urllib.request.urlopen(request_api, timeout=15) as response:
+            body = response.read()
+            data = json.loads(body.decode('utf-8')) if body.strip() else {}
+            if not isinstance(data, dict):
+                return jsonify(status='error', message='L’API de Primers ha retornat una resposta no vàlida.'), 502
+            status = str(data.get('status', '')).lower()
+            if (data.get('success') is False or data.get('ok') is False or data.get('error')
+                    or status in ('error', 'failed', 'failure', 'false', 'danger')):
+                message = primer_dates_api_message(body, 'L’API de Primers no ha pogut actualitzar les dates.')
+                return jsonify(status='error', message=message), 502
+    except urllib.error.HTTPError as error:
+        message = primer_dates_api_message(error.read(), f'L’API de Primers ha retornat un error HTTP {error.code}.')
+        return jsonify(status='error', message=message), 502
+    except OSError as error:
+        reason = getattr(error, 'reason', error)
+        return jsonify(status='error', message=f'No s’ha pogut connectar amb l’API de Primers: {reason}.'), 502
+    except (ValueError, UnicodeDecodeError):
+        return jsonify(status='error', message='L’API de Primers ha retornat una resposta no vàlida.'), 502
+
+    return jsonify(status='success', message='Les dates dels primers s’han actualitzat correctament.')
+
+
 @app.route('/add_buy_primer', methods=['POST'])
 @requires_auth
 def add_buy_primer():

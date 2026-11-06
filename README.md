@@ -60,3 +60,13 @@ LOTS_ENV=development python3 lots.py
 ```
 
 El Dockerfile incluye LibreOffice, necesario para convertir documentos a PDF. Las funciones de autenticación e integración requieren conectividad con los servicios internos configurados. La aplicación conserva la actualización existente de columnas de precios al arrancar sobre una base de datos anterior.
+
+## Fechas de Primers
+
+Selecciona una o dos filas y pulsa el botón azul de actualización de una de ellas. Con un primer, el modal muestra dos fechas obligatorias: `buydate` y `hydrodate`. Con dos primers, muestra `buydate_1`, `hydrodate_1`, `buydate_2` y `hydrodate_2`. Cada par aparece junto al nombre y la secuencia de su primer, en el mismo orden que el array `primers`, con inputs de fecha y etiquetas flotantes.
+
+**Enviar** envía directamente las fechas en formato `YYYY-MM-DD` y el array `primers` (con `id`, `sequence_name` y la secuencia original `sequence`) al endpoint autenticado de Lots `/update_primer_dates`. Las dos fechas de cada primer seleccionado son obligatorias y se validan tanto en el navegador como en el servidor. Lots hace el POST JSON a `http://172.16.82.46:5005/api/primers/update-dates-by-sequence`, con un tiempo de espera de 15 segundos. La conexión desde el servidor evita depender de CORS en el navegador.
+
+El JSON enviado a la API incluye únicamente la secuencia y las dos fechas de cada primer seleccionado. Para el primero se envían `sequence1`, `buydate_sequence1` y `hidrodate_sequence1`. Solo si hay un segundo primer se añaden `sequence2`, `buydate_sequence2` y `hidrodate_sequence2`. La API requiere `hidrodate` con i; el campo interno del modal `hydrodate` se convierte al enviar. Cada secuencia se recoge automáticamente de la tabla y conserva las fechas de su grupo en el modal; no se envían campos de primers no seleccionados. Los únicos campos que debe rellenar el usuario son las dos fechas obligatorias por primer.
+
+Si la API confirma la operación, las filas enviadas se retiran de la tabla actual y de la selección, y se muestra un flash de éxito en la cabecera de Primers. Ante un error HTTP, de conexión o indicado por la API, las filas se conservan y se muestra el motivo en un flash. El modal se cierra al finalizar el envío, tanto si funciona como si falla; Cancel·lar y la cruz también lo cierran. Se bloquean los envíos duplicados mientras hay una petición en curso. Esta acción no modifica el estado de recepción de las compras en la base de datos de Lots.
