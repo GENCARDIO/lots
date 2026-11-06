@@ -804,7 +804,7 @@ def update_primer_dates():
             api_payload[f'{api_field}_{sequence_key}'] = value
 
     request_api = urllib.request.Request(
-        'http://172.16.82.46:5005/api/primers/update-dates-by-sequence',
+        'http://172.16.83.23:5005/api/primers/update-dates-by-sequence',
         data=json.dumps(api_payload).encode('utf-8'),
         headers={'Content-Type': 'application/json', 'Accept': 'application/json'},
         method='POST'
