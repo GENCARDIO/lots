@@ -950,6 +950,9 @@ def action_primer():
                 primer.buy = 1
                 primer.buy_date = buy_date
                 primer.buy_by = bought_by
+                primer.received = 1
+                primer.received_date = buy_date
+                primer.received_by = bought_by
             session1.commit()
         except Exception:
             session1.rollback()
