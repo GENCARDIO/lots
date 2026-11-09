@@ -3918,7 +3918,7 @@
     function primerDateUpdateButton(primerId) {
         return `<button type="button" class="btn btn-sm btn-primary"
                         title="Actualitzar dates" aria-label="Actualitzar dates"
-                        onclick="openPrimerDateUpdate(${primerId})">
+                        onclick="action_primer(${primerId}, 'actualitzar')">
                     <i class="fa-solid fa-arrows-rotate" aria-hidden="true"></i>
                 </button>`;
     }
@@ -3932,18 +3932,9 @@
         close_modal('modal_primer_date_update');
     }
 
-    function openPrimerDateUpdate(primerId) {
-        if (primerDateUpdateInFlight) {
-            showModalMessage('Hi ha una actualització de dates en curs. Espereu que acabi.', 'warning', 'modal_message_container');
-            return;
-        }
-        const ids = Array.from(selectedPrimerIds);
+    function openPrimerDateUpdate(ids) {
         if (ids.length < 1 || ids.length > 2) {
             showModalMessage('Seleccioneu un o dos primers per actualitzar les dates (màxim 2).', 'warning', 'modal_message_container');
-            return;
-        }
-        if (!ids.includes(String(primerId))) {
-            showModalMessage('Premeu el botó d’actualització d’un dels primers seleccionats.', 'warning', 'modal_message_container');
             return;
         }
         const rows = getPrimerDateUpdateRows(ids);
@@ -3995,85 +3986,6 @@
             fields.appendChild(group);
         });
         $('#modal_primer_date_update').modal('show');
-    }
-
-    async function submitPrimerDateUpdate() {
-        if (primerDateUpdateInFlight) {
-            return;
-        }
-        const form = document.getElementById('form_primer_date_update');
-        if (!form.reportValidity()) {
-            return;
-        }
-        const rows = getPrimerDateUpdateRows(primerDateUpdateIds);
-        if (rows.length < 1 || rows.length > 2 || rows.some(row => !row || !row.dataset.primerSequence)) {
-            closePrimerDateUpdate();
-            showModalMessage('La selecció ja no està disponible. Seleccioneu un o dos primers.', 'warning', 'modal_message_container');
-            return;
-        }
-
-        const dates = {};
-        rows.forEach((row, index) => {
-            const suffix = rows.length === 1 ? '' : `_${index + 1}`;
-            ['buydate', 'hydrodate'].forEach(field => {
-                const name = `${field}${suffix}`;
-                dates[name] = form.elements.namedItem(name).value;
-            });
-        });
-        const payload = {
-            ...dates,
-            primers: rows.map(row => ({
-                id: row.id,
-                sequence_name: row.dataset.primerSequenceName,
-                sequence: row.dataset.primerSequence
-            }))
-        };
-
-        const submitButton = form.querySelector('button[type="submit"]');
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 25000);
-        primerDateUpdateInFlight = true;
-        submitButton.disabled = true;
-        form.setAttribute('aria-busy', 'true');
-        clearModalMessage('modal_message_container');
-        try {
-            const response = await fetch('/update_primer_dates', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(payload),
-                signal: controller.signal
-            });
-            const data = await response.json().catch(() => {
-                throw new Error('El servidor ha retornat una resposta no vàlida. Comproveu la sessió i torneu-ho a provar.');
-            });
-            if (!response.ok || data.status !== 'success') {
-                throw new Error(data.message || `No s’han pogut actualitzar les dates (HTTP ${response.status}).`);
-            }
-
-            const table = $('#table_primers').DataTable();
-            rows.forEach(row => {
-                table.row(row).remove();
-                selectedPrimerIds.delete(row.id);
-                pendingExternalPrimerIds.delete(row.id);
-            });
-            table.draw(false);
-            syncPrimerSelection(table);
-            if (!canPollPendingExternalPrimers()) {
-                stopPendingExternalPrimerPolling();
-            }
-            showModalMessage('Les dates dels primers s’han actualitzat correctament.', 'success', 'modal_message_container');
-        } catch (error) {
-            const message = error.name === 'AbortError'
-                ? 'S’ha esgotat el temps d’espera de l’actualització de dates.'
-                : error.message || 'No s’ha pogut connectar amb el servidor per actualitzar les dates.';
-            showModalMessage(escapeHtml(message), 'danger', 'modal_message_container');
-        } finally {
-            clearTimeout(timeout);
-            primerDateUpdateInFlight = false;
-            submitButton.disabled = false;
-            form.removeAttribute('aria-busy');
-            closePrimerDateUpdate();
-        }
     }
 
     let pendingExternalPrimerIds = new Set();
@@ -4191,6 +4103,9 @@
     });
 
     async function action_primer(id_primer, action, manualReceptionConfirmed = false, skipSelectionCheck = false, primerCommandId = '') {
+        if (action === 'actualitzar' && primerDateUpdateInFlight) {
+            return;
+        }
         const form_data = new FormData();
 
         const values = Array.from(selectedPrimerIds);
@@ -4218,6 +4133,11 @@
             return;
         }
 
+        if (action === 'actualitzar' && !skipSelectionCheck) {
+            openPrimerDateUpdate(id_primer.split(';'));
+            return;
+        }
+
         form_data.append('id_primer', id_primer);
         form_data.append('action', action);
         if (manualReceptionConfirmed) {
@@ -4227,13 +4147,57 @@
             form_data.append('primer_command_id', primerCommandId);
         }
 
-        try {
-            const response = await fetch('/action_primer', {
-                method: 'POST',
-                body: form_data
-            });
+        const requestOptions = {method: 'POST', body: form_data};
+        let dateUpdateTimeout;
+        let dateUpdateForm;
+        let dateUpdateSubmitButton;
+        if (action === 'actualitzar') {
+            const form = document.getElementById('form_primer_date_update');
+            if (!form.reportValidity()) {
+                return;
+            }
+            const rows = getPrimerDateUpdateRows(primerDateUpdateIds);
+            if (rows.length < 1 || rows.length > 2 || rows.some(row => !row || !row.dataset.primerSequence)) {
+                closePrimerDateUpdate();
+                showModalMessage('La selecció ja no està disponible. Seleccioneu un o dos primers.', 'warning', 'modal_message_container');
+                return;
+            }
 
+            const dates = {};
+            rows.forEach((row, index) => {
+                const suffix = rows.length === 1 ? '' : `_${index + 1}`;
+                ['buydate', 'hydrodate'].forEach(field => {
+                    const name = `${field}${suffix}`;
+                    dates[name] = form.elements.namedItem(name).value;
+                });
+            });
+            const payload = {
+                ...dates,
+                primers: rows.map(row => ({
+                    id: row.id,
+                    sequence_name: row.dataset.primerSequenceName,
+                    sequence: row.dataset.primerSequence
+                }))
+            };
+
+            form_data.append('primer_dates', JSON.stringify(payload));
+            const controller = new AbortController();
+            requestOptions.signal = controller.signal;
+            dateUpdateTimeout = setTimeout(() => controller.abort(), 25000);
+            dateUpdateForm = form;
+            dateUpdateSubmitButton = form.querySelector('button[type="submit"]');
+            primerDateUpdateInFlight = true;
+            dateUpdateSubmitButton.disabled = true;
+            dateUpdateForm.setAttribute('aria-busy', 'true');
+            clearModalMessage('modal_message_container');
+        }
+
+        try {
+            const response = await fetch('/action_primer', requestOptions);
             const data = await response.json();
+            if (action === 'actualitzar' && data.message) {
+                data.message = escapeHtml(data.message);
+            }
 
             if (!response.ok) {
                 showModalMessage(data.message || "Error, no hem rebut la resposta esperada", 'danger', 'modal_message_container');
@@ -4268,7 +4232,9 @@
 
                 list_ids.forEach(id_primer_change => {
                     selectedPrimerIds.delete(String(id_primer_change));
-                    const row = document.getElementById(id_primer_change);
+                    const row = action === 'actualitzar'
+                        ? getPrimerDateUpdateRows([id_primer_change])[0]
+                        : document.getElementById(id_primer_change);
                     if (!row) return;
 
                     if (action === 'tramited'){
@@ -4306,10 +4272,19 @@
                         }, 7000);
                     } else if (action === 'buy') {
                         table.row(row).remove().draw(false);
-                    } else if (action === 'delete') { 
+                    } else if (action === 'delete') {
                         table.row(row).remove().draw(false);
+                    } else if (action === 'actualitzar') {
+                        table.row(row).remove();
+                        pendingExternalPrimerIds.delete(id_primer_change);
                     }
                 });
+                if (action === 'actualitzar') {
+                    table.draw(false);
+                    if (!canPollPendingExternalPrimers()) {
+                        stopPendingExternalPrimerPolling();
+                    }
+                }
                 syncPrimerSelection(table);
 
                 if (action === 'tramited'){
@@ -4321,8 +4296,10 @@
                     showModalMessage("S'ha obert Primers. La recepció es confirmarà quan Primers acabi correctament.", data.status, 'modal_message_container');
                 } else if (action === 'buy') {
                     showModalMessage("El primer s'ha posat com ha comprat correctament", data.status, 'modal_message_container');
-                } else if (action === 'delete') { 
+                } else if (action === 'delete') {
                     showModalMessage("El primer s'ha eliminat correctament", data.status, 'modal_message_container');
+                } else if (action === 'actualitzar') {
+                    showModalMessage('Les dates dels primers s’han actualitzat correctament.', data.status, 'modal_message_container');
                 }
             } else if (data.status === 'duplicate') {
                     showModalMessage(data.message, 'warning', 'modal_message_container');
@@ -4331,8 +4308,25 @@
             }
 
         } catch (error) {
-            console.error('Error adding primer:', error);
-            showModalMessage("Error de connexió inesperat" || "Error inesperat", 'danger', 'modal_message_container');
+            console.error('Error processant el primer:', error);
+            if (action === 'actualitzar') {
+                const message = error.name === 'AbortError'
+                    ? 'S’ha esgotat el temps d’espera de l’actualització de dates.'
+                    : error instanceof SyntaxError
+                        ? 'El servidor ha retornat una resposta no vàlida. Comproveu la sessió i torneu-ho a provar.'
+                        : error.message || 'No s’ha pogut connectar amb el servidor per actualitzar les dates.';
+                showModalMessage(escapeHtml(message), 'danger', 'modal_message_container');
+            } else {
+                showModalMessage('Error de connexió inesperat', 'danger', 'modal_message_container');
+            }
+        } finally {
+            if (action === 'actualitzar') {
+                clearTimeout(dateUpdateTimeout);
+                primerDateUpdateInFlight = false;
+                dateUpdateSubmitButton.disabled = false;
+                dateUpdateForm.removeAttribute('aria-busy');
+                closePrimerDateUpdate();
+            }
         }
     }
 
@@ -6387,7 +6381,7 @@
     <div class="modal fade" id="modal_primer_date_update" tabindex="-1" role="dialog" aria-labelledby="primerDateUpdateTitle" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered primer-date-dialog" role="document">
             <div class="modal-content primer-date-content">
-                <form id="form_primer_date_update" onsubmit="event.preventDefault(); submitPrimerDateUpdate();">
+                <form id="form_primer_date_update" onsubmit="event.preventDefault(); action_primer(primerDateUpdateIds.join(';'), 'actualitzar', false, true);">
                     <div class="modal-header">
                         <h5 class="modal-title" id="primerDateUpdateTitle">Actualitzar dates de primers</h5>
                         <button type="button" class="close" onclick="closePrimerDateUpdate()" aria-label="Tancar"><span aria-hidden="true">&times;</span></button>

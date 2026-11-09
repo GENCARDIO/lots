@@ -775,63 +775,6 @@ def primer_dates_api_message(body, fallback):
     return fallback
 
 
-@app.route('/update_primer_dates', methods=['POST'])
-@requires_auth
-def update_primer_dates():
-    payload = request.get_json(silent=True)
-    primers = payload.get('primers') if isinstance(payload, dict) else None
-    if not isinstance(primers, list) or not 1 <= len(primers) <= 2:
-        return jsonify(status='error', message='Seleccioneu un o dos primers per actualitzar les dates.'), 400
-
-    api_payload = {}
-    for index, primer in enumerate(primers):
-        if (not isinstance(primer, dict) or not isinstance(primer.get('sequence'), str)
-                or not primer['sequence'].strip()):
-            return jsonify(status='error', message='Falten les dades dels primers seleccionats.'), 400
-        sequence_key = f'sequence{index + 1}'
-        api_payload[sequence_key] = primer['sequence']
-        suffix = '' if len(primers) == 1 else f'_{index + 1}'
-        # The modal uses hydrodate; the external API requires hidrodate.
-        for field, api_field in (('buydate', 'buydate'), ('hydrodate', 'hidrodate')):
-            name = f'{field}{suffix}'
-            value = payload.get(name)
-            try:
-                if not isinstance(value, str) or not re.fullmatch(r'\d{4}-\d{2}-\d{2}', value):
-                    raise ValueError()
-                datetime.strptime(value, '%Y-%m-%d')
-            except ValueError:
-                return jsonify(status='error', message=f'La data {name} no és vàlida. Utilitzeu YYYY-MM-DD.'), 400
-            api_payload[f'{api_field}_{sequence_key}'] = value
-
-    request_api = urllib.request.Request(
-        'http://172.16.83.23:5005/api/primers/update-dates-by-sequence',
-        data=json.dumps(api_payload).encode('utf-8'),
-        headers={'Content-Type': 'application/json', 'Accept': 'application/json'},
-        method='POST'
-    )
-    try:
-        with urllib.request.urlopen(request_api, timeout=15) as response:
-            body = response.read()
-            data = json.loads(body.decode('utf-8')) if body.strip() else {}
-            if not isinstance(data, dict):
-                return jsonify(status='error', message='L’API de Primers ha retornat una resposta no vàlida.'), 502
-            status = str(data.get('status', '')).lower()
-            if (data.get('success') is False or data.get('ok') is False or data.get('error')
-                    or status in ('error', 'failed', 'failure', 'false', 'danger')):
-                message = primer_dates_api_message(body, 'L’API de Primers no ha pogut actualitzar les dates.')
-                return jsonify(status='error', message=message), 502
-    except urllib.error.HTTPError as error:
-        message = primer_dates_api_message(error.read(), f'L’API de Primers ha retornat un error HTTP {error.code}.')
-        return jsonify(status='error', message=message), 502
-    except OSError as error:
-        reason = getattr(error, 'reason', error)
-        return jsonify(status='error', message=f'No s’ha pogut connectar amb l’API de Primers: {reason}.'), 502
-    except (ValueError, UnicodeDecodeError):
-        return jsonify(status='error', message='L’API de Primers ha retornat una resposta no vàlida.'), 502
-
-    return jsonify(status='success', message='Les dates dels primers s’han actualitzat correctament.')
-
-
 @app.route('/add_buy_primer', methods=['POST'])
 @requires_auth
 def add_buy_primer():
@@ -924,6 +867,98 @@ def action_primer():
     primer_command_id = request.form.get('primer_command_id', '').strip()
 
     list_id_primer = [primer_id for primer_id in id_primer.split(';') if primer_id]
+    if action == 'actualitzar':
+        try:
+            payload = json.loads(request.form.get('primer_dates', '{}'))
+        except ValueError:
+            return jsonify(status='error', message='Les dades de les dates no són vàlides.'), 400
+        primers = payload.get('primers') if isinstance(payload, dict) else None
+        if not isinstance(primers, list) or not 1 <= len(primers) <= 2:
+            return jsonify(status='error', message='Seleccioneu un o dos primers per actualitzar les dates.'), 400
+
+        api_payload = {}
+        primer_ids = []
+        for index, primer in enumerate(primers):
+            if (not isinstance(primer, dict) or not isinstance(primer.get('sequence'), str)
+                    or not primer['sequence'].strip()):
+                return jsonify(status='error', message='Falten les dades dels primers seleccionats.'), 400
+            primer_id = str(primer.get('id', ''))
+            if not re.fullmatch(r'[1-9][0-9]*', primer_id) or int(primer_id) in primer_ids:
+                return jsonify(status='error', message='Els identificadors dels primers seleccionats no són vàlids.'), 400
+            primer_ids.append(int(primer_id))
+            sequence_key = f'sequence{index + 1}'
+            api_payload[sequence_key] = primer['sequence']
+            suffix = '' if len(primers) == 1 else f'_{index + 1}'
+            # The modal uses hydrodate; the external API requires hidrodate.
+            for field, api_field in (('buydate', 'buydate'), ('hydrodate', 'hidrodate')):
+                name = f'{field}{suffix}'
+                value = payload.get(name)
+                try:
+                    if not isinstance(value, str) or not re.fullmatch(r'\d{4}-\d{2}-\d{2}', value):
+                        raise ValueError()
+                    parsed_date = datetime.strptime(value, '%Y-%m-%d')
+                except ValueError:
+                    return jsonify(status='error', message=f'La data {name} no és vàlida. Utilitzeu YYYY-MM-DD.'), 400
+                api_payload[f'{api_field}_{sequence_key}'] = parsed_date.strftime('%d/%m/%Y')
+
+        if [str(primer_id) for primer_id in primer_ids] != list_id_primer:
+            return jsonify(status='error', message='Les dates no corresponen als primers seleccionats.'), 400
+
+        try:
+            stored_primers = session1.query(Buy_primers).filter(Buy_primers.id.in_(primer_ids)).all()
+            primers_by_id = {primer.id: primer for primer in stored_primers}
+            for primer_id, primer in zip(primer_ids, primers):
+                stored_primer = primers_by_id.get(primer_id)
+                if (stored_primer is None or stored_primer.delete != 0 or stored_primer.received != 0
+                        or stored_primer.sequence != primer['sequence']):
+                    return jsonify(status='error', message='La selecció de primers ha canviat. Torneu a carregar la taula.'), 409
+        except Exception:
+            session1.rollback()
+            app.logger.exception('Error consultant els primers abans d’actualitzar les dates')
+            return jsonify(status='error', message='No s’han pogut consultar els primers seleccionats a Lots.'), 500
+
+        request_api = urllib.request.Request(
+            f'{ip_address}:5005/api/primers/update-dates-by-sequence',
+            data=json.dumps(api_payload).encode('utf-8'),
+            headers={'Content-Type': 'application/json', 'Accept': 'application/json'},
+            method='POST'
+        )
+        try:
+            with urllib.request.urlopen(request_api, timeout=15) as response:
+                body = response.read()
+                data = json.loads(body.decode('utf-8')) if body.strip() else {}
+                if not isinstance(data, dict):
+                    return jsonify(status='error', message='L’API de Primers ha retornat una resposta no vàlida.'), 502
+                status = str(data.get('status', '')).lower()
+                if (data.get('success') is False or data.get('ok') is False or data.get('error')
+                        or status in ('error', 'failed', 'failure', 'false', 'danger')):
+                    message = primer_dates_api_message(body, 'L’API de Primers no ha pogut actualitzar les dates.')
+                    return jsonify(status='error', message=message), 502
+        except urllib.error.HTTPError as error:
+            message = primer_dates_api_message(error.read(), f'L’API de Primers ha retornat un error HTTP {error.code}.')
+            return jsonify(status='error', message=message), 502
+        except OSError as error:
+            reason = getattr(error, 'reason', error)
+            return jsonify(status='error', message=f'No s’ha pogut connectar amb l’API de Primers: {reason}.'), 502
+        except (ValueError, UnicodeDecodeError):
+            return jsonify(status='error', message='L’API de Primers ha retornat una resposta no vàlida.'), 502
+
+        try:
+            buy_date = instant_date()
+            bought_by = session['acronim']
+            for primer in stored_primers:
+                primer.buy = 1
+                primer.buy_date = buy_date
+                primer.buy_by = bought_by
+            session1.commit()
+        except Exception:
+            session1.rollback()
+            app.logger.exception('Error desant a Lots l’actualització de dates dels primers')
+            return jsonify(status='error', message='Les dates s’han actualitzat a Primers, però no s’ha pogut desar l’estat a Lots.'), 500
+
+        return jsonify(status='success', message='Les dates dels primers s’han actualitzat correctament.',
+                       id=';'.join(list_id_primer), not_found='')
+
     if action == 'tramited':
         text_email = '<p style="margin-bottom:10px;">Els següents primers han estat comprats :</p>'
         text_header_email = 'Compra de primers'

@@ -5,31 +5,28 @@ main_dir = os.path.dirname(os.path.abspath(__file__))
 LOTS_ENV = os.environ.get('LOTS_ENV', 'production').strip().lower()
 
 if LOTS_ENV == 'production':
-    ip_address = 'http://172.16.83.23'
     main_dir = f'{main_dir}/DB'
 elif LOTS_ENV == 'development':
-    ip_address = 'http://172.16.82.45'
     main_dir = f'{main_dir}_db'
 else:
     raise ValueError('LOTS_ENV ha de ser production o development')
 
-ip_address = os.environ.get('LOTS_IP_ADDRESS', ip_address).rstrip('/')
+ip_address = os.environ.get('LOTS_IP_ADDRESS', '').strip().rstrip('/')
+if not ip_address:
+    raise ValueError('Cal definir LOTS_IP_ADDRESS al docker compose amb la URL base dels serveis, sense port')
 main_dir = os.environ.get('LOTS_DATA_DIR', main_dir)
 main_dir_docs = os.environ.get('LOTS_DOCS_DIR', f'{main_dir}/docs')
 
 # Desenvolupament anterior (referència)
 # main_dir = os.path.dirname(os.path.abspath(__file__))
-# ip_address = 'http://172.16.82.45'
 # main_dir = f'{main_dir}_db'
 # main_dir_docs = f"{main_dir}/docs"
 
 # Docker
-# ip_address = 'http://172.16.78.83'
 # main_dir = f'{main_dir}/DB'
 # main_dir_docs = f"{main_dir}/docs"
 
 # Producció qumulo
-# ip_address = 'http://172.16.83.23'
 # main_dir = f'{main_dir}/DB'
 # main_dir_docs = f"{main_dir}/docs"
 
