@@ -20,3 +20,4 @@ services:
           create_host_path: false
     command: ["python3", "lots.py"]
     restart: unless-stopped
+#patata
