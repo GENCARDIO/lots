@@ -164,6 +164,11 @@ def get_next_oligos_order_reference():
     return '4430954989-1'
 
 
+@app.route('/api/health', methods=['GET'])
+def api_health():
+    return jsonify(status='ok'), 202
+
+
 # Pagina incial i visualització
 @app.route('/')
 @requires_auth

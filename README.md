@@ -61,6 +61,10 @@ LOTS_ENV=development LOTS_IP_ADDRESS=http://172.16.82.45 python3 lots.py
 
 El Dockerfile incluye LibreOffice, necesario para convertir documentos a PDF. Las funciones de autenticación e integración requieren conectividad con los servicios internos configurados. La aplicación conserva la actualización existente de columnas de precios al arrancar sobre una base de datos anterior.
 
+## Disponibilidad de la API
+
+`GET /api/health` no requiere autenticación y devuelve HTTP `202` con `{"status":"ok"}` cuando Lots responde. Es una comprobación de disponibilidad de la aplicación, sin consultar la base de datos ni servicios externos. Si la ruta no está instalada, la respuesta será `404`; si el servidor está apagado o no es accesible, la aplicación que consulta debe gestionar el error de conexión o timeout.
+
 ## Fechas de Primers
 
 Selecciona una o dos filas y pulsa el botón azul de actualización de una de ellas. Con un primer, el modal muestra dos fechas obligatorias: `buydate` y `hydrodate`. Con dos primers, muestra `buydate_1`, `hydrodate_1`, `buydate_2` y `hydrodate_2`. Cada par aparece junto al nombre y la secuencia de su primer, en el mismo orden que el array `primers`, con inputs de fecha y etiquetas flotantes.
