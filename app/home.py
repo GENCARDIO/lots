@@ -863,6 +863,81 @@ def add_buy_primer():
         }), 500
 
 
+# Camps editables del formulari de primers. No inclou l'estat de compra o recepció.
+PRIMER_EDIT_FIELDS = (
+    'dna', 'sequence_name', 'purification', 'synthesis_scale',
+    'shipping_conditions', 'modification_5', 'sequence', 'modification_3',
+    'internal_modification', 'quality_check_maldi', 'technique', 'observations',
+)
+
+
+@app.route('/edit_buy_primer/<int:primer_id>', methods=['POST'])
+@requires_auth
+def edit_buy_primer(primer_id):
+    '''
+        1 - Llegim els camps editables del formulari i validem els obligatoris.
+        2 - Busquem un primer pendent que no estigui eliminat ni recepcionat.
+        3 - Comprovem que la seqüència no pertanyi a un altre primer pendent.
+        4 - Comparem cada valor amb el de la BD i guardem només els canvis.
+        5 - Afegim un log per cada camp modificat, amb el valor anterior i el nou.
+        6 - Confirmem el primer i els logs en una sola transacció; si falla, revertim tot.
+
+        :param int primer_id: Identificador del primer que volem editar.
+
+        :return: Resposta JSON amb l'estat de l'edició.
+        :rtype: flask.Response
+    '''
+    values = {field: request.form.get(field, '').strip() for field in PRIMER_EDIT_FIELDS}
+    required = ('dna', 'sequence_name', 'purification', 'synthesis_scale',
+                'shipping_conditions', 'sequence', 'technique')
+    if any(not values[field] for field in required) or len(values['sequence']) < 10:
+        return jsonify(status='error', message='Ompliu els camps obligatoris i indiqueu una seqüència de com a mínim 10 caràcters.'), 400
+
+    try:
+        primer = session1.query(Buy_primers).filter_by(id=primer_id, received=0, delete=0).first()
+        if primer is None:
+            return jsonify(status='error', message='El primer ja no està disponible. Torneu a carregar la taula.'), 404
+
+        duplicate = session1.query(Buy_primers).filter(
+            Buy_primers.id != primer_id,
+            Buy_primers.sequence == values['sequence'],
+            Buy_primers.received == 0,
+            Buy_primers.delete == 0,
+        ).first()
+        if duplicate:
+            return jsonify(status='duplicate', message='Ja tenim un altre primer pendent amb la mateixa seqüència.'), 409
+
+        changes = {}
+        for field, new_value in values.items():
+            old_value = getattr(primer, field) or ''
+            if old_value != new_value:
+                changes[field] = {'old_info': old_value, 'new_info': new_value}
+                setattr(primer, field, new_value)
+
+        if changes:
+            for field, change in changes.items():
+                # La taula logs és comuna: id_lot guarda aquí l'ID del primer,
+                # i el tipus permet distingir aquest log dels canvis de lots.
+                log = {
+                    'id_lot': primer.id,
+                    'type': 'edit buy primer',
+                    'info': json.dumps({'field': field, **change}, ensure_ascii=False),
+                    'user': session['acronim'],
+                    'id_user': str(session['idClient']),
+                    'date': instant_date(),
+                }
+                if save_log(log) != 'True':
+                    raise RuntimeError('No s’ha pogut crear el registre de canvis')
+            session1.commit()
+
+        # Si no ha canviat cap camp, retornem èxit sense crear logs buits.
+        return jsonify(status='success', message='Primer actualitzat correctament.', id=primer.id)
+    except Exception:
+        session1.rollback()
+        app.logger.exception('Error editant el primer %s', primer_id)
+        return jsonify(status='error', message='No s’ha pogut desar el primer.'), 500
+
+
 @app.route('/action_primer', methods=['POST'])
 @requires_auth
 def action_primer():

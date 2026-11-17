@@ -8,6 +8,12 @@ app.test_client()
 app.config.from_object(
     'config.DevelopmentConfig' if LOTS_ENV == 'development' else 'config.ProductionConfig'
 )
+# 1 - En desenvolupament, F5 torna a llegir les plantilles modificades.
+# 2 - Els fitxers estàtics no mantenen una còpia antiga al navegador.
+# 3 - La recàrrega de Python es configura a lots.py; el navegador no es refresca sol.
+if LOTS_ENV == 'development':
+    app.config['TEMPLATES_AUTO_RELOAD'] = True
+    app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 
 from app import models
 
