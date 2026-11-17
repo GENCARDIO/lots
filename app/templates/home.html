@@ -3598,6 +3598,109 @@
     }
     
 
+    // Els mateixos camps serveixen per netejar el formulari nou i omplir-lo en editar.
+    const primerFormFields = [
+        'dna', 'sequence_name', 'purification', 'synthesis_scale',
+        'shipping_conditions', 'modification_5', 'sequence', 'modification_3',
+        'internal_modification', 'quality_check_maldi', 'technique', 'observations'
+    ];
+    // Conservem les dades de cada fila perquè l'edició inclogui camps no visibles a la taula.
+    const primerRowsById = new Map();
+    let primerEditId = null;
+
+    /**
+     * Prepara el formulari compartit per crear un primer nou.
+     * 1 - Esborra l'ID d'edició i restaura els valors inicials.
+     * 2 - Mostra el títol i el botó de creació.
+     * @returns {void} No retorna cap valor.
+     */
+    function openNewPrimer() {
+        primerEditId = null;
+        primerFormFields.forEach(field => {
+            document.getElementById(`${field}_bp`).value = field === 'dna' ? 'DNA' : '';
+        });
+        document.getElementById('home-primer-form-title').textContent = 'Afegir primer';
+        document.getElementById('primer_form_submit').textContent = 'Afegir';
+        clearModalMessage('modal_message_container_add_primer');
+        showHomePanel('home-primer-form-panel');
+    }
+
+    /**
+     * Construeix el botó que obre l'edició d'un primer de la taula.
+     * @param {number} primerId Identificador del primer.
+     * @returns {string} HTML del botó d'edició.
+     */
+    function primerEditButton(primerId) {
+        return `<button type="button" class="btn btn-sm btn-outline-primary" title="Editar primer"
+                        aria-label="Editar primer" onclick="openEditPrimer(${primerId})">
+                    <i class="fa-solid fa-pen" aria-hidden="true"></i>
+                </button>`;
+    }
+
+    /**
+     * Agrupa les accions del flux a l'esquerra i Editar/Eliminar a la dreta.
+     * 1 - Abans de comprar, mostra Tramitar; després, mostra Recepcionar.
+     * 2 - Actualitzar dates, Editar i Eliminar continuen disponibles en tots dos estats.
+     * @param {number} primerId Identificador del primer.
+     * @param {boolean} bought Indica si la compra ja està tramitada.
+     * @returns {string} HTML dels dos grups de botons.
+     */
+    function primerActionGroups(primerId, bought) {
+        const purchaseButton = bought ? '' : `
+            <button class="btn btn-sm btn-primary" title="Tramitar compra a Lots"
+                    aria-label="Tramitar compra a Lots" onclick="action_primer(${primerId}, 'tramited')">
+                <i class="fa-solid fa-basket-shopping" aria-hidden="true"></i>
+            </button>`;
+        const receiveButton = bought ? `
+            <button class="btn btn-sm btn-success" title="Recepcionar; la parella vàlida es pot enviar a Primers"
+                    aria-label="Recepcionar primer" onclick="action_primer(${primerId}, 'buy')">
+                <i class="fa-solid fa-circle-plus" aria-hidden="true"></i>
+            </button>` : '';
+        return `<span class="primer-action-group primer-action-group-workflow" title="Tramitació, recepció i dates" aria-label="Accions de tramitació, recepció i dates">
+                    ${purchaseButton}
+                    ${receiveButton}
+                    ${primerDateUpdateButton(primerId)}
+                </span>
+                <span class="primer-action-group primer-action-group-local" title="Editar o eliminar el primer" aria-label="Gestió del primer">
+                    ${primerEditButton(primerId)}
+                    <button class="btn btn-sm btn-danger" title="Eliminar compra de Lots"
+                            aria-label="Eliminar compra de Lots" onclick="action_primer(${primerId}, 'delete')">
+                        <i class="fa-solid fa-trash" aria-hidden="true"></i>
+                    </button>
+                </span>`;
+    }
+
+    /**
+     * Obre el formulari compartit amb totes les dades del primer seleccionat.
+     * 1 - Recupera les dades guardades en carregar la taula.
+     * 2 - Omple els camps i canvia el títol i el botó a mode d'edició.
+     * @param {number} primerId Identificador del primer.
+     * @returns {void} No retorna cap valor.
+     */
+    function openEditPrimer(primerId) {
+        const primer = primerRowsById.get(Number(primerId));
+        if (!primer) {
+            showModalMessage('No s’han pogut recuperar les dades del primer. Torneu a carregar la taula.', 'warning', 'modal_message_container');
+            return;
+        }
+        primerEditId = Number(primerId);
+        primerFormFields.forEach(field => {
+            document.getElementById(`${field}_bp`).value = primer[field] ?? '';
+        });
+        document.getElementById('home-primer-form-title').textContent = 'Editar primer';
+        document.getElementById('primer_form_submit').textContent = 'Desar canvis';
+        clearModalMessage('modal_message_container_add_primer');
+        showHomePanel('home-primer-form-panel');
+    }
+
+    /**
+     * Desa el formulari compartit per crear o editar un primer.
+     * 1 - Valida els camps obligatoris i prepara les dades del formulari.
+     * 2 - Envia les dades a l'endpoint de creació o al d'edició segons primerEditId.
+     * 3 - En editar, torna a carregar la taula perquè mostri els valors desats.
+     * 4 - En crear, afegeix la fila i conserva les seves dades per a futures edicions.
+     * @returns {Promise<void>} Mostra el resultat a la interfície.
+     */
     async function add_buy_primer() {
         const dna = document.getElementById('dna_bp').value;
         const sequence_name = document.getElementById('sequence_name_bp').value;
@@ -3660,7 +3763,7 @@
         form_data.append('observations', observations);
 
         try {
-            const response = await fetch('/add_buy_primer', {
+            const response = await fetch(primerEditId === null ? '/add_buy_primer' : `/edit_buy_primer/${primerEditId}`, {
                 method: 'POST',
                 body: form_data
             });
@@ -3668,11 +3771,18 @@
             const data = await response.json();
 
             if (!response.ok) {
-                alert(data.message || 'Unexpected error');
+                showModalMessage(data.message || 'No s’ha pogut desar el primer.', 'warning', 'modal_message_container_add_primer');
                 return;
             }
 
             if (data.status === 'success') {
+                if (primerEditId !== null) {
+                    primerEditId = null;
+                    if (await openPrimerPanel()) {
+                        showModalMessage('Primer actualitzat correctament.', 'success', 'modal_message_container');
+                    }
+                    return;
+                }
                 showHomePanel('home-primer-table-panel');
                 document.getElementById('sequence_name_bp').value = '';
                 document.getElementById('purification_bp').value = '';
@@ -3693,15 +3803,7 @@
                 const rowNode = table.row.add([
                     `<div class="primer-control-cell">
                         <div class="form-check primer-checkbox-cell"><input class="form-check-input primer-select-checkbox" name="select_multiple" type="checkbox" value=${data.id} id="${data.id}_cb_primer"></div>
-                        <div class="primer-row-actions">
-                            <button class="btn btn-sm btn-primary" title="Tramitar Compra" onclick="action_primer(${data.id}, 'tramited')">
-                                <i class="fa-solid fa-basket-shopping"></i>
-                            </button>
-                            <button class="btn btn-sm btn-danger" title="Eliminar Compra" onclick="action_primer(${data.id}, 'delete')">
-                                <i class="fa-solid fa-trash"></i>
-                            </button>
-                            ${primerDateUpdateButton(data.id)}
-                        </div>
+                        <div class="primer-row-actions">${primerActionGroups(data.id, false)}</div>
                     </div>`,
                     `<div class="text-center">${dna ?? ''}</div>`,
                     `<div class="text-center">${sequence_name ?? ''}</div>`,
@@ -3720,6 +3822,11 @@
                 rowNode.id = `${data.id}`;
                 rowNode.dataset.primerSequence = sequence;
                 rowNode.dataset.primerSequenceName = sequence_name;
+                primerRowsById.set(Number(data.id), {
+                    dna, sequence_name, purification, synthesis_scale, shipping_conditions,
+                    modification_5, sequence, modification_3, internal_modification,
+                    quality_check_maldi, technique, observations
+                });
 
                 // 👉 highlight
                 rowNode.classList.add('table-warning');
@@ -3915,9 +4022,14 @@
     let primerDateUpdateIds = [];
     let primerDateUpdateInFlight = false;
 
+    /**
+     * Construeix el botó que envia les dates seleccionades a Primers.
+     * @param {number} primerId Identificador del primer.
+     * @returns {string} HTML del botó d'actualització de dates.
+     */
     function primerDateUpdateButton(primerId) {
         return `<button type="button" class="btn btn-sm btn-primary"
-                        title="Actualitzar dates" aria-label="Actualitzar dates"
+                        title="Actualitzar dates i enviar-les a Primers" aria-label="Actualitzar dates i enviar-les a Primers"
                         onclick="action_primer(${primerId}, 'actualitzar')">
                     <i class="fa-solid fa-arrows-rotate" aria-hidden="true"></i>
                 </button>`;
@@ -4238,23 +4350,10 @@
                     if (!row) return;
 
                     if (action === 'tramited'){
-                        const cells = row.querySelectorAll('td');
                         const actionsCell = row.querySelector('.primer-row-actions');
 
-                        // nous botons
-                        const newButtons = `
-                            <button class="btn btn-sm btn-success"
-                                    title="Recepcionar primer"
-                                    onclick="action_primer(${id_primer_change}, 'buy')">
-                                <i class="fa-solid fa-circle-plus"></i>
-                            </button>
-                            <button class="btn btn-sm btn-danger"
-                                    title="Eliminar Compra"
-                                    onclick="action_primer(${id_primer_change}, 'delete')">
-                                <i class="fa-solid fa-trash"></i>
-                            </button>
-                            ${primerDateUpdateButton(id_primer_change)}
-                        `;
+                        // En tramitar, el grup de flux passa de Tramitar a Recepcionar.
+                        const newButtons = primerActionGroups(id_primer_change, true);
                         // sustituir contenido
                         actionsCell.innerHTML = newButtons;
                         // 👉 highlight fila
@@ -4959,7 +5058,7 @@
                         {% set lista_text = lista | map('string') | list %}
                         {% set id_client = session.get('idClient') %}
                         {% if id_client in lista or id_client|string in lista_text %}
-                            <button type="button" class="btn btn-link btn-sm ml-2" onclick="showHomePanel('home-primer-form-panel')">
+                            <button type="button" class="btn btn-link btn-sm ml-2" onclick="openNewPrimer()">
                                 <i class="fa-solid fa-plus"></i> Nou primer
                             </button>
                         {% else %}
@@ -5293,7 +5392,7 @@
 
             <section class="home-data-panel home-content-panel" id="home-primer-form-panel">
                 <div class="home-data-header">
-                    <h2>Afegir primer</h2>
+                    <h2 id="home-primer-form-title">Afegir primer</h2>
                     <button type="button" class="btn btn-outline-secondary btn-sm" onclick="showHomePanel('home-primer-table-panel')">
                         <i class="fa-solid fa-arrow-left"></i> Tornar
                     </button>
@@ -6350,7 +6449,7 @@
                                     <th class="primer-actions-header">
                                         <div class="primer-control-header">
                                             <div class="form-check primer-checkbox-cell"><input class="form-check-input primer-select-checkbox" type="checkbox" id="all_checkbox" onclick="select_all_checkbox(this)"></div>
-                                            <span>Accions</span>
+                                            <span class="primer-actions-labels"><span>Accions</span><span>Gestió</span></span>
                                         </div>
                                     </th>
                                     <th><div class="header-filter"><span class="header-title">DNA <span class="sort-icon">↕</span></span><input type="text" data-column="1"></div></th>
@@ -6736,7 +6835,7 @@
                             <input type="text" class="form-control" id="observations_bp" aria-label="TTN">
                         </div>
                     </div>
-                    <center><button type="button" class="btn btn-primary btn-sm" onclick="add_buy_primer()">Afegir</button></center>
+                    <center><button type="button" class="btn btn-primary btn-sm" id="primer_form_submit" onclick="add_buy_primer()">Afegir</button></center>
                 </div>
             </div>
           </div>
@@ -7804,6 +7903,13 @@
 
     let primerPanelLoadedOnce = false;
 
+    /**
+     * Carrega la taula de primers i sincronitza les dades utilitzades per editar.
+     * 1 - Recupera els primers pendents del servidor.
+     * 2 - Reconstrueix les files i els grups de botons segons l'estat de compra.
+     * 3 - Retorna si la càrrega ha anat bé, perquè el desat mostri el missatge correcte.
+     * @returns {Promise<boolean>} Cert si s'ha pogut actualitzar la taula.
+     */
     async function openPrimerPanel() {
         markSidebarActive('primers');
         showHomePanel('home-primer-table-panel');
@@ -7830,39 +7936,20 @@
             }
             setPrimerInitialLoading(false);
             showModalMessage("No s'han pogut carregar els primers.", 'danger', 'modal_message_container');
-            return;
+            return false;
         }
 
         const table = $('#table_primers').DataTable();
         table.clear();
         table.columns().visible(true);
+        primerRowsById.clear();
 
         for (const r of rows) {
-            let actionButton = '';
-            let deleteButton = `<button class="btn btn-sm btn-danger" title="Eliminar Compra" onclick="action_primer(${r.id}, 'delete')"><i class="fa-solid fa-trash"></i></button>`;
-
-            if (r.buy == 0) {
-                actionButton = `
-                    <button class="btn btn-sm btn-primary"
-                            title="Tramitar Compra"
-                            onclick="action_primer(${r.id}, 'tramited')">
-                        <i class="fa-solid fa-basket-shopping"></i>
-                    </button>
-                `;
-            } else if (r.buy == 1) {
-                actionButton = `
-                    <button class="btn btn-sm btn-success"
-                            title="Recepcionar primer"
-                            onclick="action_primer(${r.id}, 'buy')">
-                        <i class="fa-solid fa-circle-plus"></i>
-                    </button>
-                `;
-            }
-
+            primerRowsById.set(Number(r.id), r);
             const rowNode = table.row.add([
                 `<div class="primer-control-cell">
                     <div class="form-check primer-checkbox-cell"><input class="form-check-input primer-select-checkbox" type="checkbox" name="select_multiple" value=${r.id} id="${r.id}_cb_primer"></div>
-                    <div class="primer-row-actions">${actionButton} ${deleteButton} ${primerDateUpdateButton(r.id)}</div>
+                    <div class="primer-row-actions">${primerActionGroups(r.id, r.buy == 1)}</div>
                 </div>`,
                 `<div class="text-center">${r.dna ?? ''}</div>`,
                 `<div class="text-center">${r.sequence_name ?? ''}</div>`,
@@ -7927,6 +8014,7 @@
                 setPrimerInitialLoading(false);
             }
         }, 60);
+        return true;
     }
 
     function setPrimerInitialLoading(isLoading) {

@@ -262,6 +262,11 @@ table tbody tr:hover td {
     z-index: 1040;
 }
 
+/* La línia fixa de la barra lateral segueix el vermell de la navbar de desenvolupament. */
+.app-top-navbar-development ~ .home-shell .home-sidebar::before {
+    background: #dc2626;
+}
+
 .home-sidebar.is-collapsed {
     width: 0;
     flex-basis: 0;
@@ -1526,9 +1531,10 @@ body.app-navbar-page-embedded .app-navbar-page-view .app-navbar-table-wrapper {
     position: static;
 }
 
+/* Amplada de la columna per al selector i els dos grups de botons. */
 .primer-actions-header {
-    min-width: 154px;
-    width: 154px !important;
+    min-width: 190px;
+    width: 190px !important;
 }
 
 .primer-checkbox-cell {
@@ -1610,6 +1616,38 @@ body.app-navbar-page-embedded .app-navbar-page-view .app-navbar-table-wrapper {
     gap: 8px;
     min-height: 28px;
     white-space: nowrap;
+}
+
+/* Els títols segueixen l'ordre dels grups: Accions i Gestió. */
+.primer-actions-labels {
+    display: grid;
+    grid-template-columns: 76px 76px;
+    gap: 4px;
+    text-align: center;
+}
+
+/* Cada requadre s'ajusta als botons que conté, també després de tramitar la compra. */
+.primer-action-group {
+    align-items: center;
+    border: 1px solid;
+    border-radius: 6px;
+    display: inline-flex;
+    gap: 3px;
+    justify-content: center;
+    min-height: 34px;
+    padding: 2px 4px;
+}
+
+/* Editar i eliminar només modifiquen el registre local de Lots. */
+.primer-action-group-local {
+    background: #f3f5f7;
+    border-color: #d8e0e8;
+}
+
+/* Tramitar, recepcionar i actualitzar dates són les accions del flux del primer. */
+.primer-action-group-workflow {
+    background: #eaf3ff;
+    border-color: #a9cef9;
 }
 
 #modal_primer_date_update .primer-date-dialog {

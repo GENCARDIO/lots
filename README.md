@@ -8,8 +8,8 @@ Los dos archivos siguen el mismo esquema: proyecto con nombre, servicio `app`, c
 
 | Archivo | Entorno | HOME y servicios internos | Datos del anfitrión | Navbar |
 | --- | --- | --- | --- | --- |
-| `docker-compose.yaml` | Producción | `http://172.16.83.23` | `/home/gencardio/Desktop/apps_db/lots_db` | Azul original |
-| `docker-compose-alex.yaml` | Desarrollo | `http://172.16.82.45` | `/home/gencardio/Escriptori/lots_db` | Roja |
+| `docker-compose.yaml` | Producción | `http://172.16.83.23` | `/home/udmmp/Desktop/apps_db/lots_db` | Azul original |
+| `docker-compose-adria.yaml` | Desarrollo | `http://172.16.82.46` | `/home/adria/Escritorio/apps/lots_db` | Roja |
 
 El directorio de datos se monta completo en `/lots/DB`: debe contener la base `lots.db`, los documentos y las plantillas del subdirectorio `docs`. `create_host_path: false` impide que una ruta equivocada cree un directorio vacío. Revisa las rutas directamente en el Compose correspondiente; no hace falta un archivo `.env`.
 
@@ -23,8 +23,8 @@ docker compose up -d --build
 Desarrollo:
 
 ```bash
-docker compose -f docker-compose-alex.yaml config --quiet
-docker compose -f docker-compose-alex.yaml up -d --build
+docker compose -f docker-compose-adria.yaml config --quiet
+docker compose -f docker-compose-adria.yaml up -d --build
 ```
 
 La aplicación estará disponible en `http://localhost:5017` o mediante la IP del anfitrión. Ambos archivos publican el mismo puerto; para ejecutarlos a la vez en una máquina, cambia el puerto del anfitrión en uno de ellos.
@@ -32,11 +32,13 @@ La aplicación estará disponible en `http://localhost:5017` o mediante la IP de
 Para ver los logs o detener desarrollo, utiliza el mismo archivo:
 
 ```bash
-docker compose -f docker-compose-alex.yaml logs -f --tail=100
-docker compose -f docker-compose-alex.yaml down
+docker compose -f docker-compose-adria.yaml logs -f --tail=100
+docker compose -f docker-compose-adria.yaml down
 ```
 
-En producción, utiliza las mismas órdenes sin `-f docker-compose-alex.yaml`. Las bases de datos y los documentos permanecen en el anfitrión al recrear el contenedor.
+En producción, utiliza las mismas órdenes sin `-f docker-compose-adria.yaml`. Las bases de datos y los documentos permanecen en el anfitrión al recrear el contenedor.
+
+En desarrollo, el Compose monta `app/`, `config.py` y `lots.py` desde el anfitrión. Flask reinicia el proceso tras cambios de Python y vuelve a leer las plantillas; los archivos estáticos se sirven sin caché persistente. Los cambios aparecen cuando el usuario actualiza la página manualmente. Tras modificar el Compose, ejecuta una vez `docker compose -f docker-compose-adria.yaml up -d --build --force-recreate`; los cambios siguientes en esos archivos ya no requieren reiniciar el contenedor. El Compose de producción mantiene el código dentro de la imagen.
 
 ## Configuración
 
@@ -56,7 +58,7 @@ Para ejecutar desarrollo directamente con Python y las rutas locales:
 
 ```bash
 python3 -m pip install -r requirements.txt
-LOTS_ENV=development LOTS_IP_ADDRESS=http://172.16.82.45 python3 lots.py
+LOTS_ENV=development LOTS_IP_ADDRESS=http://172.16.82.46 python3 lots.py
 ```
 
 El Dockerfile incluye LibreOffice, necesario para convertir documentos a PDF. Las funciones de autenticación e integración requieren conectividad con los servicios internos configurados. La aplicación conserva la actualización existente de columnas de precios al arrancar sobre una base de datos anterior.
