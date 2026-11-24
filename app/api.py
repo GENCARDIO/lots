@@ -2,7 +2,6 @@
 """Rutes HTTP que altres aplicacions poden consultar."""
 
 from datetime import datetime
-import hmac
 import os
 
 from flask import jsonify, request, session
@@ -114,15 +113,6 @@ def get_lots():
 @app.route('/api/quality-indicators/purchases', methods=['GET'])
 def get_quality_purchases_indicators():
     """Retorna els set recomptes mensuals de compres per a un any."""
-    token = os.environ.get('LOTS_INDICATORS_API_TOKEN', '')
-    if not token:
-        app.logger.error('Falta configurar LOTS_INDICATORS_API_TOKEN')
-        return jsonify({'status': 'error', 'message': 'Service not configured'}), 503
-    authorization = request.headers.get('Authorization', '')
-    supplied = authorization.removeprefix('Bearer ') if authorization.startswith('Bearer ') else ''
-    if not supplied or not hmac.compare_digest(supplied, token):
-        return jsonify({'status': 'error', 'message': 'Unauthorized'}), 401
-
     year = request.args.get('year', '').strip()
     if len(year) != 4 or not year.isascii() or not year.isdigit():
         return jsonify({'status': 'error', 'message': 'year must have four digits'}), 400

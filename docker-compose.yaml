@@ -11,7 +11,6 @@ services:
       LOTS_DATA_DIR: /lots/DB
       LOTS_DOCS_DIR: /lots/DB/docs
       LOTS_DEBUG: "false"
-      LOTS_INDICATORS_API_TOKEN: ${LOTS_INDICATORS_API_TOKEN:?Cal configurar el token compartit de lots}
       TZ: Europe/Madrid
     volumes:
       - type: bind
