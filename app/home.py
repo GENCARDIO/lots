@@ -112,39 +112,6 @@ def get_isoforma_by_gene_exon(sequence_name):
     return isoforma
 
 
-def receive_primers_by_ids(list_id_primer, received_by):
-    date_now = instant_date()
-    text_email = '<p style="margin-bottom:10px;">Hem rebut els seguents primers :</p>'
-    text_header_email = 'Recepcio de primers'
-    not_found = ''
-    id_primers_change = ''
-    send_mail = []
-
-    for primer_id in list_id_primer:
-        select_primer = session1.query(Buy_primers).filter(Buy_primers.id == primer_id).first()
-        if select_primer is None:
-            not_found += str(primer_id) + ';'
-            continue
-
-        if select_primer.buy == 1 and select_primer.received == 0 and select_primer.delete == 0:
-            select_primer.received = 1
-            select_primer.received_date = date_now
-            select_primer.received_by = received_by
-
-            text_email += f"&nbsp;&nbsp;&nbsp;• {select_primer.sequence_name} - {select_primer.sequence}<br>"
-            id_primers_change += str(primer_id) + ';'
-            if select_primer.email_send not in send_mail:
-                send_mail.append(select_primer.email_send)
-
-    return {
-        'id_primers_change': id_primers_change.rstrip(';'),
-        'not_found': not_found.rstrip(';'),
-        'send_mail': send_mail,
-        'text_email': text_email,
-        'text_header_email': text_header_email
-    }
-
-
 def get_next_oligos_order_reference():
     """Return the next internal order reference used for the oligos article."""
     oligos_commands = (
@@ -162,11 +129,6 @@ def get_next_oligos_order_reference():
             return f'{prefix}-{int(sequence) + 1}'
 
     return '4430954989-1'
-
-
-@app.route('/api/health', methods=['GET'])
-def api_health():
-    return jsonify(status='ok'), 202
 
 
 # Pagina incial i visualització
@@ -1190,45 +1152,6 @@ def prepare_primer_purchase_request():
     }), 200
 
 
-@app.route('/external/receive-primers', methods=['POST'])
-def external_receive_primers():
-    id_primer = request.form.get('id_primer') or request.form.get('lots_primer_ids') or ''
-    received_by = request.form.get('received_by') or request.form.get('user') or session.get('acronim') or 'Primers'
-    list_id_primer = [primer_id for primer_id in id_primer.split(';') if primer_id]
-
-    if not list_id_primer:
-        return jsonify({
-            "status": "error",
-            "message": "No s'ha rebut cap ID de primer per recepcionar.",
-            "id": "",
-            "not_found": ""
-        }), 400
-
-    try:
-        received_result = receive_primers_by_ids(list_id_primer, received_by)
-        session1.commit()
-
-        if len(received_result['send_mail']) > 0:
-            result_emails = ','.join(received_result['send_mail'])
-            send_mail_generic(result_emails, received_result['text_email'], received_result['text_header_email'])
-
-        return jsonify({
-            "status": "success",
-            "message": "Primers recepcionats correctament.",
-            "id": received_result['id_primers_change'],
-            "not_found": received_result['not_found']
-        }), 200
-
-    except Exception as e:
-        session1.rollback()
-        return jsonify({
-            "status": "error",
-            "message": str(e) or "No s'han pogut recepcionar els primers.",
-            "id": "",
-            "not_found": ""
-        }), 500
-
-
 @app.route("/upadate_bd")
 @requires_auth
 def upadate_bd():
@@ -1633,27 +1556,6 @@ def create_excel_primer():
             'success': False,
             'message': f"No s'ha pogut crear l'Excel de primers: {error}"
         }), 500
-
-
-@app.route('/get_lots', methods=['GET'])
-def get_lots():
-    """
-    Retorna una llista de lots.
-
-    :return: JSON amb la llista de lots.
-    :rtype: flask.Response
-    """
-    lots = session1.query(Lots).group_by(Lots.manufacturer).order_by(func.lower(Lots.manufacturer)).all()
-
-    result = []
-    for lot in lots:
-        result.append({
-            "manufacturer": lot.manufacturer,
-            "nif": lot.nif,
-            "sales_contact": lot.sales_contact
-        })
-
-    return jsonify(result)
 
 
 '''@app.route('/charge_excel')

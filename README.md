@@ -67,6 +67,8 @@ El Dockerfile incluye LibreOffice, necesario para convertir documentos a PDF. La
 
 `GET /api/health` no requiere autenticación y devuelve HTTP `202` con `{"status":"ok"}` cuando Lots responde. Es una comprobación de disponibilidad de la aplicación, sin consultar la base de datos ni servicios externos. Si la ruta no está instalada, la respuesta será `404`; si el servidor está apagado o no es accesible, la aplicación que consulta debe gestionar el error de conexión o timeout.
 
+El endpoint `GET /api/quality-indicators/purchases?year=AAAA` devuelve los siete recuentos mensuales de compras para Indicadors de Qualitat. Requiere la cabecera `Authorization: Bearer <token>`. Configure `LOTS_INDICATORS_API_TOKEN` con el mismo valor en ambos servicios mediante una variable de entorno o un `.env` local ignorado por Git. Si no se configura, el endpoint responde `503`; si el token no coincide, responde `401`.
+
 ## Fechas de Primers
 
 Selecciona una o dos filas y pulsa el botón azul de actualización de una de ellas. Con un primer, el modal muestra dos fechas obligatorias: `buydate` y `hydrodate`. Con dos primers, muestra `buydate_1`, `hydrodate_1`, `buydate_2` y `hydrodate_2`. Cada par aparece junto al nombre y la secuencia de su primer, en el mismo orden que el array `primers`, con inputs de fecha y etiquetas flotantes.

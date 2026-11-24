@@ -3,3 +3,4 @@ __pycache__/
 *.pyo
 docker-compose-alex.yaml
 docker-compose-adria.yaml
+.env
