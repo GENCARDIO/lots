@@ -1,9 +1,9 @@
 from flask import request, session, render_template, flash, send_file, jsonify
 from app import app
-from app.utils import instant_date, requires_auth, create_excel, save_log, to_dict, year_now, list_desciption_lots, list_cost_center, send_mail_generic
-from app.models import session1, Lots, Commands, Cost_center, Stock_lots
+from app.utils import instant_date, requires_auth, create_excel, save_log, to_dict, year_now, list_desciption_lots, list_cost_center, send_mail_generic, mark_primer_purchased
+from app.models import Session1, session1, Lots, Commands, Cost_center, Stock_lots, Buy_primers
 from app.command_prices import command_price
-from sqlalchemy import func, or_
+from sqlalchemy import func, or_, text
 from config import main_dir_docs
 from werkzeug.utils import secure_filename
 import json
@@ -141,70 +141,107 @@ def search_add_command():
 @app.route('/add_command', methods=['POST'])
 @requires_auth
 def add_command():
-    '''
-        Recullim la informació, i com que es una comanda nova inserim la informació a la BD.
-        Si el cost center es nou, s'insereix a la BD així les pròximes vegades sortira al llistat inicial.
-        Comprobem que la comanda es de fungibles i si es així posarem l'stock dels producte que haguem fet comanda a 0
-
-
-        :param str key_lot: Identificador únic del lot
-        :param str units_command: Les unitats que s'han demanat a la comanda
-        :param str cost_center: Nom del cost center
-        :param str new_cost_center: Varibale amb un true o un false per saber si és un cost center nou o no.
-
-        :function: instant_date()
-
-        :return: json amb un True o un False i si es False una paraula amb el motiu.
-        :rtype: json
-    '''
+    """Desa una comanda i registra els primers seleccionats si la compra ve de Primers."""
     key_lot = request.form.get("key_lot")
     units_command = request.form.get("units_command")
     cost_center = request.form.get("cost_center")
     new_cost_center = request.form.get("new_cost_center")
     observations_command = request.form.get("observations_command")
+    primer_selection = request.form.get('primer_ids')
+    primer_purchase = primer_selection is not None
 
-    lot = session1.query(Lots).filter(Lots.key == key_lot).first()
-    if lot is None:
-        return 'False_error'
-
-    if new_cost_center == 'true':
-        select_COCE = session1.query(Cost_center).filter(func.lower(Cost_center.name) == cost_center.lower()).first()
-        if not select_COCE:
-            insert_cost_center = Cost_center(name=cost_center)
-            session1.add(insert_cost_center)
-            session1.commit()
+    if primer_purchase:
+        try:
+            primer_ids = {int(primer_id) for primer_id in primer_selection.split(';') if primer_id}
+            units_command = int(units_command)
+        except (TypeError, ValueError):
+            return jsonify(message='Cal indicar els primers i un nombre enter d’unitats.'), 400
+        observations_command = (observations_command or '').strip()
+        if not primer_ids or units_command <= 0 or not observations_command or not cost_center or cost_center == '--':
+            return jsonify(message='Cal indicar els primers, les unitats, el centre de cost i el codi a Observacions.'), 400
 
     date = instant_date()
+    matching_command = None
+    recipients = set()
+    purchase_lines = []
 
     try:
-        insert_command = Commands(id_lot=key_lot,
-                                  units=units_command,
-                                  date_create=date,
-                                  user_create=session['acronim'],
-                                  user_id_create=session['idClient'],
-                                  date_close='',
-                                  user_close='',
-                                  user_id_close='',
-                                  cost_center=cost_center,
-                                  import_unit_ics=lot.import_unit_ics,
-                                  import_unit_idibgi=lot.import_unit_idibgi,
-                                  received=0,
-                                  num_received=0,
-                                  code_command='',
-                                  observations=observations_command,
-                                  date_complete='',
-                                  user_email=session['email'])
-        session1.add(insert_command)
+        with Session1.begin() as db:
+            if primer_purchase:
+                # Reserva l’escriptura abans de consultar el codi i l’estat dels primers.
+                db.execute(text('BEGIN IMMEDIATE'))
 
-        select_stock_lot = session1.query(Stock_lots).filter_by(id_lot=key_lot, spent=0, react_or_fungible='Fungible').all()
-        for stock in select_stock_lot:
-            select_stock = session1.query(Stock_lots).filter_by(group_insert=stock.group_insert).all()
-            for real_stock in select_stock:
-                real_stock.spent = 1
+            lot = db.query(Lots).filter_by(key=key_lot).first()
+            if primer_purchase:
+                if lot is None or (lot.catalog_reference or '').lower() != 'oligos_ref':
+                    return jsonify(message='No s’ha trobat l’article oligos_ref per a la comanda de primers.'), 400
+
+                primers = (db.query(Buy_primers).filter(Buy_primers.id.in_(primer_ids))
+                          .filter_by(delete=0, received=0).order_by(Buy_primers.id).all())
+                if len(primers) != len(primer_ids):
+                    return jsonify(message='La selecció de primers ha canviat. Torneu a carregar la taula.'), 409
+                if all(primer.buy == 1 and primer.command_id == observations_command for primer in primers):
+                    return jsonify(status='success')
+                if any(primer.buy != 0 for primer in primers):
+                    return jsonify(message='Hi ha primers que ja s’han tramitat. Torneu a carregar la taula.'), 409
+
+                matching_command = (db.query(Commands)
+                                    .filter(func.trim(Commands.observations) == observations_command)
+                                    .order_by(Commands.id.desc()).first())
+                if matching_command and matching_command.id != request.form.get('confirmed_order_id', type=int):
+                    return jsonify(status='duplicate_reference', reference=observations_command,
+                                   order_id=matching_command.id), 409
+            elif lot is None:
+                return 'False_error'
+
+            if matching_command is not None:
+                matching_command.units = (matching_command.units or 0) + units_command
+            else:
+                if new_cost_center == 'true':
+                    center = db.query(Cost_center).filter(func.lower(Cost_center.name) == cost_center.lower()).first()
+                    if center is None:
+                        db.add(Cost_center(name=cost_center))
+
+                db.add(Commands(id_lot=key_lot,
+                                units=units_command,
+                                date_create=date,
+                                user_create=session['acronim'],
+                                user_id_create=session['idClient'],
+                                date_close='',
+                                user_close='',
+                                user_id_close='',
+                                cost_center=cost_center,
+                                import_unit_ics=lot.import_unit_ics,
+                                import_unit_idibgi=lot.import_unit_idibgi,
+                                received=0,
+                                num_received=0,
+                                code_command='',
+                                observations=observations_command,
+                                date_complete='',
+                                user_email=session['email']))
+
+                stock_lots = db.query(Stock_lots).filter_by(id_lot=key_lot, spent=0, react_or_fungible='Fungible').all()
+                for stock in stock_lots:
+                    for grouped_stock in db.query(Stock_lots).filter_by(group_insert=stock.group_insert):
+                        grouped_stock.spent = 1
+
+            if primer_purchase:
+                for primer in primers:
+                    mark_primer_purchased(primer, observations_command, date, session['acronim'])
+                    if primer.email_send:
+                        recipients.add(primer.email_send)
+                    purchase_lines.append(f'&nbsp;&nbsp;&nbsp;• {primer.sequence_name} - {primer.sequence}<br>')
     except Exception:
-        session1.rollback()
+        app.logger.exception('Error desant la comanda del lot %s', key_lot)
+        if primer_purchase:
+            return jsonify(message='No s’ha pogut desar la comanda de primers.'), 500
         return 'False_error'
-    session1.commit()
+
+    if primer_purchase:
+        if recipients:
+            body = '<p style="margin-bottom:10px;">Els següents primers han estat comprats :</p>'
+            send_mail_generic(','.join(sorted(recipients)), body + ''.join(purchase_lines), 'Compra de primers')
+        return jsonify(status='success', merged=matching_command is not None)
     return 'True'
 
 
