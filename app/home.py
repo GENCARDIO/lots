@@ -1,6 +1,6 @@
 from flask import render_template, request, redirect, session, flash, jsonify, send_file, after_this_request
 from app import app
-from app.utils import requires_auth, list_desciption_lots, list_cost_center, to_dict, save_log, instant_date, send_mail_generic
+from app.utils import requires_auth, list_desciption_lots, list_cost_center, to_dict, save_log, instant_date, send_mail_generic, mark_primer_purchased
 from app.models import IP_HOME, session1, Lots, Stock_lots, Lot_consumptions, Buy_primers, Commands
 import jwt
 import json
@@ -1077,10 +1077,7 @@ def action_primer():
                 not_found += id_primer + ';'
             else:
                 if action == 'tramited' and select_primer.buy == 0:
-                    select_primer.buy = 1
-                    select_primer.buy_date = date_now
-                    select_primer.buy_by = session['acronim']
-                    select_primer.command_id = new_command_id
+                    mark_primer_purchased(select_primer, new_command_id, date_now, session['acronim'])
 
                     text_email += f"&nbsp;&nbsp;&nbsp;• {select_primer.sequence_name} - {select_primer.sequence}<br>"
                     id_primers_change += primer_id + ';'

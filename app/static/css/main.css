@@ -1650,6 +1650,31 @@ body.app-navbar-page-embedded .app-navbar-page-view .app-navbar-table-wrapper {
     border-color: #a9cef9;
 }
 
+#modal_primer_reference_confirmation .modal-dialog {
+    max-width: 460px;
+}
+
+#modal_primer_reference_confirmation .modal-content {
+    border-radius: 14px;
+}
+
+.primer-reference-warning {
+    display: inline-grid;
+    place-items: center;
+    width: 48px;
+    height: 48px;
+    margin-bottom: 12px;
+    border-radius: 50%;
+    background: #fff3d6;
+    color: #8b4b0b;
+    font-size: 20px;
+}
+
+#duplicate_primer_reference {
+    color: #15283b;
+    overflow-wrap: anywhere;
+}
+
 #modal_primer_date_update .primer-date-dialog {
     max-width: 580px;
 }
@@ -1974,6 +1999,14 @@ body.app-navbar-page-embedded .app-navbar-page-view .app-navbar-table-wrapper {
 .home-form-grid .form-select:focus {
     position: relative;
     z-index: 1;
+}
+
+#home-command-form-body [aria-invalid="true"] {
+    border-color: #dc3545;
+}
+
+#home-command-form-body [aria-invalid="true"]:focus {
+    box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.2);
 }
 
 .home-form-grid center {

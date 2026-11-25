@@ -2220,6 +2220,10 @@
                                 }
                             });
                         }
+                        if (list_info_lots['catalog_reference']?.toLowerCase() !== 'oligos_ref') {
+                            document.getElementById('observations_command').value = '';
+                        }
+                        resetAddCommandValidation();
                         showHomePanel('home-command-form-panel');
                         message = '' }}
                 else if (split_response === 'False'){
@@ -2253,6 +2257,65 @@
     }
 
     
+    function resetAddCommandValidation() {
+        document.querySelectorAll('#home-command-form-body [aria-invalid="true"]').forEach(field => {
+            field.removeAttribute('aria-invalid');
+        });
+        clearModalMessage('flash_message_comand');
+    }
+
+    function validateAddCommandForm(focusInvalid = false) {
+        const units = document.getElementById('units_command');
+        const costCenter = document.getElementById('cost_center');
+        const manualCenter = document.getElementById('cost_center_name');
+        const observations = document.getElementById('observations_command');
+        const primerPurchase = Boolean(window.pendingPrimerPurchase);
+        const unitCount = Number(units.value);
+        const validUnits = Number.isFinite(unitCount) && unitCount > 0
+            && (!primerPurchase || /^\d+$/.test(units.value));
+        const validations = [
+            [units, !validUnits, primerPurchase
+                ? 'Indiqueu un nombre enter d’unitats superior a zero.'
+                : 'Indiqueu un nombre d’unitats superior a zero.'],
+            [costCenter, !costCenter.value || costCenter.value === '--', 'Seleccioneu un centre de cost (CECO).'],
+            [manualCenter, costCenter.value === 'Intoduïr manualment' && !manualCenter.value.trim(),
+                'Escriviu el nom del centre de cost (CECO).'],
+            [observations, primerPurchase && !observations.value.trim(), 'Indiqueu el codi de comanda a Observacions.']
+        ];
+
+        const errors = [];
+        let firstInvalid;
+        let changed = false;
+        for (const [field, invalid, message] of validations) {
+            if (invalid) {
+                firstInvalid ??= field;
+                errors.push(message);
+                if (!field.hasAttribute('aria-invalid')) {
+                    field.setAttribute('aria-invalid', 'true');
+                    changed = true;
+                }
+            } else if (field.hasAttribute('aria-invalid')) {
+                field.removeAttribute('aria-invalid');
+                changed = true;
+            }
+        }
+
+        if (focusInvalid || changed) {
+            if (errors.length) {
+                const message = errors.length === 1
+                    ? errors[0]
+                    : `<ul>${errors.map(error => `<li>${error}</li>`).join('')}</ul>`;
+                showModalMessage(message, 'danger', 'flash_message_comand');
+            } else {
+                clearModalMessage('flash_message_comand');
+            }
+        }
+        if (focusInvalid) {
+            firstInvalid?.focus();
+        }
+        return errors.length === 0;
+    }
+
     /**
      * Afegeix informació a la BD commands utilitzant les dades introduïdes en un modal.
      * Comprovem que els camps requerits no estiguin buits.
@@ -2263,7 +2326,10 @@
      * @descriptor Aquesta funció afegeix comandes a partir de les dades introduïdes en un modal.
      * També realitza validacions i assegura que els camps requerits no estiguin buits abans de l'enviament de les dades.
      */
-    function add_command(){
+    function add_command(confirmation = null){
+        if (!validateAddCommandForm(true)) {
+            return;
+        }
         // Crear form data
         var form_data = new FormData();
         
@@ -2274,40 +2340,8 @@
         const cost_center = document.getElementById("cost_center").value
         const cost_center_name = document.getElementById("cost_center_name").value
         const observations_command = document.getElementById("observations_command").value
-        let cost_center_final = ''
-        let new_cost_center = false
-
-        
-        if (cost_center === '--' || cost_center === 'Intoduïr manualment' && cost_center_name === ''){
-                alert("No es pot deixar el centre de cost buït")
-                return}
-        else if (cost_center === 'Intoduïr manualment'){
-                new_cost_center = true
-                cost_center_final = cost_center_name }
-        else{ cost_center_final = cost_center }
-        
-        if (units_command === '0' || units_command === '' || units_command < 0){
-            var divMessage = document.getElementById("div_message_command");
-            if (divMessage) {divMessage.remove();}
-        
-            var html_insert = `
-                <div class="d-flex justify-content-center" id="div_message_command">
-                    <div class="row mt-1 justify-content-center">
-                        <div class="alert alert-danger alert-dismissible fade show ml-3" role="alert">
-                            <span>Has de posar un número d'unitats valid</span>
-                            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                                <span aria-hidden="true">&times;</span>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            `;
-            var div_ubication_comand = document.getElementById("flash_message_comand");
-            // Insertar el HTML dentro del elemento objetivo
-            div_ubication_comand.insertAdjacentHTML('beforebegin', html_insert);
-            // var spanElement = document.querySelector('span[name="span_units_command"]');
-            // spanElement.style.backgroundColor = 'red';
-            return }
+        const new_cost_center = cost_center === 'Intoduïr manualment';
+        const cost_center_final = new_cost_center ? cost_center_name : cost_center;
  
         form_data.append('key_lot', key_lot)
         form_data.append('units_command', units_command)
@@ -2315,10 +2349,15 @@
         form_data.append('new_cost_center', new_cost_center)
         form_data.append('observations_command', observations_command)
 
-        const isPrimerPurchaseRequest = Boolean(window.pendingPrimerPurchase);
-        if (!isPrimerPurchaseRequest) {
-            showHomePanel('home-command-table-panel');
+        const purchase = window.pendingPrimerPurchase;
+        if (purchase) {
+            if (confirmation?.reference === observations_command.trim()) {
+                form_data.append('confirmed_order_id', confirmation.order_id);
+            }
+            submitPrimerPurchase(form_data, purchase);
+            return;
         }
+        showHomePanel('home-command-table-panel');
 
         // Creeem l'objecte per l'ajax
         var xhr = new XMLHttpRequest();
@@ -2338,19 +2377,6 @@
                 else if (response === 'True'){
                     message = "La comanda s'ha introduït correctament."
                     alert_type = 'success'
-
-                    if (window.pendingPrimerPurchase) {
-                        const pendingPurchase = window.pendingPrimerPurchase;
-                        window.pendingPrimerPurchase = null;
-                        showHomePanel('home-primer-table-panel');
-                        action_primer(
-                            pendingPurchase.primerIds,
-                            'tramited',
-                            false,
-                            true,
-                            pendingPurchase.commandReference
-                        );
-                    }
                 }
                 else{
                     message = `Error inesperat.`
@@ -2358,10 +2384,6 @@
             else {
                 message = `Error, No s'ha pogut realitzar l'operació.`
                 alert_type = 'danger' }
-
-            if (response === 'True' && isPrimerPurchaseRequest) {
-                return;
-            }
 
             var flashContainer = document.querySelector(".d-flex.justify-content-center .row");
             // Eliminar la alerta anterior, si existe
@@ -2378,7 +2400,7 @@
             flashContainer.appendChild(newFlash);
             flashContainer.style.paddingTop = "20px";
 
-            if (response === 'True' && !isPrimerPurchaseRequest) {
+            if (response === 'True') {
                 setTimeout(() => {
                     newFlash.remove();
                     if (!flashContainer.children.length) {
@@ -2389,6 +2411,70 @@
         }
 
         xhr.send(form_data)
+    }
+
+
+    async function submitPrimerPurchase(formData, purchase) {
+        const submitButton = document.getElementById('add_command_submit');
+        if (submitButton.disabled) {
+            return;
+        }
+        submitButton.disabled = true;
+        formData.append('primer_ids', purchase.primerIds);
+
+        const errorMessage = "No s'ha pogut desar la comanda de primers.";
+        try {
+            const response = await fetch('/add_command', {method: 'POST', body: formData});
+            const result = await response.json();
+            if (window.pendingPrimerPurchase !== purchase) {
+                return;
+            }
+            if (response.status === 409 && result.status === 'duplicate_reference') {
+                showPrimerReferenceConfirmation(result, purchase);
+                return;
+            }
+            if (!response.ok || result.status !== 'success') {
+                showModalMessage(escapeHtml(result.message || errorMessage), 'danger', 'flash_message_comand');
+                return;
+            }
+
+            window.pendingPrimerPurchase = null;
+            showHomePanel('home-primer-table-panel');
+            showPurchasedPrimers(purchase.primerIds.split(';'));
+            const message = result.merged
+                ? "S'han sumat les unitats a la comanda existent i s'han tramitat els primers."
+                : "La comanda i els primers s'han tramitat correctament.";
+            showModalMessage(message, 'success', 'modal_message_container');
+        } catch (error) {
+            console.error('Error desant la comanda de primers:', error);
+            if (window.pendingPrimerPurchase === purchase) {
+                showModalMessage(errorMessage, 'danger', 'flash_message_comand');
+            }
+        } finally {
+            submitButton.disabled = false;
+        }
+    }
+
+    function showPrimerReferenceConfirmation(confirmation, purchase) {
+        const dialog = $('#modal_primer_reference_confirmation');
+        const changeButton = document.getElementById('change_primer_reference');
+        const continueButton = document.getElementById('confirm_primer_reference');
+        document.getElementById('duplicate_primer_reference').textContent = confirmation.reference;
+
+        continueButton.disabled = true;
+        continueButton.onclick = () => {
+            continueButton.disabled = true;
+            dialog.one('hidden.bs.modal', () => {
+                if (window.pendingPrimerPurchase === purchase) {
+                    add_command(confirmation);
+                }
+            }).modal('hide');
+        };
+        dialog.one('shown.bs.modal', () => {
+            continueButton.disabled = false;
+            changeButton.focus();
+        }).one('hidden.bs.modal', () => document.getElementById('observations_command').focus())
+            .modal('show');
     }
 
 
@@ -3992,10 +4078,8 @@
             unitsInput.value = preparation.units;
             document.getElementById('observations_command').value = preparation.observations;
 
-            window.pendingPrimerPurchase = {
-                primerIds,
-                commandReference: preparation.observations
-            };
+            window.pendingPrimerPurchase = {primerIds};
+            resetAddCommandValidation();
             showHomePanel('home-command-form-panel');
         } catch (error) {
             console.error('Error preparant la petició de compra de primers:', error);
@@ -4035,9 +4119,24 @@
                 </button>`;
     }
 
-    function getPrimerDateUpdateRows(primerIds) {
+    function getPrimerRows(primerIds) {
         const rows = $('#table_primers').DataTable().rows().nodes().toArray();
         return primerIds.map(id => rows.find(row => row.id === id));
+    }
+
+    function showPurchasedPrimers(primerIds) {
+        getPrimerRows(primerIds).forEach((row, index) => {
+            const primerId = primerIds[index];
+            selectedPrimerIds.delete(primerId);
+            if (!row) {
+                return;
+            }
+            row.querySelector('.primer-row-actions').innerHTML = primerActionGroups(primerId, true);
+            row.querySelector('input[name="select_multiple"]').checked = false;
+            row.classList.add('table-warning');
+            setTimeout(() => row.classList.remove('table-warning'), 7000);
+        });
+        syncPrimerSelection();
     }
 
     function closePrimerDateUpdate() {
@@ -4049,7 +4148,7 @@
             showModalMessage('Seleccioneu un o dos primers per actualitzar les dates (màxim 2).', 'warning', 'modal_message_container');
             return;
         }
-        const rows = getPrimerDateUpdateRows(ids);
+        const rows = getPrimerRows(ids);
         if (rows.some(row => !row || !row.dataset.primerSequence)) {
             showModalMessage('No s’han pogut recuperar les seqüències seleccionades. Torneu a carregar Primers.', 'warning', 'modal_message_container');
             return;
@@ -4268,7 +4367,7 @@
             if (!form.reportValidity()) {
                 return;
             }
-            const rows = getPrimerDateUpdateRows(primerDateUpdateIds);
+            const rows = getPrimerRows(primerDateUpdateIds);
             if (rows.length < 1 || rows.length > 2 || rows.some(row => !row || !row.dataset.primerSequence)) {
                 closePrimerDateUpdate();
                 showModalMessage('La selecció ja no està disponible. Seleccioneu un o dos primers.', 'warning', 'modal_message_container');
@@ -4340,36 +4439,24 @@
                 }
 
                 const list_ids = data.id ? data.id.split(';') : [];
+                if (action === 'tramited') {
+                    showPurchasedPrimers(list_ids);
+                    const message = primerCommandId
+                        ? "La comanda i els primers s'han tramitat correctament."
+                        : "El primer s'ha tramitat correctament";
+                    showModalMessage(message, data.status, 'modal_message_container');
+                    return;
+                }
                 const table = $('#table_primers').DataTable();
 
                 list_ids.forEach(id_primer_change => {
                     selectedPrimerIds.delete(String(id_primer_change));
                     const row = action === 'actualitzar'
-                        ? getPrimerDateUpdateRows([id_primer_change])[0]
+                        ? getPrimerRows([id_primer_change])[0]
                         : document.getElementById(id_primer_change);
                     if (!row) return;
 
-                    if (action === 'tramited'){
-                        const actionsCell = row.querySelector('.primer-row-actions');
-
-                        // En tramitar, el grup de flux passa de Tramitar a Recepcionar.
-                        const newButtons = primerActionGroups(id_primer_change, true);
-                        // sustituir contenido
-                        actionsCell.innerHTML = newButtons;
-                        // 👉 highlight fila
-                        row.classList.add('table-warning');
-
-                        // 👉 opcional transición suave
-                        row.style.transition = 'background-color 0.5s';
-                        
-                        document.getElementById(`${id_primer_change}_cb_primer`).checked = false;
-                        document.getElementById('all_checkbox').checked = false;
-
-                        // 👉 quitar highlight después de 5s
-                        setTimeout(() => {
-                            row.classList.remove('table-warning');
-                        }, 7000);
-                    } else if (action === 'buy') {
+                    if (action === 'buy') {
                         table.row(row).remove().draw(false);
                     } else if (action === 'delete') {
                         table.row(row).remove().draw(false);
@@ -4386,12 +4473,7 @@
                 }
                 syncPrimerSelection(table);
 
-                if (action === 'tramited'){
-                    const successMessage = primerCommandId
-                        ? "La comanda i els primers s'han tramitat correctament."
-                        : "El primer s'ha tramitat correctament";
-                    showModalMessage(successMessage, data.status, 'modal_message_container');
-                } else if (action === 'buy' && data.deferred) {
+                if (action === 'buy' && data.deferred) {
                     showModalMessage("S'ha obert Primers. La recepció es confirmarà quan Primers acabi correctament.", data.status, 'modal_message_container');
                 } else if (action === 'buy') {
                     showModalMessage("El primer s'ha posat com ha comprat correctament", data.status, 'modal_message_container');
@@ -6234,7 +6316,7 @@
             </div>
             <div class="modal-body">
                 <div class="row">
-                    <div id="flash_message_comand"></div>
+                    <div id="flash_message_comand" class="col-12 mb-3 text-center" style="display: none;"></div>
                     <div class="col-lg-6 col-md-12 col-sm-12">
                         <div class="input-group mb-3">
                             <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>Codi proveïdor</b></span>
@@ -6256,13 +6338,13 @@
                     <div class="col-lg-6 col-md-12 col-sm-12">
                         <div class="input-group mb-3">
                             <span class="input-group-text" id="basic-addon1" style="width: 140px;" name="span_units_command"><b>Unitats</b></span>
-                            <input type="number" class="form-control" id="units_command" aria-label="TTN" value="0">
+                            <input type="number" class="form-control" id="units_command" aria-label="Unitats" aria-required="true" value="0">
                         </div>
                     </div>
                     <div class="col-lg-6 col-md-6 col-sm-12">       
                         <div class="input-group mb-3">
                             <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>CECO</b></span>
-                            <select class="form-select" id="cost_center" onchange="show_hide_div_ceco(this.value)">
+                            <select class="form-select" id="cost_center" aria-label="Centre de cost" aria-required="true" onchange="show_hide_div_ceco(this.value)">
                                 <option selected>--</option>
                                 {% for ceco in list_cost_center%}
                                     <option>{{ ceco.name }}</option>
@@ -6280,7 +6362,7 @@
                     <div class="col-lg-6 col-md-12 col-sm-12" style="display: none;" id="div_ceco_manual">
                         <div class="input-group mb-3">
                             <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>CECO</b></span>
-                            <input type="text" class="form-control" id="cost_center_name" aria-label="TTN">
+                            <input type="text" class="form-control" id="cost_center_name" aria-label="Nom del centre de cost">
                         </div>
                     </div>
                     <div class="col-lg-12 col-md-12 col-sm-12">
@@ -6292,11 +6374,11 @@
                     <div class="col-lg-12 col-md-12 col-sm-12">
                         <div class="input-group mb-3">
                             <span class="input-group-text" id="basic-addon1" style="width: 140px;"><b>Observacions</b></span>
-                            <input type="text" class="form-control" id="observations_command" aria-label="TTN" style="background-color: white;">
+                            <input type="text" class="form-control" id="observations_command" aria-label="Observacions" style="background-color: white;">
                         </div>
                     </div>
                     <input type="hidden" id="key_lot_command" value=""/>
-                    <center><button type="button" class="btn btn-primary btn-sm" onclick="add_command()">Afegir</button></center>
+                    <center><button type="button" class="btn btn-primary btn-sm" id="add_command_submit" onclick="add_command()">Afegir</button></center>
                 </div>
             </div>
           </div>
@@ -6542,6 +6624,26 @@
     </div>
 
     
+    <div class="modal fade" id="modal_primer_reference_confirmation" tabindex="-1" role="dialog" aria-labelledby="primerReferenceConfirmationTitle" aria-describedby="primerReferenceConfirmationMessage" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-body text-center px-4 pt-4 pb-2">
+                    <span class="primer-reference-warning" aria-hidden="true"><i class="fa-solid fa-triangle-exclamation"></i></span>
+                    <h5 class="modal-title font-weight-bold mb-2" id="primerReferenceConfirmationTitle">Aquest codi de comanda ja existeix</h5>
+                    <p class="text-muted mb-2" id="primerReferenceConfirmationMessage">
+                        El codi <strong id="duplicate_primer_reference"></strong> ja consta a Observacions.
+                        Voleu canviar-lo o sumar les unitats a la comanda existent?
+                    </p>
+                </div>
+                <div class="modal-footer justify-content-center border-0 px-4 pt-2 pb-4">
+                    <button type="button" class="btn btn-outline-secondary" id="change_primer_reference" data-dismiss="modal">Canvia el codi</button>
+                    <button type="button" class="btn btn-primary" id="confirm_primer_reference">Continua i suma</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
     <div class="modal fade"  id="modal_download_excel_primers" tabindex="-1" role="dialog" aria-labelledby="editRegister" aria-hidden="true">
         <div class="modal-dialog modal-md" tabindex="-1" role="document">
         <div class="modal-content">
@@ -8140,6 +8242,16 @@
     moveElementToPanel('#table_primers', 'home-primer-table-body');
     moveElementToPanel('#modal_message_container_add_primer', 'home-primer-form-body');
     moveElementToPanel('#modal_buy_primer .modal-body > .row', 'home-primer-form-body');
+
+    const addCommandForm = $('#home-command-form-body');
+    addCommandForm.on('input', 'input', refreshAddCommandValidation);
+    addCommandForm.on('change', 'select', refreshAddCommandValidation);
+
+    function refreshAddCommandValidation() {
+        if (addCommandForm.find('[aria-invalid="true"]').length) {
+            validateAddCommandForm();
+        }
+    }
 
     function closeReceptionObservationsPopover() {
         const popover = document.getElementById('reception_observations_popover');

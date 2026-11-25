@@ -33,6 +33,13 @@ def requires_auth(f):
     return decorated_function
 
 
+def mark_primer_purchased(primer, reference, date, user):
+    primer.buy = 1
+    primer.buy_date = date
+    primer.buy_by = user
+    primer.command_id = reference
+
+
 def instant_date():
     '''
     1 - Obtenim la data actual
