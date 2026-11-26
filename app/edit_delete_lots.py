@@ -126,6 +126,7 @@ def edit_lot():
     observations = request.form.get("observations")
     nif = request.form.get("nif")
     sales_contact = request.form.get("sales_contact")
+    type_discount = request.form.get("type_discount")
 
     import_unit_ics = import_unit_ics.replace(',', '.')
     import_unit_idibgi = import_unit_idibgi.replace(',', '.')
@@ -349,6 +350,13 @@ def edit_lot():
                 save_log(dict_save_info)
                 change_confirmed = True
 
+            if type_discount is not None and select_lot.type_discount != type_discount:
+                info_change = {"field": 'type_discount', "old_info": select_lot.type_discount, "new_info": type_discount}
+                select_lot.type_discount = type_discount
+                dict_save_info['info'] = json.dumps(info_change)
+                save_log(dict_save_info)
+                change_confirmed = True
+
             if not change_confirmed and not change_confirmed_price:
                 return "False_//_No hi ha cap canvi ha realizar respecte l'original."
 
@@ -427,6 +435,9 @@ def edit_lot():
 
                         if lot_stock.units_measurement != units_measurement:
                             lot_stock.units_measurement = units_measurement
+
+                        if type_discount is not None and lot_stock.type_discount != type_discount:
+                            lot_stock.type_discount = type_discount
 
                         if lot_stock.observations != observations:
                             lot_stock.observations = observations

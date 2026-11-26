@@ -1186,6 +1186,7 @@
                 document.getElementById('observations_edit').value = lot.observations
                 document.getElementById('nif_edit').value = lot.nif
                 document.getElementById('sales_contact_edit').value = lot.sales_contact
+                document.getElementById('type_discount_edit').value = normalizeTypeDiscount(lot.type_discount)
                 document.getElementById('view_for_command').value = 'true'
 
                 if (lot.react_or_fungible === 'Reactiu'){

@@ -280,7 +280,16 @@
                         <input type="text" class="form-control" id='location_edit' aria-label="TTN" aria-describedby="basic-addon1">
                     </div>
                 </div>
-                <div class="col-lg-4 d-none d-lg-block"></div>
+                <div class="col-lg-4 col-md-12 col-sm-12">
+                    <div class="input-group mb-3">
+                        <label class="input-group-text" for="type_discount_edit" style="width: 180px;"><b>Mètode de descompte</b></label>
+                        <select class="form-select" id="type_discount_edit">
+                            <option value="">Selecciona un mètode</option>
+                            <option value="Estat del recipient (Obert / Tancat)">Estat del recipient (Obert / Tancat)</option>
+                            <option value="Descompte per reaccions">Descompte per reaccions</option>
+                        </select>
+                    </div>
+                </div>
                 <div class="col-lg-4 col-md-12 col-sm-12">
                     <div class="input-group mb-3">
                         <span class="input-group-text" id="basic-addon1" style="width: 180px;"><b>Proveïdor</b></span>
@@ -300,7 +309,6 @@
                         <input type="text" class="form-control" id='sales_contact_edit' aria-label="TTN" aria-describedby="basic-addon1">
                     </div>
                 </div>
-
                 <div class="col-lg-4 col-md-12 col-sm-12">
                     <div class="input-group mb-3">
                         <span class="input-group-text" id="basic-addon1" style="width: 180px;"><b>Gestió local</b></span>
@@ -377,8 +385,6 @@
                         <input type="text" class="form-control" id='units_measurement_edit' aria-label="TTN" aria-describedby="basic-addon1">
                     </div>
                 </div>
-                <div class="col-lg-4 d-none d-lg-block"></div>
-
                 <div class="col-lg-12 col-md-12 col-sm-12">
 
                     <div class="input-group mb-3">
@@ -672,6 +678,11 @@
 </div>
 
 <script>
+    function normalizeTypeDiscount(value) {
+        if (value === 'Obrir tancar') return 'Estat del recipient (Obert / Tancat)';
+        if (value === 'Descontar') return 'Descompte per reaccions';
+        return value || '';
+    }
     const navbarPageViewsWithoutSidebar = ['info_lots_bd', 'modal_seach_all_year'];
 
     function openNavbarCommandHistory() {
@@ -1334,7 +1345,8 @@
             document.getElementById('units_measurement_edit').value,
             document.getElementById('observations_edit').value,
             document.getElementById('nif_edit').value,
-            document.getElementById('sales_contact_edit').value
+            document.getElementById('sales_contact_edit').value,
+            document.getElementById('type_discount_edit').value
         ].join('/-/');
     }
 
@@ -1453,6 +1465,7 @@
         document.getElementById('observations_edit').value = list_info_article[28];
         document.getElementById('nif_edit').value = list_info_article[29];
         document.getElementById('sales_contact_edit').value = list_info_article[30];
+        document.getElementById('type_discount_edit').value = normalizeTypeDiscount(list_info_article[31]);
 
         if (list_info_article[11] === ''){ document.getElementById('div_desc_subref').style.display = 'none'}
         else { document.getElementById('div_desc_subref').style.display = 'block'}
@@ -1557,7 +1570,8 @@
             'units_measurement_edit',
             'observations_edit',
             'nif_edit',
-            'sales_contact_edit'
+            'sales_contact_edit',
+            'type_discount_edit'
         ];
 
         document.getElementById('edit_lot_btn').style.display = only_show ? "none" : "block";
@@ -1644,6 +1658,7 @@
 
         let nif = document.getElementById('nif_edit').value
         let sales_contact = document.getElementById('sales_contact_edit').value
+        let type_discount = document.getElementById('type_discount_edit').value
 
         // Crear form data
         var form_data = new FormData();
@@ -1678,6 +1693,7 @@
         form_data.append('observations', observations)
         form_data.append('nif', nif)
         form_data.append('sales_contact', sales_contact)
+        form_data.append('type_discount', type_discount)
 
         // Creeem l'objecte per l'ajax
         var xhr = new XMLHttpRequest();
@@ -2323,6 +2339,7 @@
         document.getElementById('reference_catalog').value = '';
         document.getElementById("supplier").value = '';
         document.getElementById("name_logaritme").value = '';
+        document.getElementById('type_discount').value = '';
 
         // Eliminar tots els divs amb el name divs_new_lots
         var elementosAEliminar = document.querySelectorAll('div[name="divs_new_lots"]');

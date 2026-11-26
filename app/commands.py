@@ -1066,5 +1066,6 @@ def view_modal_lot():
             "observations": select_lot.observations,
             "nif": select_lot.nif,
             "sales_contact": select_lot.sales_contact,
+            "type_discount": select_lot.type_discount,
         }
     })

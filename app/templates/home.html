@@ -1198,6 +1198,7 @@
         const observations = document.getElementById(`observations`).value
         const nif = document.getElementById(`nif`).value
         const sales_contact = document.getElementById(`sales_contact`).value
+        const type_discount = document.getElementById('type_discount').value
 
         function showAddNewLotMessage(message, category = 'warning') {
             showModalMessage(message, category, 'add_new_lot_message_container', 10000);
@@ -1276,6 +1277,7 @@
             if (isBlank(name_logaritme)) missingFields.push('Nom Logaritme');
             if (isBlank(nif)) missingFields.push('NIF');
             if (isBlank(sales_contact)) missingFields.push('Contacte comercial');
+            if (isBlank(type_discount)) missingFields.push('Mètode de descompte');
             
             // Aquí m'han fet treure la restricció de que el codi SAP i LOG siguin obligatoris
             // if (code_sap !== '' && code_log !== '' && analytical_technique !== '' && description !== '' && reference_catalog !== '' && manufacturer !== '' && location !== '') {
@@ -1313,7 +1315,8 @@
                     units_measurement: units_measurement,
                     observations: observations,
                     nif: nif,
-                    sales_contact: sales_contact }; }
+                    sales_contact: sales_contact,
+                    type_discount: type_discount }; }
             else {  
                 showMissingRequiredFields(missingFields)
                 return
@@ -1361,6 +1364,7 @@
             if (isBlank(purchase_format_supplier)) missingFields.push(`Lot ${x + 1}: Format compra ICS`);
             if (isBlank(nif)) missingFields.push('NIF');
             if (isBlank(sales_contact)) missingFields.push('Contacte comercial');
+            if (isBlank(type_discount)) missingFields.push('Mètode de descompte');
 
             if (missingFields.length === 0) {
                 var dict_lots = {
@@ -1390,7 +1394,8 @@
                     units_measurement: units_measurement,
                     observations: observations,
                     nif: nif,
-                    sales_contact: sales_contact }; }
+                    sales_contact: sales_contact,
+                    type_discount: type_discount }; }
             else {
                 showMissingRequiredFields(missingFields)
                 return
@@ -5617,6 +5622,16 @@
                             <input type="text" class="form-control" id='sales_contact' aria-label="TTN" aria-describedby="basic-addon1">
                         </div>
                     </div>
+                    <div class="col-lg-6 col-md-12 col-sm-12">
+                        <div class="input-group mb-3">
+                            <label class="input-group-text is-required" for="type_discount" style="width: 168px;"><b>Mètode de descompte</b></label>
+                            <select class="form-select" id="type_discount">
+                                <option value="">Selecciona un mètode</option>
+                                <option value="Estat del recipient (Obert / Tancat)">Estat del recipient (Obert / Tancat)</option>
+                                <option value="Descompte per reaccions">Descompte per reaccions</option>
+                            </select>
+                        </div>
+                    </div>
                     <div class="col-lg-12 col-md-12 col-sm-12">       
                         <div class="input-group mb-3">
                             <span class="input-group-text is-required" id="basic-addon1" style="width: 168px;"><b>Descripció&nbsp; </b><button class="icon-button" title="Segons albarà"><i class="fas fa-info-circle"></i></button></span>
@@ -7988,6 +8003,7 @@
             document.getElementById('observations_edit').value = lot.observations;
             document.getElementById('nif_edit').value = lot.nif;
             document.getElementById('sales_contact_edit').value = lot.sales_contact;
+            document.getElementById('type_discount_edit').value = normalizeTypeDiscount(lot.type_discount);
             document.getElementById('view_for_command').value = 'true';
             document.getElementById('edit_lot_btn').style.display = "none";
 

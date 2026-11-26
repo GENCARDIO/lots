@@ -51,6 +51,7 @@ class Lots(Base):
     observations = Column(String())
     nif = Column(String())
     sales_contact = Column(String())
+    type_discount = Column(String())
 
 
 class Stock_lots(Base):
@@ -113,6 +114,7 @@ class Stock_lots(Base):
     observations = Column(String())
     nif = Column(String())
     sales_contact = Column(String())
+    type_discount = Column(String())
 
 
 class Logs(Base):

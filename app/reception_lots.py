@@ -110,7 +110,8 @@ def search_add_lot():
                                  'units_measurement': lot.units_measurement,
                                  'observations': lot.observations,
                                  'nif': lot.nif,
-                                 'sales_contact': lot.sales_contact}
+                                 'sales_contact': lot.sales_contact,
+                                 'type_discount': lot.type_discount}
                     list_lots.append(dict_lots)
             json_data = json.dumps(list_lots)
             list_commands_json = json.dumps(list_commands) 
@@ -138,6 +139,9 @@ def register_new_lot():
     list_lots_json = request.form.get("list_lots")
 
     list_lots = json.loads(list_lots_json)
+    valid_discount_types = {'Estat del recipient (Obert / Tancat)', 'Descompte per reaccions'}
+    if any(lots.get('type_discount') not in valid_discount_types for lots in list_lots):
+        return 'False_error'
     date = instant_date()
 
     for lots in list_lots:
@@ -171,7 +175,8 @@ def register_new_lot():
                               units_measurement=lots['units_measurement'],
                               observations=lots['observations'],
                               nif=lots['nif'],
-                              sales_contact=lots['sales_contact'])
+                              sales_contact=lots['sales_contact'],
+                              type_discount=lots.get('type_discount'))
             session1.add(insert_lot)
 
             json_lots = json.dumps(lots)
@@ -337,6 +342,7 @@ def add_stock_lot():
     for lot_data in list_lots:
         catalog_lot = session1.query(Lots).filter(Lots.key == lot_data['key']).first()
         if catalog_lot is not None:
+            lot_data['type_discount'] = catalog_lot.type_discount
             lot_data['import_unit_ics'] = command_price(select_command, catalog_lot, 'import_unit_ics')
             lot_data['import_unit_idibgi'] = command_price(select_command, catalog_lot, 'import_unit_idibgi')
 
@@ -440,6 +446,7 @@ def add_stock_lot():
                 select_lot = None
             if select_lot:
                 select_lot.units_lot = int(select_lot.units_lot) + int(lots['units_lot'])
+                select_lot.type_discount = lots.get('type_discount')
                 type_log = 'insert add stock'
                 dict_info_excel = {'catalog_reference': lots['catalog_reference'],
                                    'description': lots['description'],
@@ -567,7 +574,8 @@ def add_stock_lot():
                                             units_measurement=lots['units_measurement'],
                                             observations=lots['observations'],
                                             nif=lots['nif'],
-                                            sales_contact=lots['sales_contact'])
+                                            sales_contact=lots['sales_contact'],
+                                            type_discount=lots.get('type_discount'))
                     session1.add(insert_lot)
 
                     dict_info_excel = {'catalog_reference': lots['catalog_reference'],
