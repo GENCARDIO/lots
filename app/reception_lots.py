@@ -3,6 +3,7 @@ from app import app
 from app.utils import instant_date, requires_auth, save_log, send_mail, list_desciption_lots, list_cost_center
 from app.models import session1, Lots, Stock_lots, Commands
 from app.command_prices import command_price
+from app.analytical_techniques import is_active_technique
 from sqlalchemy import func, Integer, and_
 from sqlalchemy.sql import cast
 from werkzeug.utils import secure_filename
@@ -141,6 +142,9 @@ def register_new_lot():
     list_lots = json.loads(list_lots_json)
     valid_discount_types = {'Estat del recipient (Obert / Tancat)', 'Descompte per reaccions'}
     if any(lots.get('type_discount') not in valid_discount_types for lots in list_lots):
+        return 'False_error'
+    if any(lots.get('react_or_fungible') != 'Fungible'
+           and not is_active_technique(lots.get('analytical_technique')) for lots in list_lots):
         return 'False_error'
     date = instant_date()
 

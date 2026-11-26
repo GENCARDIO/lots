@@ -243,6 +243,8 @@ table tbody tr:hover td {
 
 .home-sidebar {
     position: relative;
+    display: flex;
+    flex-direction: column;
     width: 258px;
     flex: 0 0 258px;
     background: #ffffff;
@@ -292,7 +294,37 @@ table tbody tr:hover td {
 }
 
 .home-sidebar-nav {
+    flex: 1 1 auto;
     padding: 28px 20px;
+}
+
+.home-sidebar-settings {
+    margin-top: auto;
+    padding: 16px 20px 20px;
+}
+
+.home-sidebar .home-sidebar-settings-button {
+    align-items: center;
+    background: #f1f4f8;
+    border: 1px solid #d1dae6;
+    border-radius: 7px;
+    color: #263b5a;
+    display: flex;
+    font-size: 14px;
+    font-weight: 800;
+    gap: 10px;
+    min-height: 42px;
+    padding: 9px 11px;
+    text-align: left;
+    width: 100%;
+}
+
+.home-sidebar .home-sidebar-settings-button:hover,
+.home-sidebar .home-sidebar-settings-button:focus,
+.home-sidebar .home-sidebar-settings-button.is-active {
+    background: #e7eff9;
+    border-color: #aec5e3;
+    color: #174ea6;
 }
 
 .home-sidebar-section {
@@ -422,6 +454,10 @@ table tbody tr:hover td {
 .home-sidebar.is-collapsed .home-sidebar-nav {
     display: none;
     padding: 0;
+}
+
+.home-sidebar.is-collapsed .home-sidebar-settings {
+    display: none;
 }
 
 .home-sidebar.is-collapsed .home-sidebar-section {
@@ -585,6 +621,119 @@ table tbody tr:hover td {
     color: #0f263d;
     font-size: 18px;
     font-weight: 800 !important;
+}
+
+#home-configuration-panel .configuration-tabs {
+    display: flex;
+    gap: 6px;
+    padding: 12px 16px 0;
+    border-bottom: 1px solid #dfe7ef;
+    background: #f8fbfe;
+}
+
+#home-configuration-panel .configuration-tab-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 14px;
+    border: 1px solid #cddaea;
+    border-bottom: 0;
+    border-radius: 7px 7px 0 0;
+    background: #fff;
+    color: #1f5fa8;
+    font-weight: 700;
+}
+
+#home-configuration-panel .configuration-section {
+    padding: 18px;
+    max-width: 760px;
+}
+
+#home-configuration-panel .configuration-section h3 {
+    margin: 0 0 14px;
+    color: #0f263d;
+    font-size: 17px;
+    font-weight: 700;
+}
+
+#home-configuration-panel .configuration-kit-form {
+    display: grid;
+    grid-template-columns: minmax(180px, 1fr) auto;
+    align-items: center;
+    gap: 12px;
+    max-width: 500px;
+    padding: 14px;
+    margin-bottom: 18px;
+    border: 1px solid #dbe5f0;
+    border-radius: 8px;
+    background: #f8fbfe;
+}
+
+#home-configuration-panel .configuration-name-field span {
+    background: #f8fbfe;
+}
+
+#home-configuration-panel .configuration-kit-form .btn {
+    min-height: 42px;
+    min-width: 42px;
+}
+
+#home-configuration-panel .table-toolbar {
+    grid-template-columns: 70px minmax(180px, 1fr) auto;
+}
+
+#analytical_techniques_table th,
+#analytical_techniques_table td {
+    text-align: center !important;
+}
+
+#analytical_techniques_table .analytical-technique-edit {
+    text-align: center;
+}
+
+#home-configuration-panel .configuration-status-badge {
+    display: inline-block;
+    min-width: 70px;
+    padding: 4px 9px;
+    border-radius: 999px;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+#home-configuration-panel .configuration-status-active {
+    background: #e8f7ee;
+    color: #1f7a42;
+}
+
+#home-configuration-panel .configuration-status-inactive {
+    background: #f1f5f9;
+    color: #64748b;
+}
+
+#home-configuration-panel .configuration-action-button {
+    margin-right: 5px;
+}
+
+.configuration-confirm-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 0 16px 16px;
+}
+
+#analytical_technique_message[hidden] {
+    display: none;
+}
+
+@media (max-width: 600px) {
+    #home-configuration-panel .table-toolbar {
+        grid-template-columns: 70px minmax(0, 1fr);
+    }
+
+    #home-configuration-panel .toolbar-clear-button {
+        grid-column: 1 / -1;
+    }
 }
 
 #home-primer-table-panel > .home-data-header {
@@ -1494,6 +1643,55 @@ body.app-navbar-page-embedded .app-navbar-page-view .app-navbar-table-wrapper {
     padding: 12px 18px;
 }
 
+#modal_accions .toolbar-field,
+#stock_control_open_close_modal .toolbar-field,
+#stock_control_discount_modal .toolbar-field {
+    width: 100%;
+}
+
+#stock_control_discount_modal .modal-dialog {
+    max-width: min(680px, calc(100vw - 32px));
+}
+
+.stock-control-discount-row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+}
+
+@media (max-width: 520px) {
+    .stock-control-discount-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+#modal_accions .toolbar-field input:focus,
+#stock_control_open_close_modal .toolbar-field input:focus,
+#stock_control_discount_modal .toolbar-field input:focus {
+    border-color: #3b82c4;
+    box-shadow: 0 0 0 3px rgba(35, 130, 214, 0.12);
+    outline: none;
+}
+
+#modal_accions .toolbar-field input[readonly],
+#stock_control_discount_modal .toolbar-field input[readonly] {
+    background: #f3f6fa;
+}
+
+#history_lot.document-action-modal .modal-dialog,
+#stock_control_history_modal.document-action-modal .modal-dialog {
+    max-width: min(960px, calc(100vw - 32px));
+}
+
+#modal_accions .modal-header .close,
+#history_lot .modal-header .close,
+#stock_control_open_close_modal .modal-header .close,
+#stock_control_discount_modal .modal-header .close,
+#stock_control_history_modal .modal-header .close {
+    color: #405671;
+    opacity: 1;
+}
+
 .home-table-wrap {
     overflow-x: auto;
 }
@@ -1816,6 +2014,47 @@ body.app-navbar-page-embedded .app-navbar-page-view .app-navbar-table-wrapper {
     padding: 10px 16px 0;
     border-bottom: 1px solid #dfe7ef;
     background: #ffffff;
+}
+
+#stock_control_tabs {
+    overflow-x: auto;
+}
+
+#stock_control_tabs .manage-command-tab-button {
+    flex: 0 0 auto;
+    white-space: nowrap;
+}
+
+#home-stock-control-panel #stock_control_table tbody td:not(:nth-child(4)) {
+    text-align: center;
+}
+
+#home-stock-control-panel #stock_control_table tbody td:nth-child(4) {
+    min-width: 280px;
+    text-align: left;
+    white-space: normal;
+}
+
+#home-stock-control-panel #stock_control_table tbody td:nth-child(6) {
+    min-width: 130px;
+}
+
+#home-stock-control-panel #stock_control_table tbody td:nth-child(7) {
+    min-width: 190px;
+}
+
+#stock_control_open_close_error[hidden],
+#stock_control_discount_error[hidden] {
+    display: none;
+}
+
+#stock_control_history_modal .table-wrapper {
+    max-height: 60vh;
+    overflow: auto;
+}
+
+#stock_control_history_table {
+    min-width: 850px;
 }
 
 .manage-command-tab-actions {

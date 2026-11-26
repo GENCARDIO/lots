@@ -125,6 +125,12 @@ def open_close_lots():
     action = request.form.get("action")
     observations = request.form.get("observations")
     date_open_close = request.form.get("date_open_close")
+    if action not in ('open', 'close'):
+        return 'False_Acció no vàlida.'
+    try:
+        datetime.strptime(date_open_close or '', '%d-%m-%Y')
+    except ValueError:
+        return 'False_Indica una data vàlida en format dd-mm-aaaa.'
     num_lots_open = 0
     pos_close = -1
     message = ''
@@ -133,6 +139,10 @@ def open_close_lots():
         select_lots = session1.query(Stock_lots).filter_by(id=id_lot).first()
         if select_lots is None:
             return 'False_No hem trobat el lot seleccionat.'
+        if select_lots.spent != 0:
+            return 'False_Aquest lot ja està gastat.'
+        if select_lots.type_discount in ('Descompte per reaccions', 'Descontar'):
+            return 'False_Aquest producte utilitza el descompte per reaccions.'
 
         select_consumptions = session1.query(Lot_consumptions).filter_by(id_lot=id_lot).all()
         if select_consumptions:

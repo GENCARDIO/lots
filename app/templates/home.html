@@ -2961,11 +2961,19 @@
 
             const splitResponse = xhr.responseText.split('_//_');
             if (splitResponse[0] !== 'True') {
+                if (splitResponse[1] === 'No hi ha cap consumisio registrada.') {
+                    showModalMessage('No hi ha registres.', 'warning', 'product_management_message_container', 5000);
+                    return;
+                }
                 showModalMessage(splitResponse[1] || "No hi ha historial", 'warning', 'product_management_message_container');
                 return;
             }
 
             const rows = JSON.parse(splitResponse[1]);
+            if (!rows.length) {
+                showModalMessage('No hi ha registres.', 'warning', 'product_management_message_container', 5000);
+                return;
+            }
             const table = $('#table_history_lots').DataTable();
             table.clear();
             rows.forEach(function (row) {
@@ -4741,12 +4749,67 @@
                         </button>
                     </div>
                 </div>
+                <div class="home-sidebar-section">
+                    <div class="home-sidebar-step">
+                        <button type="button" class="home-sidebar-item home-sidebar-item-main" data-sidebar-key="stock-control" onclick="openStockControlPage()" title="Control d'estock">
+                            <i class="fa-solid fa-boxes-stacked"></i>
+                            <span class="home-sidebar-text">
+                                <b>Control d'estock</b>
+                                <small>Reactius disponibles</small>
+                            </span>
+                        </button>
+                    </div>
+                </div>
 
             </nav>
+            <div class="home-sidebar-settings">
+                <button type="button" class="home-sidebar-settings-button home-sidebar-item" data-sidebar-key="configuration" onclick="openAnalyticalConfiguration()" title="Configuració">
+                    <i class="fa-solid fa-gear"></i>
+                    <span>Configuració</span>
+                </button>
+            </div>
         </aside>
 
         <main class="home-main">
             {% include 'ErrorFlash/errorFlash.html' %}
+            <section class="home-data-panel home-content-panel" id="home-configuration-panel">
+                <div class="home-data-header"><h2>Configuració</h2></div>
+                <div class="configuration-tabs" role="tablist" aria-label="Configuració">
+                    <button type="button" class="configuration-tab-button is-active" aria-selected="true">
+                        <i class="fa-solid fa-microscope"></i> Tècniques analítiques
+                    </button>
+                </div>
+                <div class="configuration-section">
+                    <h3>Tècniques analítiques</h3>
+                    <div id="analytical_technique_message" class="alert" role="status" hidden></div>
+                    <form id="analytical_technique_form" class="configuration-kit-form">
+                        <label class="toolbar-field configuration-name-field" for="analytical_technique_name">
+                            <span>Nom</span>
+                            <input type="text" id="analytical_technique_name" maxlength="100" required>
+                        </label>
+                        <button type="submit" class="btn btn-primary btn-sm" title="Afegir tècnica" aria-label="Afegir tècnica"><i class="fa-solid fa-plus"></i></button>
+                    </form>
+                    <div class="table-toolbar" id="analytical_techniques_toolbar">
+                        <label class="toolbar-field toolbar-field-show">
+                            <span>Mostra</span>
+                            <select id="analytical_techniques_length"><option>10</option><option>25</option><option>50</option><option>100</option></select>
+                        </label>
+                        <label class="toolbar-field toolbar-field-search">
+                            <span>Cercar</span>
+                            <input type="search" id="analytical_techniques_search" placeholder="Cerca en tota la taula">
+                        </label>
+                        <button type="button" class="toolbar-clear-button" id="analytical_techniques_clear_filters">
+                            <i class="fa-solid fa-eraser"></i> Netejar filtres
+                        </button>
+                    </div>
+                    <div class="table-wrapper">
+                        <table id="analytical_techniques_table" class="lab-data-table" style="width: 100%;">
+                            <thead><tr><th>Tècnica analítica</th><th>Estat</th><th>Accions</th></tr></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
             <div class="home-work-panel shadow-sm home-content-panel is-active" id="home-start-panel">
                 <span class="home-work-badge">
                     <i class="fa-solid fa-circle-info"></i>
@@ -5348,15 +5411,15 @@
                     <div class="modal-content document-action-modal-content">
                         <div class="modal-header">
                             <h5 class="modal-title" id="productLotActionTitle"><i class="fa-solid fa-box-open"></i> Obrir / Tancar lots</h5>
-                            <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="close_modal('modal_accions')"><span aria-hidden="true">&times;</span></button>
+                            <button type="button" class="close" aria-label="Tancar" onclick="close_modal('modal_accions')"><span aria-hidden="true">&times;</span></button>
                         </div>
                         <div class="modal-body">
                             <div class="document-modal-body">
-                                <label class="home-field home-field-full">
+                                <label class="toolbar-field app-modal-field">
                                     <span>Data</span>
-                                    <input type="text" id="date_open_close" name="date_open_close" oninput="replae_slash_with_hyphen(this); filter_characters(this)">
+                                    <input type="text" id="date_open_close" name="date_open_close" placeholder="dd-mm-aaaa" oninput="replae_slash_with_hyphen(this); filter_characters(this)">
                                 </label>
-                                <label class="home-field home-field-full">
+                                <label class="toolbar-field app-modal-field">
                                     <span>Observacions</span>
                                     <input type="text" id="observations_open_close" name="observations_open_close">
                                 </label>
@@ -5364,13 +5427,13 @@
                             </div>
                         </div>
                         <div class="modal-footer document-modal-footer">
-                            <button type="button" class="btn btn-outline-secondary btn-sm" data-dismiss="modal" onclick="close_modal('modal_accions')">
+                            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="close_modal('modal_accions')">
                                 <i class="fa-solid fa-xmark"></i> Cancel·lar
                             </button>
-                            <button type="button" class="btn btn-outline-success btn-sm" onclick="show_modal_open_close_lot('open')" id="btn_open" style="display: none;">
+                            <button type="button" class="btn btn-success btn-sm" onclick="show_modal_open_close_lot('open')" id="btn_open" style="display: none;">
                                 <i class="fa-solid fa-share-from-square"></i> Obrir
                             </button>
-                            <button type="button" class="btn btn-outline-danger btn-sm" onclick="show_modal_open_close_lot('close')" id="btn_close" style="display: none;">
+                            <button type="button" class="btn btn-danger btn-sm" onclick="show_modal_open_close_lot('close')" id="btn_close" style="display: none;">
                                 <i class="fa-solid fa-lock"></i> Tancar
                             </button>
                         </div>
@@ -5383,7 +5446,7 @@
                     <div class="modal-content document-action-modal-content">
                         <div class="modal-header">
                             <h5 class="modal-title" id="productLotHistoryTitle"><i class="fa-solid fa-book"></i> Historial</h5>
-                            <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="close_modal('history_lot')"><span aria-hidden="true">&times;</span></button>
+                            <button type="button" class="close" aria-label="Tancar" onclick="close_modal('history_lot')"><span aria-hidden="true">&times;</span></button>
                         </div>
                         <div class="modal-body">
                             <div class="table-wrapper product-history-wrapper">
@@ -5477,6 +5540,49 @@
                 </div>
             </div>
 
+            <section class="home-data-panel home-content-panel" id="home-stock-control-panel">
+                <div class="home-data-header">
+                    <h2>Control d'estock</h2>
+                </div>
+                <div class="manage-command-tabs" id="stock_control_tabs" role="tablist" aria-label="Tècniques analítiques"></div>
+                <div id="stock_control_message" class="mb-2 text-center" style="display:none;"></div>
+                <div class="table-toolbar" id="stock_control_toolbar">
+                    <label class="toolbar-field toolbar-field-show">
+                        <span>Mostra</span>
+                        <select id="stock_control_length_control">
+                            <option value="10">10</option>
+                            <option value="25">25</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                        </select>
+                    </label>
+                    <label class="toolbar-field toolbar-field-search">
+                        <span>Cercar</span>
+                        <input type="search" id="stock_control_global_search" placeholder="Cerca en tota la taula">
+                    </label>
+                    <button type="button" class="toolbar-clear-button" id="stock_control_clear_filters">
+                        <i class="fa-solid fa-eraser"></i> Netejar filtres
+                    </button>
+                </div>
+                <div id="stock_control_error" class="alert alert-danger" role="alert" style="display: none;"></div>
+                <div class="home-data-body table-wrapper">
+                    <table id="stock_control_table" class="lab-data-table" style="width: 100%;">
+                        <thead>
+                            <tr>
+                                <th>Ref. proveïdor</th>
+                                <th>Codi SAP</th>
+                                <th>Codi LOG</th>
+                                <th>Descripció</th>
+                                <th>Lot</th>
+                                <th>Lot intern</th>
+                                <th>Accions</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </section>
+
             <section class="home-data-panel home-content-panel" id="home-primer-form-panel">
                 <div class="home-data-header">
                     <h2 id="home-primer-form-title">Afegir primer</h2>
@@ -5487,6 +5593,92 @@
                 <div class="home-data-body home-form-grid" id="home-primer-form-body"></div>
             </section>
         </main>
+    </div>
+
+    <div class="modal fade document-action-modal" id="stock_control_open_close_modal" tabindex="-1" role="dialog" aria-labelledby="stockControlOpenCloseTitle" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content document-action-modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i id="stockControlOpenCloseIcon" class="fa-solid fa-box-open"></i> <span id="stockControlOpenCloseTitle">Obrir lot</span></h5>
+                    <button type="button" class="close" aria-label="Tancar" onclick="close_modal('stock_control_open_close_modal')"><span aria-hidden="true">&times;</span></button>
+                </div>
+                <form id="stock_control_open_close_form">
+                    <div class="modal-body document-modal-body">
+                        <div id="stock_control_open_close_error" class="alert alert-danger" role="alert" hidden></div>
+                        <label class="toolbar-field app-modal-field"><span>Data</span><input type="text" id="stock_control_open_close_date" placeholder="dd-mm-aaaa" oninput="replae_slash_with_hyphen(this); filter_characters(this)" required></label>
+                        <label class="toolbar-field app-modal-field"><span>Observacions</span><input type="text" id="stock_control_open_close_observations"></label>
+                    </div>
+                    <div class="modal-footer document-modal-footer">
+                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="close_modal('stock_control_open_close_modal')"><i class="fa-solid fa-xmark"></i> Cancel·lar</button>
+                        <button type="submit" class="btn btn-success btn-sm" id="stock_control_open_close_submit"><i class="fa-solid fa-box-open"></i> <span id="stock_control_open_close_submit_label">Obrir</span></button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade document-action-modal" id="stock_control_discount_modal" tabindex="-1" role="dialog" aria-labelledby="stockControlDiscountTitle" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content document-action-modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="stockControlDiscountTitle"><i class="fa-solid fa-vial"></i> Descomptar quantitat</h5>
+                    <button type="button" class="close" aria-label="Tancar" onclick="close_modal('stock_control_discount_modal')"><span aria-hidden="true">&times;</span></button>
+                </div>
+                <form id="stock_control_discount_form">
+                    <div class="modal-body document-modal-body">
+                        <div id="stock_control_discount_error" class="alert alert-danger" role="alert" hidden></div>
+                        <div class="stock-control-discount-row">
+                            <label class="toolbar-field app-modal-field"><span>Quantitat actual</span><input type="number" id="stock_control_quantity_before" min="0" step="any" required></label>
+                            <label class="toolbar-field app-modal-field"><span>Quantitat a descomptar</span><input type="number" id="stock_control_quantity_discounted" min="0" step="any" required></label>
+                        </div>
+                        <div class="stock-control-discount-row">
+                            <label class="toolbar-field app-modal-field"><span>Unitat</span><input type="text" id="stock_control_volume_unit" required></label>
+                            <label class="toolbar-field app-modal-field"><span>Data descompte</span><input type="text" id="stock_control_discount_date" placeholder="dd-mm-aaaa" oninput="replae_slash_with_hyphen(this); filter_characters(this)" required></label>
+                        </div>
+                        <label class="toolbar-field app-modal-field"><span>Observacions</span><input type="text" id="stock_control_discount_observations"></label>
+                    </div>
+                    <div class="modal-footer document-modal-footer">
+                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="close_modal('stock_control_discount_modal')"><i class="fa-solid fa-xmark"></i> Cancel·lar</button>
+                        <button type="submit" class="btn btn-success btn-sm"><i class="fa-solid fa-vial"></i> Descomptar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade document-action-modal" id="stock_control_history_modal" tabindex="-1" role="dialog" aria-labelledby="stockControlHistoryTitle" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content document-action-modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="stockControlHistoryTitle"><i class="fa-solid fa-book"></i> Registres del lot</h5>
+                    <button type="button" class="close" aria-label="Tancar" onclick="close_modal('stock_control_history_modal')"><span aria-hidden="true">&times;</span></button>
+                </div>
+                <div class="modal-body">
+                    <div class="table-wrapper">
+                        <table id="stock_control_history_table" class="lab-data-table" style="width: 100%;">
+                            <thead></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="delete_analytical_technique_modal" tabindex="-1" role="dialog" aria-labelledby="deleteAnalyticalTechniqueTitle" aria-hidden="true">
+        <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
+            <div class="modal-content configuration-confirm-modal">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteAnalyticalTechniqueTitle">Eliminar tècnica analítica</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Tancar"><span aria-hidden="true">&times;</span></button>
+                </div>
+                <div class="modal-body">Segur que vols eliminar aquesta tècnica? Quedarà marcada com a inactiva i els productes existents conservaran el valor.</div>
+                <div class="configuration-confirm-actions">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" data-dismiss="modal">Cancel·lar</button>
+                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="confirmDeleteAnalyticalTechnique()"><i class="fa-solid fa-trash"></i> Eliminar</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div class="primer-initial-loading" id="primer_initial_loading" hidden>
@@ -5582,18 +5774,8 @@
                     <div class="col-lg-6 col-md-12 col-sm-12 divs_reatives">       
                         <div class="input-group mb-3">
                             <span class="input-group-text is-required" id="basic-addon1" style="width: 168px;"><b>Tècnica analítica</b></span>
-                            <!-- <input type="text" class="form-control" id='analytical_technique' aria-label="TTN" aria-describedby="basic-addon1"> -->
                             <select class="form-select" id="analytical_technique">
-                                <option selected></option>
-                                <option>AP</option>
-                                <option>Extracció</option>
-                                <option>Genèric</option>
-                                <option>Genotipat</option>
-                                <option>MLPA</option>
-                                <option>NGS</option>
-                                <option>Oficina</option>
-                                <option>qPCR</option>
-                                <option>Sanger</option>
+                                <option value="">Selecciona una tècnica</option>
                             </select>
                         </div>
                     </div>
@@ -7977,7 +8159,7 @@
             document.getElementById('reference_catalog_edit').value = lot.catalog_reference;
             document.getElementById('manufacturer_edit').value = lot.manufacturer;
             document.getElementById('description_edit').value = lot.description;
-            document.getElementById('analytical_technique_edit').value = lot.analytical_technique;
+            populateAnalyticalTechniqueSelect('analytical_technique_edit', lot.analytical_technique);
             document.getElementById('id_reactive_edit').value = lot.id_reactive;
             document.getElementById('code_sap_edit').value = lot.code_SAP;
             document.getElementById('code_log_edit').value = lot.code_LOG;
@@ -8689,5 +8871,5 @@
             })
         } );
     });
-</script>                
+</script>
 </html>

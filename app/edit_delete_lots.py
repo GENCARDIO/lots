@@ -2,6 +2,7 @@ from flask import request, session, render_template, flash, jsonify
 from app import app
 from app.utils import instant_date, requires_auth, save_log, list_desciption_lots, list_cost_center
 from app.models import session1, Lots, Stock_lots, Logs
+from app.analytical_techniques import is_active_technique
 from sqlalchemy import String, cast, or_
 import html
 import json
@@ -137,6 +138,10 @@ def edit_lot():
         if not select_lot:
             return "False_//_No hem trobat l'article a la BD"
         else:
+            if (react_or_fungible != 'Fungible'
+                    and analytical_technique != select_lot.analytical_technique
+                    and not is_active_technique(analytical_technique)):
+                return "False_//_Selecciona una tècnica analítica activa."
             change_confirmed = False
             change_confirmed_price = False
 

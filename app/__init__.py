@@ -18,5 +18,7 @@ if LOTS_ENV == 'development':
 from app import models
 
 models.ensure_command_price_columns()
+models.ensure_analytical_techniques()
+models.ensure_stock_volume_discounts()
 
-from app import utils, home, documents_lots, reception_lots, open_close_lots, commands, edit_delete_lots, look_spend_money, api
+from app import utils, home, documents_lots, reception_lots, open_close_lots, commands, edit_delete_lots, look_spend_money, api, analytical_techniques, stock_control

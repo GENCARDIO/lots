@@ -209,7 +209,9 @@
                 <div class="col-lg-4 col-md-12 col-sm-12">
                     <div class="input-group mb-3">
                         <span class="input-group-text" id="basic-addon1" style="width: 180px;"><b>Tècnica analítica</b></span>
-                        <input type="text" class="form-control" id='analytical_technique_edit' aria-label="TTN" aria-describedby="basic-addon1">
+                        <select class="form-select" id="analytical_technique_edit" aria-label="Tècnica analítica">
+                            <option value="">Selecciona una tècnica</option>
+                        </select>
                     </div>
                 </div>
                 <div class="col-lg-4 col-md-12 col-sm-12">
@@ -677,6 +679,8 @@
     </div>
 </div>
 
+<script src="{{ url_for('static', filename='js/analytical_techniques.js') }}"></script>
+<script src="{{ url_for('static', filename='js/stock_control_actions.js') }}"></script>
 <script>
     function normalizeTypeDiscount(value) {
         if (value === 'Obrir tancar') return 'Estat del recipient (Obert / Tancat)';
@@ -703,6 +707,76 @@
 
     function openProductsLookupPage(rol) {
         search_lots_db(rol);
+    }
+
+    let stockControlRows = [];
+    let stockControlSelectedTechnique;
+
+    function selectStockControlTab(techniqueName, selectedButton) {
+        stockControlSelectedTechnique = techniqueName;
+        const table = $('#stock_control_table').DataTable();
+        const visibleRows = techniqueName === null
+            ? stockControlRows
+            : stockControlRows.filter(row => row.analytical_technique === techniqueName);
+
+        document.querySelectorAll('#stock_control_tabs .manage-command-tab-button').forEach(button => {
+            const active = button === selectedButton;
+            button.classList.toggle('is-active', active);
+            button.setAttribute('aria-selected', String(active));
+        });
+        $('#stock_control_global_search').val('');
+        table.search('').clear().rows.add(visibleRows).draw();
+        table.columns.adjust();
+    }
+
+    function renderStockControlTabs(techniques) {
+        const container = document.getElementById('stock_control_tabs');
+        container.replaceChildren();
+
+        function addTab(label, techniqueName) {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'manage-command-tab-button';
+            button.setAttribute('role', 'tab');
+            button.setAttribute('aria-controls', 'stock_control_table');
+            button.setAttribute('aria-selected', 'false');
+            button.textContent = label;
+            button.addEventListener('click', () => selectStockControlTab(techniqueName, button));
+            container.appendChild(button);
+            return button;
+        }
+
+        const firstTechnique = techniques[0] || null;
+        techniques.forEach(technique => addTab(technique.name, technique.name));
+        const allButton = addTab('Tots', null);
+        const selectedName = stockControlSelectedTechnique === null
+            ? null
+            : (techniques.some(technique => technique.name === stockControlSelectedTechnique)
+                ? stockControlSelectedTechnique : (firstTechnique ? firstTechnique.name : null));
+        const selectedButton = selectedName === null
+            ? allButton
+            : Array.from(container.children).find(button => button.textContent === selectedName);
+        selectStockControlTab(selectedName, selectedButton);
+    }
+
+    async function openStockControlPage() {
+        markSidebarActive('stock-control');
+        showHomePanel('home-stock-control-panel');
+        const error = document.getElementById('stock_control_error');
+        error.style.display = 'none';
+        try {
+            const [stockResponse, techniquesResponse] = await Promise.all([
+                fetch('/stock_control_data'),
+                fetch('/analytical_techniques?active=1')
+            ]);
+            if (!stockResponse.ok || !techniquesResponse.ok) throw new Error('No s’ha pogut carregar l’estoc.');
+            stockControlRows = await stockResponse.json();
+            const techniques = await techniquesResponse.json();
+            renderStockControlTabs(techniques);
+        } catch (loadError) {
+            error.textContent = 'No s’ha pogut carregar l’estoc. Torna-ho a provar.';
+            error.style.display = 'block';
+        }
     }
 
     function showNavbarPageView(viewId) {
@@ -1437,7 +1511,7 @@
         document.getElementById('reference_catalog_edit').value = list_info_article[1];
         document.getElementById('manufacturer_edit').value = list_info_article[2];
         document.getElementById('description_edit').value = list_info_article[3];
-        document.getElementById('analytical_technique_edit').value = list_info_article[4];
+        populateAnalyticalTechniqueSelect('analytical_technique_edit', list_info_article[4]);
         document.getElementById('id_reactive_edit').value = list_info_article[6];
         document.getElementById('code_sap_edit').value = list_info_article[7];
         document.getElementById('code_log_edit').value = list_info_article[8];
@@ -2295,6 +2369,7 @@
      * el modal `add_new_lot`.
      */
     async function show_new_article(){
+        await populateAnalyticalTechniqueSelect('analytical_technique', '');
         try {
             const res = await fetch('/get_lots');
             const data = await res.json();
@@ -2772,6 +2847,42 @@
 
 
     $(document).ready(function() {
+        if (document.getElementById('stock_control_table')) {
+            const stockTable = $('#stock_control_table').DataTable({
+                order: [[0, 'asc']],
+                autoWidth: true,
+                dom: 'rtip',
+                scrollX: true,
+                scrollY: '58vh',
+                scrollCollapse: true,
+                columns: [
+                    { data: 'catalog_reference' },
+                    { data: 'code_sap' },
+                    { data: 'code_log' },
+                    { data: 'description' },
+                    { data: 'lot' },
+                    { data: 'internal_lot' }
+                ].map(column => ({ ...column, render: $.fn.dataTable.render.text() })).concat([{
+                    data: null,
+                    orderable: false,
+                    searchable: false,
+                    render: function (_data, type, row) {
+                        return type === 'display' ? stockControlActions(row) : '';
+                    }
+                }]),
+                language: getNavbarCatalanDataTableLanguage({
+                    emptyTable: "No hi ha estoc disponible"
+                })
+            });
+            setupNavbarManagedTableControls(
+                stockTable,
+                '#home-stock-control-panel',
+                '#stock_control_global_search',
+                '#stock_control_length_control',
+                '#stock_control_clear_filters'
+            );
+        }
+
         var table = $('#table_info_lots_db').DataTable( {
             order: [[0, 'desc']],
             autoWidth: false,

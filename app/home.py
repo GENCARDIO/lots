@@ -1,7 +1,7 @@
 from flask import render_template, request, redirect, session, flash, jsonify, send_file, after_this_request
 from app import app
 from app.utils import requires_auth, list_desciption_lots, list_cost_center, to_dict, save_log, instant_date, send_mail_generic, mark_primer_purchased
-from app.models import IP_HOME, session1, Lots, Stock_lots, Lot_consumptions, Buy_primers, Commands
+from app.models import IP_HOME, session1, Lots, Stock_lots, Lot_consumptions, Stock_volume_discounts, Buy_primers, Commands
 import jwt
 import json
 import re
@@ -241,6 +241,73 @@ def search_lot_db():
         return "False_ No s'ha pogut accedir a la informació dels consums."
 
     return f'True_//_{json_data}'
+
+
+@app.route('/stock_control_data', methods=['GET'])
+@requires_auth
+def stock_control_data():
+    """Available reactive stock, with one representative per subreference group."""
+    stock_rows = (
+        session1.query(Stock_lots)
+        .filter(Stock_lots.spent == 0)
+        .filter(Stock_lots.react_or_fungible == 'Reactiu')
+        .filter(or_(Stock_lots.description.is_(None), func.lower(Stock_lots.description).notlike('%oligos%')))
+        .filter(or_(Stock_lots.catalog_reference.is_(None), func.lower(Stock_lots.catalog_reference) != 'oligos_ref'))
+        .order_by(Stock_lots.id)
+        .all()
+    )
+
+    seen_subreferences = set()
+    displayed_stock = []
+    for stock in stock_rows:
+        if stock.description_subreference:
+            # The same physical lot can have several subreferences. Show the
+            # first available one for each internal unit in its reception group.
+            group_key = (stock.group_insert, stock.catalog_reference, stock.lot, stock.internal_lot)
+            if group_key in seen_subreferences:
+                continue
+            seen_subreferences.add(group_key)
+
+        displayed_stock.append(stock)
+
+    stock_ids = [stock.id for stock in displayed_stock]
+    open_ids = set()
+    latest_volume = {}
+    if stock_ids:
+        open_ids = {
+            stock_id for (stock_id,) in session1.query(Lot_consumptions.id_lot).filter(
+                Lot_consumptions.id_lot.in_(stock_ids),
+                Lot_consumptions.date_close == '',
+            ).distinct().all()
+        }
+        latest_ids = session1.query(func.max(Stock_volume_discounts.id).label('id')).filter(
+            Stock_volume_discounts.id_stock_lot.in_(stock_ids)
+        ).group_by(Stock_volume_discounts.id_stock_lot).subquery()
+        latest_volume = {
+            row.id_stock_lot: row for row in session1.query(Stock_volume_discounts).join(
+                latest_ids, Stock_volume_discounts.id == latest_ids.c.id
+            ).all()
+        }
+
+    result = []
+    for stock in displayed_stock:
+        volume = latest_volume.get(stock.id)
+        result.append({
+            'id': stock.id,
+            'catalog_reference': stock.catalog_reference or '',
+            'code_sap': stock.code_SAP or '',
+            'code_log': stock.code_LOG or '',
+            'description': stock.description or '',
+            'lot': stock.lot or '',
+            'internal_lot': stock.internal_lot or '',
+            'analytical_technique': stock.analytical_technique or '',
+            'type_discount': stock.type_discount or '',
+            'is_open': stock.id in open_ids,
+            'quantity_remaining': volume.quantity_remaining if volume else None,
+            'volume_unit': volume.unit if volume else stock.units_measurement or '',
+        })
+
+    return jsonify(result)
 
 
 @app.route('/history_lots', methods=['POST'])

@@ -1160,7 +1160,7 @@
                 document.getElementById('reference_catalog_edit').value = lot.catalog_reference
                 document.getElementById('manufacturer_edit').value = lot.manufacturer
                 document.getElementById('description_edit').value = lot.description
-                document.getElementById('analytical_technique_edit').value = lot.analytical_technique
+                populateAnalyticalTechniqueSelect('analytical_technique_edit', lot.analytical_technique)
                 document.getElementById('id_reactive_edit').value = lot.id_reactive
                 document.getElementById('code_sap_edit').value = lot.code_SAP
                 document.getElementById('code_log_edit').value = lot.code_LOG

@@ -2,7 +2,7 @@
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy import Column, Integer, String, Numeric
+from sqlalchemy import Column, Integer, String, Numeric, select
 from config import main_dir, ip_address
 
 # Connexio amb la BD
@@ -142,6 +142,25 @@ class Lot_consumptions(Base):
     observations_close = Column(String())
 
 
+class Stock_volume_discounts(Base):
+    __tablename__ = 'stock_volume_discounts'
+
+    id = Column(Integer(), primary_key=True)
+    id_stock_lot = Column(Integer(), nullable=False)
+    date = Column(String(), nullable=False)
+    quantity_before = Column(String(), nullable=False)
+    quantity_discounted = Column(String(), nullable=False)
+    quantity_remaining = Column(String(), nullable=False)
+    unit = Column(String(), nullable=False)
+    observations = Column(String())
+    user = Column(String())
+
+
+def ensure_stock_volume_discounts():
+    """Create the movement ledger without changing existing stock rows."""
+    Stock_volume_discounts.__table__.create(bind=engine, checkfirst=True)
+
+
 class Commands(Base):
     __tablename__ = 'commands'
 
@@ -184,6 +203,28 @@ class Cost_center(Base):
 
     id = Column(Integer(), primary_key=True)
     name = Column(String())
+
+
+class Analytical_techniques(Base):
+    __tablename__ = 'analytical_techniques'
+
+    id = Column(Integer(), primary_key=True)
+    name = Column(String(), nullable=False, unique=True)
+    active = Column(Integer(), nullable=False, default=1)
+
+
+def ensure_analytical_techniques():
+    """Create the catalogue and seed the options previously held in HTML."""
+    defaults = ('AP', 'Extracció', 'Genèric', 'Genotipat', 'MLPA', 'NGS', 'Oficina', 'qPCR', 'Sanger')
+    with engine.begin() as connection:
+        Analytical_techniques.__table__.create(connection, checkfirst=True)
+        existing = {
+            name.casefold()
+            for (name,) in connection.execute(select(Analytical_techniques.name))
+        }
+        for name in defaults:
+            if name.casefold() not in existing:
+                connection.execute(Analytical_techniques.__table__.insert().values(name=name, active=1))
 
 
 class Buy_primers(Base):
