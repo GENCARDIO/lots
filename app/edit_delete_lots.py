@@ -1,7 +1,7 @@
 from flask import request, session, render_template, flash, jsonify
 from app import app
 from app.utils import instant_date, requires_auth, save_log, list_desciption_lots, list_cost_center
-from app.models import session1, Lots, Stock_lots, Logs
+from app.models import session1, Lots, Stock_lots, Stock_volume_discounts, Logs
 from app.analytical_techniques import is_active_technique
 from sqlalchemy import String, cast, or_
 import html
@@ -369,6 +369,11 @@ def edit_lot():
             if change_confirmed:
                 select_stock_lot = session1.query(Stock_lots).filter(Stock_lots.id_lot == id_lot).all()
                 if len(select_stock_lot) > 0:
+                    discounted_stock_ids = {
+                        stock_id for (stock_id,) in session1.query(Stock_volume_discounts.id_stock_lot).filter(
+                            Stock_volume_discounts.id_stock_lot.in_([stock.id for stock in select_stock_lot])
+                        ).distinct().all()
+                    }
                     id_stock_lots_change = ''
                     for lot_stock in select_stock_lot:
                         id_stock_lots_change += f'{lot_stock.id}; '
@@ -435,7 +440,7 @@ def edit_lot():
                         if lot_stock.name_logaritme != name_logaritme:
                             lot_stock.name_logaritme = name_logaritme
 
-                        if lot_stock.units_for_discount != units_for_discount:
+                        if lot_stock.id not in discounted_stock_ids and lot_stock.units_for_discount != units_for_discount:
                             lot_stock.units_for_discount = units_for_discount
 
                         if lot_stock.units_measurement != units_measurement:

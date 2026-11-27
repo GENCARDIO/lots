@@ -14,6 +14,10 @@ def _decimal_text(value):
     return format(value.normalize(), 'f')
 
 
+def _whole_units(unit):
+    return unit.strip().casefold() in {'unitat', 'unitats', 'unit', 'units', 'reacció', 'reaccions'}
+
+
 @app.route('/stock_control_history/<int:stock_id>', methods=['GET'])
 @requires_auth
 def stock_control_history(stock_id):
@@ -61,26 +65,26 @@ def stock_control_discount():
     try:
         datetime.strptime(date, '%d-%m-%Y')
         discounted = Decimal((request.form.get('quantity_discounted') or '').strip().replace(',', '.'))
-        if not discounted.is_finite() or discounted <= 0:
+        if not discounted.is_finite() or discounted <= 0 or discounted != discounted.quantize(Decimal('0.000001')):
             raise InvalidOperation
     except (ValueError, InvalidOperation):
-        return jsonify(message='Indica una data vàlida i una quantitat a descomptar superior a zero.'), 400
+        return jsonify(message='Indica una data vàlida i una quantitat a descomptar superior a zero (màxim 6 decimals).'), 400
+
+    try:
+        before = Decimal(str(stock.units_for_discount))
+        if not before.is_finite() or before <= 0:
+            raise InvalidOperation
+    except InvalidOperation:
+        return jsonify(message="Aquest lot no té unitats per descompte disponibles. Revisa la configuració de l'article."), 400
 
     latest = session1.query(Stock_volume_discounts).filter_by(id_stock_lot=stock.id).order_by(
         Stock_volume_discounts.id.desc()).first()
-    if latest is None:
-        unit = (request.form.get('unit') or '').strip()
-        try:
-            before = Decimal((request.form.get('quantity_before') or '').strip().replace(',', '.'))
-            if not before.is_finite() or before <= 0:
-                raise InvalidOperation
-        except InvalidOperation:
-            return jsonify(message='Indica el volum inicial del lot.'), 400
-        if not unit:
-            return jsonify(message='Indica la unitat del volum.'), 400
-    else:
-        before = Decimal(latest.quantity_remaining)
-        unit = latest.unit
+    if latest is not None:
+        # Keep consumption made before the remaining balance was stored in stock_lots.
+        before = min(before, Decimal(latest.quantity_remaining))
+    unit = (stock.units_measurement or '').strip() or (latest.unit if latest else '')
+    if _whole_units(unit) and (before != before.to_integral_value() or discounted != discounted.to_integral_value()):
+        return jsonify(message='Per a unitats i reaccions cal indicar una quantitat entera.'), 400
 
     if discounted > before:
         return jsonify(message='No pots descomptar més quantitat de la que queda.'), 400
@@ -98,6 +102,7 @@ def stock_control_discount():
     )
     try:
         session1.add(movement)
+        stock.units_for_discount = _decimal_text(remaining)
         if remaining == 0:
             stock.spent = 1
             stock.units_lot = 0

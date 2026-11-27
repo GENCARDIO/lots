@@ -2057,6 +2057,11 @@ body.app-navbar-page-embedded .app-navbar-page-view .app-navbar-table-wrapper {
     min-width: 850px;
 }
 
+#stock_control_history_table th,
+#stock_control_history_table td {
+    text-align: center;
+}
+
 .manage-command-tab-actions {
     display: flex;
     align-items: center;

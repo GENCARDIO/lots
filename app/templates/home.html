@@ -5569,12 +5569,12 @@
                     <table id="stock_control_table" class="lab-data-table" style="width: 100%;">
                         <thead>
                             <tr>
-                                <th>Ref. proveïdor</th>
-                                <th>Codi SAP</th>
-                                <th>Codi LOG</th>
-                                <th>Descripció</th>
-                                <th>Lot</th>
-                                <th>Lot intern</th>
+                                <th><div class="header-filter"><span class="header-title">Ref. proveïdor <span class="sort-icon">↕</span></span><input type="text" data-column="0" aria-label="Cercar per referència de proveïdor"></div></th>
+                                <th><div class="header-filter"><span class="header-title">Codi SAP <span class="sort-icon">↕</span></span><input type="text" data-column="1" aria-label="Cercar per codi SAP"></div></th>
+                                <th><div class="header-filter"><span class="header-title">Codi LOG <span class="sort-icon">↕</span></span><input type="text" data-column="2" aria-label="Cercar per codi LOG"></div></th>
+                                <th><div class="header-filter"><span class="header-title">Descripció <span class="sort-icon">↕</span></span><input type="text" data-column="3" aria-label="Cercar per descripció"></div></th>
+                                <th><div class="header-filter"><span class="header-title">Lot <span class="sort-icon">↕</span></span><input type="text" data-column="4" aria-label="Cercar per lot"></div></th>
+                                <th><div class="header-filter"><span class="header-title">Lot intern <span class="sort-icon">↕</span></span><input type="text" data-column="5" aria-label="Cercar per lot intern"></div></th>
                                 <th>Accions</th>
                             </tr>
                         </thead>
@@ -5628,11 +5628,11 @@
                     <div class="modal-body document-modal-body">
                         <div id="stock_control_discount_error" class="alert alert-danger" role="alert" hidden></div>
                         <div class="stock-control-discount-row">
-                            <label class="toolbar-field app-modal-field"><span>Quantitat actual</span><input type="number" id="stock_control_quantity_before" min="0" step="any" required></label>
-                            <label class="toolbar-field app-modal-field"><span>Quantitat a descomptar</span><input type="number" id="stock_control_quantity_discounted" min="0" step="any" required></label>
+                            <label class="toolbar-field app-modal-field"><span>Quantitat actual</span><input type="number" id="stock_control_quantity_before" min="0" step="any" readonly></label>
+                            <label class="toolbar-field app-modal-field"><span>Quantitat a descomptar</span><input type="number" id="stock_control_quantity_discounted" min="1" step="1" required></label>
                         </div>
                         <div class="stock-control-discount-row">
-                            <label class="toolbar-field app-modal-field"><span>Unitat</span><input type="text" id="stock_control_volume_unit" required></label>
+                            <label class="toolbar-field app-modal-field"><span>Unitat</span><input type="text" id="stock_control_volume_unit" readonly></label>
                             <label class="toolbar-field app-modal-field"><span>Data descompte</span><input type="text" id="stock_control_discount_date" placeholder="dd-mm-aaaa" oninput="replae_slash_with_hyphen(this); filter_characters(this)" required></label>
                         </div>
                         <label class="toolbar-field app-modal-field"><span>Observacions</span><input type="text" id="stock_control_discount_observations"></label>
@@ -5829,7 +5829,7 @@
                     <div class="col-lg-6 col-md-12 col-sm-12">       
                         <div class="input-group mb-3">
                             <span class="input-group-text" id="basic-addon1" style="width: 168px;"><b>Unitats&nbsp; </b></span>
-                            <input type="number" class="form-control" id='units_for_discount' aria-label="TTN" aria-describedby="basic-addon1">
+                            <input type="number" class="form-control" id='units_for_discount' step="any" aria-label="TTN" aria-describedby="basic-addon1">
                         </div>
                     </div>
                     <div class="col-lg-6 col-md-12 col-sm-12">       

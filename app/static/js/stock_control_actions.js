@@ -47,14 +47,23 @@ function openStockControlAction(id, action) {
         document.getElementById('stock_control_open_close_observations').value = '';
         $('#stock_control_open_close_modal').modal('show');
     } else if (action === 'discount') {
+        if (row.quantity_remaining === null || Number(row.quantity_remaining) <= 0) {
+            showModalMessage("Aquest lot no té unitats per descompte disponibles. Revisa la configuració de l'article.", 'warning', 'stock_control_message', 5000);
+            return;
+        }
         stockControlModalError('stock_control_discount_error', '');
         const before = document.getElementById('stock_control_quantity_before');
         const unit = document.getElementById('stock_control_volume_unit');
-        before.value = row.quantity_remaining === null ? '' : row.quantity_remaining;
-        before.readOnly = row.quantity_remaining !== null;
+        before.value = row.quantity_remaining;
+        before.readOnly = true;
         unit.value = row.volume_unit || '';
-        unit.readOnly = row.quantity_remaining !== null;
-        document.getElementById('stock_control_quantity_discounted').value = '';
+        unit.readOnly = true;
+        const discounted = document.getElementById('stock_control_quantity_discounted');
+        discounted.value = '';
+        const wholeUnits = /^(unitat|unitats|unit|units|reacció|reaccions)$/iu.test(unit.value.trim());
+        discounted.step = wholeUnits ? '1' : 'any';
+        discounted.min = wholeUnits ? '1' : '0.000001';
+        discounted.max = row.quantity_remaining;
         document.getElementById('stock_control_discount_date').value = stockControlToday();
         document.getElementById('stock_control_discount_observations').value = '';
         $('#stock_control_discount_modal').modal('show');
@@ -92,9 +101,7 @@ async function saveStockControlDiscount() {
     submitButton.disabled = true;
     const body = new FormData();
     body.append('stock_id', stockControlActionId);
-    body.append('quantity_before', document.getElementById('stock_control_quantity_before').value);
     body.append('quantity_discounted', document.getElementById('stock_control_quantity_discounted').value);
-    body.append('unit', document.getElementById('stock_control_volume_unit').value.trim());
     body.append('date', document.getElementById('stock_control_discount_date').value.trim());
     body.append('observations', document.getElementById('stock_control_discount_observations').value.trim());
     try {

@@ -377,7 +377,7 @@
                 <div class="col-lg-4 col-md-12 col-sm-12">
                     <div class="input-group mb-3">
                         <span class="input-group-text" id="basic-addon1" style="width: 180px;"><b>Unitats</b></span>
-                        <input type="number" class="form-control" id='units_for_discount_edit' aria-label="TTN" aria-describedby="basic-addon1">
+                        <input type="number" class="form-control" id='units_for_discount_edit' step="any" aria-label="TTN" aria-describedby="basic-addon1">
                     </div>
                 </div>
                 <div class="col-lg-4 col-md-12 col-sm-12">
@@ -725,7 +725,10 @@
             button.setAttribute('aria-selected', String(active));
         });
         $('#stock_control_global_search').val('');
-        table.search('').clear().rows.add(visibleRows).draw();
+        $('#home-stock-control-panel .header-filter input').val('');
+        table.search('');
+        table.columns().search('');
+        table.clear().rows.add(visibleRows).draw();
         table.columns.adjust();
     }
 
@@ -2827,6 +2830,28 @@
             }
         });
 
+        function refreshHeaderFilters() {
+            $(`${scopeSelector} .sort-icon`).text('↕').removeClass('is-active');
+            table.order().forEach(function ([columnIndex, direction]) {
+                $(`${scopeSelector} input[data-column="${columnIndex}"]`)
+                    .closest('.header-filter').find('.sort-icon')
+                    .text(direction === 'asc' ? '↑' : '↓').addClass('is-active');
+            });
+            document.querySelectorAll(`${scopeSelector} .header-filter input`).forEach(function (input) {
+                if (input.dataset.sortGuard === 'true') return;
+                input.dataset.sortGuard = 'true';
+                ['pointerdown', 'pointerup', 'mousedown', 'mouseup', 'click', 'dblclick', 'keydown'].forEach(function (eventName) {
+                    input.addEventListener(eventName, function (event) {
+                        event.stopImmediatePropagation();
+                        event.stopPropagation();
+                    }, true);
+                });
+            });
+        }
+
+        table.on('order.dt draw.dt column-visibility.dt', refreshHeaderFilters);
+        refreshHeaderFilters();
+
         $(globalSearchSelector).on('keyup change clear', function () {
             table.search(this.value).draw();
         });
@@ -2842,6 +2867,7 @@
             table.columns().search('');
             table.order([]);
             table.draw();
+            refreshHeaderFilters();
         });
     }
 

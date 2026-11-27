@@ -9,6 +9,7 @@ import urllib.error
 import urllib.request
 from sqlalchemy import and_, or_, outerjoin, func
 from datetime import datetime
+from decimal import Decimal, InvalidOperation
 from config import main_dir, ip_address
 import pandas as pd
 from openpyxl import load_workbook
@@ -292,6 +293,15 @@ def stock_control_data():
     result = []
     for stock in displayed_stock:
         volume = latest_volume.get(stock.id)
+        try:
+            available = Decimal(str(stock.units_for_discount))
+            if not available.is_finite() or available < 0:
+                raise InvalidOperation
+            if volume is not None:
+                available = min(available, Decimal(volume.quantity_remaining))
+            quantity_remaining = format(available.normalize(), 'f')
+        except InvalidOperation:
+            quantity_remaining = None
         result.append({
             'id': stock.id,
             'catalog_reference': stock.catalog_reference or '',
@@ -303,8 +313,8 @@ def stock_control_data():
             'analytical_technique': stock.analytical_technique or '',
             'type_discount': stock.type_discount or '',
             'is_open': stock.id in open_ids,
-            'quantity_remaining': volume.quantity_remaining if volume else None,
-            'volume_unit': volume.unit if volume else stock.units_measurement or '',
+            'quantity_remaining': quantity_remaining,
+            'volume_unit': stock.units_measurement or (volume.unit if volume else ''),
         })
 
     return jsonify(result)
@@ -1421,6 +1431,11 @@ def upadate_bd():
                 update_lot_field('location', ubicació)
 
             select_stock = session1.query(Stock_lots).filter(Stock_lots.id_lot == key).all()
+            discounted_stock_ids = {
+                stock_id for (stock_id,) in session1.query(Stock_volume_discounts.id_stock_lot).filter(
+                    Stock_volume_discounts.id_stock_lot.in_([stock.id for stock in select_stock])
+                ).distinct().all()
+            } if select_stock else set()
             for stock in select_stock:
                 stock.catalog_reference = catalog_reference
                 stock.manufacturer = manufacturer
@@ -1445,7 +1460,8 @@ def upadate_bd():
                 stock.purchase_format_supplier = purchase_format_supplier
                 stock.units_format_supplier = units_format_supplier
                 stock.name_logaritme = name_logaritme
-                stock.units_for_discount = units
+                if stock.id not in discounted_stock_ids:
+                    stock.units_for_discount = units
                 stock.units_measurement = units_measurement
                 stock.observations = observations
                 
