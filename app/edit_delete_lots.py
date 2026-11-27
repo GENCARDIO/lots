@@ -103,8 +103,8 @@ def edit_lot():
     description = request.form.get("description")
     analytical_technique = request.form.get("analytical_technique")
     id_reactive = request.form.get("id_reactive")
-    code_sap = request.form.get("code_sap")
-    code_log = request.form.get("code_log")
+    code_sap = (request.form.get("code_sap") or '').strip()
+    code_log = (request.form.get("code_log") or '').strip()
     active = request.form.get("active")
     temp_conservation = request.form.get("temp_conservation")
     description_subref = request.form.get("description_subref")
@@ -138,6 +138,14 @@ def edit_lot():
         if not select_lot:
             return "False_//_No hem trobat l'article a la BD"
         else:
+            old_code_sap = (select_lot.code_SAP or '').strip()
+            old_code_log = (select_lot.code_LOG or '').strip()
+            if old_code_sap and not code_sap:
+                return "False_//_El codi SAP no pot quedar buit un cop informat."
+            if old_code_log and not code_log:
+                return "False_//_El codi LOG no pot quedar buit un cop informat."
+            propagate_code_sap = not old_code_sap and bool(code_sap)
+            propagate_code_log = not old_code_log and bool(code_log)
             if (react_or_fungible != 'Fungible'
                     and analytical_technique != select_lot.analytical_technique
                     and not is_active_technique(analytical_technique)):
@@ -392,10 +400,10 @@ def edit_lot():
                         if lot_stock.id_reactive != id_reactive:
                             lot_stock.id_reactive = id_reactive
 
-                        if lot_stock.code_SAP != code_sap:
+                        if propagate_code_sap and lot_stock.code_SAP != code_sap:
                             lot_stock.code_SAP = code_sap
 
-                        if lot_stock.code_LOG != code_log:
+                        if propagate_code_log and lot_stock.code_LOG != code_log:
                             lot_stock.code_LOG = code_log
 
                         if lot_stock.temp_conservation != temp_conservation:
